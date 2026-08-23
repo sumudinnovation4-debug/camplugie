@@ -192,7 +192,13 @@ document.getElementById('bankSaveBtn').addEventListener('click', async (e) => {
     // this pins down whether it's a page-state bug (e.g. myUserId not set yet)
     // vs. something going wrong in transit.
     const missing = [];
-    if (!myUserId) missing.push('your user ID (page may not be fully loaded — try reloading)');
+    if (!myUserId) {
+      // Page may have finished rendering before the session finished loading —
+      // re-check instead of just failing the click.
+      const { data: { session } } = await window.sb.auth.getSession();
+      if (session) myUserId = session.user.id;
+    }
+    if (!myUserId) missing.push('your user ID — please reload the page and try again');
     if (!accountNumber) missing.push('account number');
     if (!bankCode) missing.push('bank');
     if (missing.length) throw new Error(`Missing: ${missing.join(', ')}`);
