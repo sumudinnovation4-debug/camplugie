@@ -715,26 +715,120 @@ img { max-width: 100%; display: block; }
 .pin-entry-row input { flex: 1; background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; padding: 11px; font: inherit; font-size: 16px; letter-spacing: .2em; text-align: center; color: var(--text); }
 .pin-entry-row button { flex-shrink: 0; }
 
-/* ===== Listing detail ===== */
-.listing-media {
-  width: 100%; aspect-ratio: 1/1; display: flex; align-items: center; justify-content: center;
-  font-size: 90px; position: relative;
+/* ===== Listing detail (product page) ===== */
+.pdp-breadcrumb {
+  font-size: 12px; color: var(--text3); font-weight: 600;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
-.listing-body { padding: 18px 16px; }
-.listing-price { font-size: 26px; font-weight: 800; }
-.listing-title { font-size: 17px; font-weight: 700; margin-top: 6px; }
-.listing-badges { display: flex; gap: 6px; margin-top: 8px; }
-.listing-badge { font-size: 11px; font-weight: 700; background: var(--surface2); border: 1px solid var(--border); border-radius: 999px; padding: 4px 10px; color: var(--text2); }
-.listing-desc { font-size: 13.5px; color: var(--text2); line-height: 1.6; margin-top: 14px; }
-.listing-seller-row {
+.pdp-breadcrumb b { color: var(--text2); }
+
+.pdp-carousel-main {
+  width: 100%; aspect-ratio: 1/1; display: flex; align-items: center; justify-content: center;
+  font-size: 90px; position: relative; background: var(--surface2);
+}
+.pdp-carousel-main img { width: 100%; height: 100%; object-fit: cover; }
+.pdp-thumbs { display: flex; gap: 8px; padding: 10px 16px; overflow-x: auto; scrollbar-width: none; }
+.pdp-thumbs::-webkit-scrollbar { display: none; }
+.pdp-thumb {
+  flex-shrink: 0; width: 60px; height: 60px; border-radius: 10px; overflow: hidden;
+  border: 2px solid var(--border); cursor: pointer; background: var(--surface2);
+}
+.pdp-thumb img { width: 100%; height: 100%; object-fit: cover; }
+.pdp-thumb.active { border-color: var(--accent); }
+
+.pdp-rating-row { display: flex; align-items: center; gap: 8px; margin-top: 6px; }
+.pdp-stars { color: var(--accent); font-size: 13px; letter-spacing: 1px; }
+.pdp-rating-count { font-size: 12.5px; color: var(--text3); }
+.pdp-badge-new {
+  font-size: 10.5px; font-weight: 700; color: var(--money); background: rgba(52,211,153,0.14);
+  border-radius: 999px; padding: 3px 9px;
+}
+
+.pdp-stock-row { display: flex; align-items: center; gap: 10px; margin-top: 14px; flex-wrap: wrap; }
+.pdp-stock-pill {
+  font-size: 11.5px; font-weight: 700; border-radius: 999px; padding: 4px 11px;
+  background: rgba(52,211,153,0.14); color: var(--money);
+}
+.pdp-stock-pill.out { background: rgba(251,113,133,0.14); color: var(--danger); }
+.pdp-stock-note { font-size: 12.5px; color: var(--text3); }
+
+.pdp-seller-card {
   display: flex; align-items: center; gap: 10px; margin-top: 18px; padding: 12px;
   background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm);
+  cursor: pointer;
 }
-.listing-seller-row .info { flex: 1; }
-.listing-seller-row b { font-size: 13.5px; display: block; }
-.listing-seller-row span { font-size: 11.5px; color: var(--text3); }
-.listing-actions { display: flex; gap: 10px; margin-top: 18px; }
-.listing-actions .btn { flex: 1; padding: 13px; font-size: 14px; }
+.pdp-seller-card .info { flex: 1; min-width: 0; }
+.pdp-seller-card b { font-size: 13.5px; display: flex; align-items: center; gap: 5px; }
+.pdp-seller-card span { font-size: 11.5px; color: var(--text3); }
+.pdp-seller-card .chev { color: var(--text3); flex-shrink: 0; }
+.pdp-seller-card .chev svg { width: 18px; height: 18px; }
+.pdp-chat-btn {
+  width: 100%; margin-top: 8px; background: var(--surface2); border: 1px solid var(--border);
+  color: var(--text); border-radius: var(--radius-sm); padding: 12px; font: inherit; font-size: 13.5px;
+  font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px;
+}
+
+.pdp-delivery-info { margin-top: 16px; display: flex; flex-direction: column; gap: 10px; }
+.pdp-delivery-info div { display: flex; align-items: center; gap: 10px; font-size: 12.5px; color: var(--text2); }
+.pdp-delivery-info span.ic { font-size: 15px; flex-shrink: 0; }
+
+.pdp-section { margin-top: 26px; }
+.pdp-section h3 { font-size: 15.5px; font-weight: 700; margin-bottom: 10px; }
+
+.review-summary { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+.review-summary .avg { font-size: 22px; font-weight: 800; }
+.review-card {
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm);
+  padding: 12px 13px; margin-bottom: 10px;
+}
+.review-card .top { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.review-card .name { font-size: 13px; font-weight: 700; }
+.review-card .stars { color: var(--accent); font-size: 12px; }
+.review-card .comment { font-size: 12.5px; color: var(--text2); margin-top: 6px; line-height: 1.5; }
+.review-card .time { font-size: 11px; color: var(--text3); margin-top: 4px; }
+.review-empty { text-align: center; padding: 20px; color: var(--text3); font-size: 12.5px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm); }
+
+.review-form { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 14px; margin-top: 12px; }
+.review-form label { font-size: 12.5px; font-weight: 700; color: var(--text2); display: block; margin-bottom: 8px; }
+.review-star-picker { display: flex; gap: 4px; margin-bottom: 14px; }
+.review-star-picker button { background: none; border: none; font-size: 24px; color: var(--border); cursor: pointer; padding: 0; }
+.review-star-picker button.active { color: var(--accent); }
+.review-form textarea {
+  width: 100%; background: var(--surface2); border: 1px solid var(--border); border-radius: var(--radius-sm);
+  padding: 12px; font: inherit; font-size: 13px; color: var(--text); outline: none; resize: vertical; min-height: 70px;
+}
+.review-form button.submit {
+  width: 100%; margin-top: 10px; background: var(--accent); color: #1A1200; border: none;
+  border-radius: var(--radius-sm); padding: 12px; font: inherit; font-size: 13.5px; font-weight: 800; cursor: pointer;
+}
+
+.pdp-carousel-row { display: flex; gap: 12px; overflow-x: auto; scrollbar-width: none; padding: 4px 16px 6px; }
+.pdp-carousel-row::-webkit-scrollbar { display: none; }
+.pdp-carousel-row .store-card { flex-shrink: 0; width: 148px; }
+
+/* ===== Sticky buy bar ===== */
+.pdp-buybar {
+  position: fixed; left: 50%; transform: translateX(-50%); bottom: 0;
+  width: 100%; max-width: 480px;
+  background: rgba(18, 16, 29, 0.95); backdrop-filter: blur(16px);
+  border-top: 1px solid var(--border);
+  padding: 12px 16px calc(12px + var(--safe-bottom));
+  z-index: 30;
+}
+.pdp-buybar-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+.pdp-buybar-total { font-size: 12px; color: var(--text3); }
+.pdp-buybar-total b { display: block; font-size: 17px; color: var(--text); font-weight: 800; }
+.pdp-qty-stepper { display: flex; align-items: center; gap: 10px; }
+.pdp-qty-stepper button {
+  width: 30px; height: 30px; border-radius: 8px; border: 1px solid var(--border);
+  background: var(--surface2); color: var(--text); font-size: 15px; cursor: pointer;
+}
+.pdp-qty-stepper span { font-size: 14px; font-weight: 700; min-width: 18px; text-align: center; }
+.pdp-buybar-actions { display: flex; gap: 8px; }
+.pdp-buybar-actions .icon-btn { flex-shrink: 0; }
+.pdp-buybar-actions .btn { flex: 1; padding: 12px; font-size: 13.5px; }
+
+@media (min-width: 481px) { .pdp-buybar { border-radius: 20px 20px 0 0; } }
 
 /* ===== Swift map + dispute ===== */
 .swift-map { width: 100%; height: 180px; border-radius: var(--radius-sm); overflow: hidden; margin-top: 12px; background: var(--surface2); }
@@ -773,14 +867,16 @@ img { max-width: 100%; display: block; }
 </head>
 <body>
 
-<div class="app-shell" style="padding-bottom:24px">
+<div class="app-shell" style="padding-bottom:120px">
 
   <header class="cp-page-header">
     <a class="icon-btn" href="market.html" aria-label="Back">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
     </a>
-    <h1>Listing</h1>
-    <span style="width:38px"></span>
+    <div class="pdp-breadcrumb" id="pdpBreadcrumb">Listing</div>
+    <button class="icon-btn" id="shareBtn" aria-label="Share">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+    </button>
   </header>
 
   <div id="listingContent">
@@ -788,6 +884,8 @@ img { max-width: 100%; display: block; }
   </div>
 
 </div>
+
+<div class="pdp-buybar" id="pdpBuybar" style="display:none"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <script src="https://js.paystack.co/v1/inline.js"></script>
@@ -818,6 +916,30 @@ window.CP.timeAgo = (iso) => {
 };
 
 window.CP.initials = (name) => (name || 'U').slice(0, 2).toUpperCase();
+
+/**
+ * Opens (or creates) a direct conversation between the current user and
+ * otherUserId, checking both buyer/seller directions so two people never end
+ * up with duplicate threads. Pass listingId to tie it to a specific item.
+ * Returns the conversation id.
+ */
+window.CP.openOrCreateConversation = async function (meId, otherUserId, listingId = null) {
+  if (!meId || !otherUserId || meId === otherUserId) return null;
+
+  let existingQuery = window.sb.from('conversations').select('id')
+    .or(`and(buyer_id.eq.${meId},seller_id.eq.${otherUserId}),and(buyer_id.eq.${otherUserId},seller_id.eq.${meId})`);
+  existingQuery = listingId ? existingQuery.eq('listing_id', listingId) : existingQuery.is('listing_id', null);
+
+  const { data: existing } = await existingQuery.maybeSingle();
+  if (existing) return existing.id;
+
+  const { data: created, error } = await window.sb.from('conversations')
+    .insert({ buyer_id: meId, seller_id: otherUserId, listing_id: listingId })
+    .select('id').single();
+
+  if (error) { console.error('Conversation create error:', error); return null; }
+  return created.id;
+};
 
 </script>
 <script>
@@ -868,11 +990,14 @@ window.CP_signOut = async () => {
 </script>
 <script>
 const CATEGORY_EMOJI = { textbooks: '📚', electronics: '💻', fashion: '👕', services: '🛠', food: '🍱', more: '🛍' };
+const CATEGORY_LABEL = { textbooks: 'Textbooks', electronics: 'Electronics', fashion: 'Fashion', services: 'Services', food: 'Food', more: 'More' };
 const TILE_BG = 'linear-gradient(135deg,#7C3AED,#A78BFA)';
 
 function getListingId() {
   return new URLSearchParams(window.location.search).get('id');
 }
+
+let currentQty = 1;
 
 async function loadListing(userId) {
   const content = document.getElementById('listingContent');
@@ -882,92 +1007,258 @@ async function loadListing(userId) {
   const { data: item, error } = await window.sb.from('listings').select(window.CP.LISTING_SELECT).eq('id', id).single();
   if (error || !item) { content.innerHTML = `<div style="text-align:center;padding:40px;color:var(--text3);font-size:13px;">This listing couldn't be found — it may have been removed.</div>`; return; }
 
+  currentQty = 1;
   const emoji = CATEGORY_EMOJI[(item.category || '').toLowerCase()] || '🛍';
-  const media = item.media_urls?.[0];
+  const catLabel = CATEGORY_LABEL[(item.category || '').toLowerCase()] || item.category || 'General';
+  const media = item.media_urls || [];
   const seller = item.profiles || {};
   const isMine = seller.id === userId;
   const isSold = item.status === 'sold' || item.is_available === false;
   const isFood = (item.category || '').toLowerCase() === 'food';
 
-  content.innerHTML = `
-    <div class="listing-media" style="background:${TILE_BG}">
-      ${media ? `<img src="${media}" alt="" style="width:100%;height:100%;object-fit:cover">` : emoji}
-    </div>
-    <div class="listing-body">
-      <div class="listing-price">${window.CP.fmtNaira(item.price)}${isSold ? ' <span style="color:var(--danger);font-size:14px;font-weight:700">· Sold</span>' : ''}</div>
-      <div class="listing-title">${item.title}</div>
-      <div class="listing-badges">
-        <span class="listing-badge">${item.listing_type === 'service' ? '🛠 Service' : '📦 Product'}</span>
-        <span class="listing-badge">${emoji} ${item.category || 'General'}</span>
-        ${item.pickup_label ? `<span class="listing-badge">📍 ${item.pickup_label}</span>` : ''}
-      </div>
-      <p class="listing-desc">${item.description || 'No description provided.'}</p>
+  document.getElementById('pdpBreadcrumb').innerHTML = `Home &rsaquo; ${catLabel} &rsaquo; <b>${item.title}</b>`;
 
-      <div class="listing-seller-row">
+  const { count: reviewCount, avg } = await getReviewSummary(id);
+  const roundedAvg = Math.round(avg);
+
+  content.innerHTML = `
+    <div class="pdp-carousel-main" id="pdpMainMedia" style="${media.length ? '' : `background:${TILE_BG}`}">
+      ${media.length ? `<img src="${media[0]}" alt="">` : emoji}
+    </div>
+    ${media.length > 1 ? `
+      <div class="pdp-thumbs">
+        ${media.map((url, i) => `<div class="pdp-thumb${i === 0 ? ' active' : ''}" data-src="${url}"><img src="${url}" alt=""></div>`).join('')}
+      </div>
+    ` : ''}
+
+    <div class="listing-body">
+      <div class="listing-title">${item.title}</div>
+      <div class="pdp-rating-row">
+        <span class="pdp-stars">${'★'.repeat(roundedAvg)}${'☆'.repeat(5 - roundedAvg)}</span>
+        <span class="pdp-rating-count">${reviewCount ? `${reviewCount} verified rating${reviewCount === 1 ? '' : 's'}` : '0 verified ratings'}</span>
+        ${reviewCount ? '' : '<span class="pdp-badge-new">new</span>'}
+      </div>
+
+      <div class="listing-price" style="margin-top:12px">${window.CP.fmtNaira(item.price)}${isSold ? ' <span style="color:var(--danger);font-size:14px;font-weight:700">· Sold</span>' : ''}</div>
+
+      <div class="pdp-stock-row">
+        <span class="pdp-stock-pill${isSold ? ' out' : ''}">${isSold ? 'Sold out' : 'In Stock'}</span>
+        <span class="pdp-stock-note">${item.pickup_label ? `Pickup: ${item.pickup_label}` : 'Ready for campus delivery.'}</span>
+      </div>
+
+      <div class="pdp-seller-card" id="sellerCardLink">
         <div class="avatar">${window.CP.initials(seller.full_name || seller.username)}</div>
         <div class="info">
           <b>${seller.full_name || seller.username || 'Camplugie seller'}</b>
           <span>${seller.is_verified ? '✓ Verified seller' : 'Seller'}</span>
         </div>
+        <div class="chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></div>
+      </div>
+      ${!isMine ? `<button class="pdp-chat-btn" id="chatWithSellerBtn">💬 Chat with seller</button>` : ''}
+
+      <div class="pdp-delivery-info">
+        <div><span class="ic">🚚</span> Campus delivery to hostel or faculty</div>
+        <div><span class="ic">⏱</span> Contact vendor for timing</div>
+        <div><span class="ic">🛡</span> 24h returns if not as described</div>
       </div>
 
-      ${isMine ? `
-        <div class="listing-actions">
-          <a class="btn btn-ghost" href="market.html?tab=mine" style="flex:1">Manage in My listings</a>
+      ${(!isMine && !isSold) ? `
+        <div class="form-group" style="margin-top:16px">
+          <label class="form-label">Delivery note (room / hostel / landmark)</label>
+          <input class="form-input" id="dropoffNote" placeholder="e.g. Hall B, Room 204">
         </div>
-      ` : (isSold && !isFood) ? `
-        <div class="listing-actions"><span style="color:var(--text3);font-size:13px">This item is no longer available.</span></div>
-      ` : isFood ? `
-        <div class="listing-actions" style="flex-direction:column;align-items:stretch">
-          <div class="qty-stepper" style="display:flex;align-items:center;gap:12px;justify-content:center;margin-bottom:12px">
-            <button type="button" class="btn btn-ghost" id="qtyMinusBtn" style="width:40px;padding:8px;flex:none">−</button>
-            <span id="qtyValue" style="font-size:16px;font-weight:700;min-width:24px;text-align:center">1</span>
-            <button type="button" class="btn btn-ghost" id="qtyPlusBtn" style="width:40px;padding:8px;flex:none">+</button>
+      ` : ''}
+
+      ${isMine ? `<div class="listing-actions"><a class="btn btn-ghost" href="market.html?tab=mine" style="flex:1">Manage in My listings</a></div>` : ''}
+
+      <div class="pdp-section">
+        <h3>Product Details</h3>
+        <p class="listing-desc" style="margin-top:0">${item.description || 'No description provided.'}</p>
+      </div>
+
+      <div class="pdp-section">
+        <h3>Customer Reviews</h3>
+        <div id="reviewsList">Loading reviews…</div>
+        ${!isMine ? `
+          <div class="review-form">
+            <label>Your rating</label>
+            <div class="review-star-picker" id="reviewStarPicker">
+              ${[1, 2, 3, 4, 5].map(n => `<button type="button" data-star="${n}">★</button>`).join('')}
+            </div>
+            <label>Your comment</label>
+            <textarea id="reviewComment" placeholder="Share your experience…"></textarea>
+            <button class="submit" id="postReviewBtn">Post review</button>
           </div>
-          <div class="form-group" style="margin-bottom:10px">
-            <label class="form-label">Delivery note (room / hostel / landmark)</label>
-            <input class="form-input" id="foodDropoffNote" placeholder="e.g. Hall B, Room 204">
-          </div>
-          <button class="btn btn-primary" id="orderFoodBtn" style="width:100%">🍱 Order &amp; pay now — <span id="orderFoodTotal">${window.CP.fmtNaira(item.price)}</span></button>
-          <button class="btn btn-ghost" id="addToCartBtn" style="width:100%;margin-top:8px">🛒 Add to cart instead</button>
-          <p style="font-size:11px;color:var(--text3);text-align:center;margin-top:8px">No chat needed — pay now and it's prepared &amp; delivered, or add to cart to order alongside other food.</p>
-        </div>
-      ` : `
-        <div class="listing-actions" style="flex-direction:column;align-items:stretch">
-          <div class="qty-stepper" style="display:flex;align-items:center;gap:12px;justify-content:center;margin-bottom:12px">
-            <button type="button" class="btn btn-ghost" id="qtyMinusBtn" style="width:40px;padding:8px;flex:none">−</button>
-            <span id="qtyValue" style="font-size:16px;font-weight:700;min-width:24px;text-align:center">1</span>
-            <button type="button" class="btn btn-ghost" id="qtyPlusBtn" style="width:40px;padding:8px;flex:none">+</button>
-          </div>
-          <div style="display:flex;gap:10px">
-            <button class="btn btn-ghost" id="messageSellerBtn" style="flex:1">💬 Message seller</button>
-            <button class="btn btn-ghost" id="addToCartBtn" style="flex:1">🛒 Add to cart</button>
-          </div>
-          <a class="btn btn-primary" href="swift.html?listing=${item.id}" style="width:100%;text-decoration:none;margin-top:8px;text-align:center;display:block">🛵 Request delivery</a>
-        </div>
-      `}
+        ` : ''}
+      </div>
+
+      <div class="pdp-section" id="recommendedSection" style="margin-left:-16px;margin-right:-16px">
+        <div class="cp-section-head"><h3>Recommended for You</h3></div>
+        <div class="pdp-carousel-row" id="recommendedRow"></div>
+      </div>
+
+      <div class="pdp-section" id="moreFromSellerSection" style="margin-left:-16px;margin-right:-16px;display:none">
+        <div class="cp-section-head"><h3>More from ${seller.full_name || seller.username || 'this seller'}</h3></div>
+        <div class="pdp-carousel-row" id="moreFromSellerRow"></div>
+      </div>
     </div>
   `;
 
-  let qty = 1;
-  const qtyValueEl = document.getElementById('qtyValue');
-  document.getElementById('qtyMinusBtn')?.addEventListener('click', () => { qty = Math.max(1, qty - 1); updateQtyUI(); });
-  document.getElementById('qtyPlusBtn')?.addEventListener('click', () => { qty = qty + 1; updateQtyUI(); });
-  function updateQtyUI() {
-    if (qtyValueEl) qtyValueEl.textContent = qty;
-    const totalEl = document.getElementById('orderFoodTotal');
-    if (totalEl) totalEl.textContent = window.CP.fmtNaira(item.price * qty);
-  }
+  // Thumbnail swap
+  document.querySelectorAll('.pdp-thumb').forEach(t => {
+    t.addEventListener('click', () => {
+      document.querySelectorAll('.pdp-thumb').forEach(x => x.classList.remove('active'));
+      t.classList.add('active');
+      document.getElementById('pdpMainMedia').innerHTML = `<img src="${t.dataset.src}" alt="">`;
+    });
+  });
 
-  if (!isMine && !isFood && !isSold) {
-    document.getElementById('messageSellerBtn').addEventListener('click', () => openOrCreateConversation(userId, item));
-  }
-  if (!isMine && isFood) {
-    document.getElementById('orderFoodBtn').addEventListener('click', (e) => orderFoodNow(e.target, userId, item, () => qty));
-  }
-  if (!isMine && (!isSold || isFood)) {
-    document.getElementById('addToCartBtn')?.addEventListener('click', (e) => addToCart(e.target, userId, item, () => qty));
-  }
+  document.getElementById('sellerCardLink').addEventListener('click', () => { window.location.href = `profile-view.html?id=${seller.id}`; });
+  document.getElementById('chatWithSellerBtn')?.addEventListener('click', () => openOrCreateConversation(userId, item));
+  document.getElementById('shareBtn').onclick = () => sharePage(item);
+
+  renderReviews(id);
+  loadRecommended(item);
+  if (!isMine) loadMoreFromSeller(item);
+
+  let selectedStars = 0;
+  const starPicker = document.getElementById('reviewStarPicker');
+  starPicker?.addEventListener('click', (e) => {
+    const b = e.target.closest('button'); if (!b) return;
+    selectedStars = Number(b.dataset.star);
+    starPicker.querySelectorAll('button').forEach(x => x.classList.toggle('active', Number(x.dataset.star) <= selectedStars));
+  });
+  document.getElementById('postReviewBtn')?.addEventListener('click', () => postReview(id, userId, () => selectedStars));
+
+  renderBuybar(item, userId, isMine, isSold, isFood);
+}
+
+function sharePage(item) {
+  const url = window.location.href;
+  if (navigator.share) { navigator.share({ title: item.title, url }).catch(() => {}); }
+  else { navigator.clipboard?.writeText(url); alert('Link copied!'); }
+}
+
+// ---- Reviews ----
+async function getReviewSummary(listingId) {
+  const { data } = await window.sb.from('listing_reviews').select('rating').eq('listing_id', listingId);
+  if (!data || !data.length) return { count: 0, avg: 0 };
+  return { count: data.length, avg: data.reduce((s, r) => s + r.rating, 0) / data.length };
+}
+
+async function renderReviews(listingId) {
+  const el = document.getElementById('reviewsList');
+  const { data, error } = await window.sb
+    .from('listing_reviews').select('*, profiles(username, full_name)')
+    .eq('listing_id', listingId).order('created_at', { ascending: false }).limit(20);
+  if (error) { el.innerHTML = `<div class="review-empty">Couldn't load reviews.</div>`; return; }
+  if (!data || !data.length) { el.innerHTML = `<div class="review-empty">No reviews yet. Be the first to review this product!</div>`; return; }
+  el.innerHTML = data.map(r => `
+    <div class="review-card">
+      <div class="top">
+        <span class="name">${r.profiles?.full_name || r.profiles?.username || 'Camplugie user'}</span>
+        <span class="stars">${'★'.repeat(r.rating)}${'☆'.repeat(5 - r.rating)}</span>
+      </div>
+      ${r.comment ? `<div class="comment">${r.comment}</div>` : ''}
+      <div class="time">${window.CP.timeAgo(r.created_at)}</div>
+    </div>
+  `).join('');
+}
+
+async function postReview(listingId, userId, getStars) {
+  const stars = getStars();
+  const comment = document.getElementById('reviewComment').value.trim();
+  if (!stars) { alert('Please pick a star rating.'); return; }
+  const btn = document.getElementById('postReviewBtn');
+  btn.disabled = true; btn.textContent = 'Posting…';
+  const { error } = await window.sb.from('listing_reviews').upsert(
+    { listing_id: listingId, user_id: userId, rating: stars, comment, created_at: new Date().toISOString() },
+    { onConflict: 'listing_id,user_id' }
+  );
+  btn.disabled = false; btn.textContent = 'Post review';
+  if (error) { console.error('Review post error:', error); alert('Could not post your review — please try again.'); return; }
+  document.getElementById('reviewComment').value = '';
+  loadListing(userId);
+}
+
+// ---- Recommendation carousels ----
+function storeCardHTML(listing) {
+  const emoji = CATEGORY_EMOJI[(listing.category || '').toLowerCase()] || '🛍';
+  const media = listing.media_urls?.[0];
+  const sellerName = listing.profiles?.full_name || listing.profiles?.username || 'Seller';
+  return `
+    <button class="store-card" data-id="${listing.id}">
+      <div class="store-card-media" style="background:${TILE_BG}">
+        ${media ? `<img src="${media}" alt="" style="width:100%;height:100%;object-fit:cover">` : emoji}
+      </div>
+      <div class="store-card-body">
+        <div class="store-price">${window.CP.fmtNaira(listing.price)}</div>
+        <div class="store-title">${listing.title}</div>
+        <div class="store-seller">
+          <div class="store-av"></div>
+          <span class="store-seller-name">${sellerName}</span>
+        </div>
+      </div>
+    </button>
+  `;
+}
+function wireCardClicks(rowEl) {
+  rowEl.querySelectorAll('.store-card').forEach(card => {
+    card.addEventListener('click', () => { window.location.href = `listing.html?id=${card.dataset.id}`; });
+  });
+}
+async function loadRecommended(item) {
+  const section = document.getElementById('recommendedSection');
+  const row = document.getElementById('recommendedRow');
+  const { data, error } = await window.sb.from('listings').select(window.CP.LISTING_SELECT)
+    .eq('category', item.category).neq('id', item.id).eq('status', 'active').limit(8);
+  if (error || !data || !data.length) { section.style.display = 'none'; return; }
+  row.innerHTML = data.map(storeCardHTML).join('');
+  wireCardClicks(row);
+}
+async function loadMoreFromSeller(item) {
+  const row = document.getElementById('moreFromSellerRow');
+  const { data, error } = await window.sb.from('listings').select(window.CP.LISTING_SELECT)
+    .eq('seller_id', item.seller_id).neq('id', item.id).eq('status', 'active').limit(8);
+  if (error || !data || !data.length) return;
+  document.getElementById('moreFromSellerSection').style.display = '';
+  row.innerHTML = data.map(storeCardHTML).join('');
+  wireCardClicks(row);
+}
+
+// ---- Sticky buy bar ----
+function renderBuybar(item, userId, isMine, isSold, isFood) {
+  const bar = document.getElementById('pdpBuybar');
+  if (isMine || (isSold && !isFood)) { bar.style.display = 'none'; return; }
+
+  bar.style.display = '';
+  bar.innerHTML = `
+    <div class="pdp-buybar-top">
+      <div class="pdp-buybar-total">Total<b id="buybarTotal">${window.CP.fmtNaira(item.price)}</b></div>
+      <div class="pdp-qty-stepper">
+        <button type="button" id="qtyMinusBtn">−</button>
+        <span id="qtyValue">1</span>
+        <button type="button" id="qtyPlusBtn">+</button>
+      </div>
+    </div>
+    <div class="pdp-buybar-actions">
+      <button class="icon-btn" id="messageSellerBtn2" aria-label="Chat with seller">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+      </button>
+      <button class="btn btn-ghost" id="addToCartBtn" style="flex:1">Add to cart</button>
+      <button class="btn btn-primary" id="buyNowBtn" style="flex:1">Buy Now</button>
+    </div>
+  `;
+
+  document.getElementById('qtyMinusBtn').addEventListener('click', () => { currentQty = Math.max(1, currentQty - 1); updateQtyUI(item); });
+  document.getElementById('qtyPlusBtn').addEventListener('click', () => { currentQty += 1; updateQtyUI(item); });
+  document.getElementById('messageSellerBtn2').addEventListener('click', () => openOrCreateConversation(userId, item));
+  document.getElementById('addToCartBtn').addEventListener('click', (e) => addToCart(e.target, userId, item, () => currentQty));
+  document.getElementById('buyNowBtn').addEventListener('click', (e) => orderNow(e.target, userId, item, () => currentQty, isFood));
+}
+function updateQtyUI(item) {
+  document.getElementById('qtyValue').textContent = currentQty;
+  document.getElementById('buybarTotal').textContent = window.CP.fmtNaira(item.price * currentQty);
 }
 
 async function addToCart(btn, userId, item, getQty) {
@@ -988,14 +1279,18 @@ async function addToCart(btn, userId, item, getQty) {
   }
 }
 
-async function orderFoodNow(btn, buyerId, item, getQty) {
-  const dropoffNote = document.getElementById('foodDropoffNote').value.trim();
-  if (!dropoffNote) { alert("Add a delivery note so the vendor knows where to bring it."); return; }
+// Unified "order & pay now" flow — food goes into food_orders (as before);
+// everything else goes into escrow_orders tied to a real buyer/seller
+// conversation so the existing chat-thread confirm-received/dispute UI can
+// track it, instead of needing a brand new "my orders" page for items.
+async function orderNow(btn, buyerId, item, getQty, isFood) {
+  const dropoffNote = document.getElementById('dropoffNote')?.value.trim();
+  if (!dropoffNote) { alert("Add a delivery note so the seller knows where to bring it."); return; }
   if (!navigator.geolocation) { alert('Location not supported on this device.'); return; }
   const qty = getQty();
-
-  const resetText = `🍱 Order & pay now — ${window.CP.fmtNaira(item.price * qty)}`;
+  const resetText = 'Buy Now';
   btn.disabled = true; btn.textContent = 'Getting your location…';
+
   navigator.geolocation.getCurrentPosition(async (pos) => {
     const dropoff_lat = pos.coords.latitude, dropoff_lng = pos.coords.longitude;
     try {
@@ -1003,45 +1298,50 @@ async function orderFoodNow(btn, buyerId, item, getQty) {
       const email = session.user.email;
       const amount_kobo = window.CPPay.nairaToKobo(item.price * qty);
       const commission_kobo = Math.round(amount_kobo * 0.05);
-
       btn.textContent = 'Opening payment…';
-      const { data: order, error } = await window.sb.from('food_orders').insert({
-        buyer_id: buyerId, seller_id: item.seller_id, listing_id: item.id,
-        items: [{ listing_id: item.id, title: item.title, price: Number(item.price), qty }],
-        amount_kobo, commission_kobo, payout_kobo: amount_kobo - commission_kobo,
-        dropoff_lat, dropoff_lng, dropoff_note: dropoffNote, status: 'awaiting_payment',
-      }).select().single();
-      if (error) throw error;
-      // TEMP DEBUG — remove once the "Order not found" bug is confirmed fixed.
-      alert(`DEBUG: inserted order id = ${order?.id ?? 'MISSING'} | full row: ${JSON.stringify(order)}`);
 
-      await window.CPPay.payFoodOrder({ foodOrderId: order.id, amountKobo: amount_kobo, email });
-      alert('Order placed! Track it on your food orders page.');
-      window.location.href = 'orders.html';
+      if (isFood) {
+        const { data: order, error } = await window.sb.from('food_orders').insert({
+          buyer_id: buyerId, seller_id: item.seller_id, listing_id: item.id,
+          items: [{ listing_id: item.id, title: item.title, price: Number(item.price), qty }],
+          amount_kobo, commission_kobo, payout_kobo: amount_kobo - commission_kobo,
+          dropoff_lat, dropoff_lng, dropoff_note: dropoffNote, status: 'awaiting_payment',
+        }).select().single();
+        if (error) throw error;
+        await window.CPPay.payFoodOrder({ foodOrderId: order.id, amountKobo: amount_kobo, email });
+        alert('Order placed! Track it on your food orders page.');
+        window.location.href = 'orders.html';
+      } else {
+        const conversationId = await window.CP.openOrCreateConversation(buyerId, item.seller_id, item.id);
+        if (!conversationId) throw new Error('Could not start a chat with the seller — please try again.');
+
+        const { data: order, error } = await window.sb.from('escrow_orders').insert({
+          kind: 'item', conversation_id: conversationId, listing_id: item.id,
+          buyer_id: buyerId, seller_id: item.seller_id,
+          amount_kobo, commission_kobo, payout_kobo: amount_kobo - commission_kobo,
+          pickup_lat: item.pickup_lat || null, pickup_lng: item.pickup_lng || null,
+          dropoff_lat, dropoff_lng, dropoff_note: dropoffNote, status: 'awaiting_payment',
+        }).select().single();
+        if (error) throw error;
+
+        await window.CPPay.payEscrowOrder({ escrowOrderId: order.id, amountKobo: amount_kobo, email });
+        alert('Order placed and paid! Head to the chat to track delivery and confirm once received.');
+        window.location.href = `chat-thread.html?id=${conversationId}`;
+      }
     } catch (err) {
       alert(err.message || 'Payment failed — you were not charged.');
       btn.disabled = false; btn.textContent = resetText;
     }
   }, () => {
-    alert('Turn on location so the vendor can find you.');
+    alert('Turn on location so the seller can find you.');
     btn.disabled = false; btn.textContent = resetText;
   });
 }
 
 async function openOrCreateConversation(userId, item) {
-  const { data: existing } = await window.sb
-    .from('conversations').select('id')
-    .eq('listing_id', item.id).eq('buyer_id', userId).eq('seller_id', item.seller_id)
-    .maybeSingle();
-
-  if (existing) { window.location.href = 'notifications.html'; return; }
-
-  const { error } = await window.sb.from('conversations').insert({
-    listing_id: item.id, buyer_id: userId, seller_id: item.seller_id,
-    created_at: new Date().toISOString(),
-  });
-  if (error) { console.error('Conversation create error:', error); alert('Could not start a chat — please try again.'); return; }
-  window.location.href = 'notifications.html';
+  const conversationId = await window.CP.openOrCreateConversation(userId, item.seller_id, item.id);
+  if (!conversationId) { alert('Could not start a chat — please try again.'); return; }
+  window.location.href = `chat-thread.html?id=${conversationId}`;
 }
 
 document.addEventListener('cp-ready', (e) => {
