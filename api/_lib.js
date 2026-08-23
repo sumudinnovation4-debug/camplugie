@@ -38,4 +38,55 @@ function setCors(res) {
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 }
 
-module.exports = { supabaseAdmin, paystack, computeCommission, setCors, COMMISSION_RATE };
+// --- Notifications (in-app + email) ---
+// Sends via Resend (https://resend.com) — free tier covers 3,000 emails/month
+// and, unlike Formspree, can send to any address dynamically (each seller's
+// own inbox), not just one fixed address configured ahead of time.
+// Requires RESEND_API_KEY and RESEND_FROM env vars (see notes at bottom of file).
+async function sendEmail({ to, subject, text }) {
+  if (!process.env.RESEND_API_KEY) {
+    console.warn('RESEND_API_KEY not set — skipping email notification');
+    return;
+  }
+  const res = await fetch('https://api.resend.com/emails', {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${process.env.RESEND_API_KEY}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      from: process.env.RESEND_FROM || 'Camplugie <onboarding@resend.dev>',
+      to,
+      subject,
+      text,
+    }),
+  });
+  if (!res.ok) {
+    const body = await res.text();
+    throw new Error(`Resend error (${res.status}): ${body}`);
+  }
+}
+
+// Writes the in-app notification row AND emails the seller. Both halves are
+// wrapped so a failure here (bad email, Resend down, etc.) never breaks the
+// calling payment flow — it just logs and moves on.
+async function notifySeller(sb, { sellerId, type = 'order', title, body }) {
+  try {
+    await sb.from('notifications').insert({
+      user_id: sellerId, type, title, body, is_read: false,
+    });
+  } catch (err) {
+    console.error('notifySeller: in-app notification failed:', err.message);
+  }
+
+  try {
+    const { data: seller } = await sb.from('profiles').select('email').eq('id', sellerId).maybeSingle();
+    if (seller?.email) {
+      await sendEmail({ to: seller.email, subject: title, text: body });
+    }
+  } catch (err) {
+    console.error('notifySeller: email failed:', err.message);
+  }
+}
+
+module.exports = { supabaseAdmin, paystack, computeCommission, setCors, notifySeller, COMMISSION_RATE };
