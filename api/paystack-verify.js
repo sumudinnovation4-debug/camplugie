@@ -11,7 +11,7 @@
 // reading it back here was causing "Order not found" even on successful
 // payments. The client already knows exactly which order it's paying for —
 // we just re-verify the amount actually charged before trusting it.
-const { paystack, supabaseAdmin, setCors } = require('./_lib');
+const { paystack, supabaseAdmin, notifySeller, setCors } = require('./_lib');
 
 module.exports = async (req, res) => {
   setCors(res);
@@ -43,8 +43,52 @@ module.exports = async (req, res) => {
       status: paidStatus, paystack_reference: reference, updated_at: new Date().toISOString(),
     }).eq('id', order_id);
 
+    try {
+      await notifyOrderPaid(sb, order_type, order);
+    } catch (err) {
+      console.error('notifyOrderPaid failed:', err.message);
+    }
+
     return res.status(200).json({ ok: true });
   } catch (err) {
     return res.status(500).json({ error: err.message });
   }
 };
+
+// Builds an order-specific message and fires the seller's in-app + email
+// notification. Runs after the DB write above so the order is already marked
+// paid even if this part fails for some reason (see notifySeller in _lib.js).
+async function notifyOrderPaid(sb, order_type, order) {
+  const amountNaira = (order.amount_kobo / 100).toLocaleString('en-NG');
+
+  if (order_type === 'food') {
+    const itemNames = (order.items || []).map((i) => `${i.qty}x ${i.title}`).join(', ') || 'your food listing';
+    await notifySeller(sb, {
+      sellerId: order.seller_id,
+      title: 'New order! 🍔',
+      body: `You've got a new food order for ${itemNames} — ₦${amountNaira}. Head to your orders page on Camplugie to start preparing it.`,
+    });
+    return;
+  }
+
+  // escrow: either a normal item sale or a Swift delivery job
+  if (order.kind === 'swift') {
+    await notifySeller(sb, {
+      sellerId: order.seller_id,
+      title: 'New Swift delivery job 🛵',
+      body: `A buyer has paid for a Swift delivery — ₦${amountNaira}. Check the Swift tab on Camplugie for pickup details.`,
+    });
+    return;
+  }
+
+  let itemTitle = 'your item';
+  if (order.listing_id) {
+    const { data: listing } = await sb.from('listings').select('title').eq('id', order.listing_id).maybeSingle();
+    if (listing?.title) itemTitle = listing.title;
+  }
+  await notifySeller(sb, {
+    sellerId: order.seller_id,
+    title: 'Item sold! 🎉',
+    body: `"${itemTitle}" just sold for ₦${amountNaira}. Head to Camplugie to arrange handoff with the buyer.`,
+  });
+}
