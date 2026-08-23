@@ -126,9 +126,26 @@ const BANKS = [
 ];
 document.getElementById('bankCode').innerHTML = BANKS.map(([code, name]) => `<option value="${code}">${name}</option>`).join('');
 
+// Loose word-overlap match — mirrors the authoritative check in
+// /api/paystack-create-recipient.js. This copy is only for instant UI
+// feedback; the server re-checks and is what actually blocks saving.
+function normalizeNameWords(name) {
+  return (name || '').toUpperCase().replace(/[^A-Z\s]/g, ' ').split(/\s+/).filter(Boolean);
+}
+function namesLikelyMatch(registeredName, resolvedName) {
+  const a = normalizeNameWords(registeredName);
+  const b = new Set(normalizeNameWords(resolvedName));
+  if (!a.length || !b.size) return false;
+  const overlap = a.filter((w) => b.has(w)).length;
+  return overlap >= Math.max(1, Math.ceil(Math.min(a.length, b.size) / 2));
+}
+
 let myUserId = null;
+let myFullName = '';
 function init(user) {
   myUserId = user.id;
+  window.sb.from('profiles').select('full_name').eq('id', user.id).maybeSingle()
+    .then(({ data }) => { myFullName = data?.full_name || ''; });
   refreshWallet();
 }
 
@@ -167,13 +184,29 @@ function labelFor(type) {
   return { escrow_release: 'Escrow payout', p2p_in: 'Received', p2p_out: 'Sent', withdrawal: 'Withdrawal', commission: 'Commission', refund: 'Refund' }[type] || type;
 }
 
+let bankNameMatchesProfile = false;
+document.getElementById('bankCode').addEventListener('change', () => {
+  // Bank changed — re-trigger resolution against the current account number.
+  document.getElementById('bankAccountNumber').dispatchEvent(new Event('input'));
+});
 document.getElementById('bankAccountNumber').addEventListener('input', async (e) => {
-  document.getElementById('bankResolvedName').textContent = '';
+  const resolvedEl = document.getElementById('bankResolvedName');
+  bankNameMatchesProfile = false;
+  resolvedEl.textContent = '';
+  resolvedEl.style.color = '';
   if (e.target.value.length !== 10) return;
   try {
     const { account_name } = await window.CPPay.resolveAccount(e.target.value, document.getElementById('bankCode').value);
-    document.getElementById('bankResolvedName').textContent = `✓ ${account_name}`;
-  } catch { document.getElementById('bankResolvedName').textContent = ''; }
+    if (namesLikelyMatch(myFullName, account_name)) {
+      bankNameMatchesProfile = true;
+      resolvedEl.textContent = `✓ ${account_name}`;
+    } else {
+      // Withdrawals can only go to a bank account in your own name — flag a
+      // mismatch immediately instead of letting them find out after tapping Save.
+      resolvedEl.textContent = `✗ ${account_name} — this isn't your registered name (${myFullName || 'not set'}), so you can't withdraw to it.`;
+      resolvedEl.style.color = 'var(--danger)';
+    }
+  } catch { resolvedEl.textContent = ''; }
 });
 
 document.getElementById('bankSaveBtn').addEventListener('click', async (e) => {
@@ -190,6 +223,9 @@ document.getElementById('bankSaveBtn').addEventListener('click', async (e) => {
     if (!accountNumber) missing.push('account number');
     if (!bankCode) missing.push('bank');
     if (missing.length) throw new Error(`Missing: ${missing.join(', ')}`);
+    // This is only a fast client-side guard — the server re-verifies the name
+    // match itself and is the one actually enforcing it.
+    if (!bankNameMatchesProfile) throw new Error("You can only add a bank account that's registered in your own name.");
 
     await window.CPPay.saveBankAccount({ userId: myUserId, accountNumber, bankCode, bankName });
     alert('Bank account saved.');
