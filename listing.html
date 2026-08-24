@@ -1184,7 +1184,8 @@ function sharePage(item) {
 
 // ---- Reviews ----
 async function getReviewSummary(listingId) {
-  const { data } = await window.sb.from('listing_reviews').select('rating').eq('listing_id', listingId);
+  const { data, error } = await window.sb.from('listing_reviews').select('rating').eq('listing_id', listingId);
+  if (error) { console.error('Review summary error:', error); return { count: 0, avg: 0 }; }
   if (!data || !data.length) return { count: 0, avg: 0 };
   return { count: data.length, avg: data.reduce((s, r) => s + r.rating, 0) / data.length };
 }
@@ -1194,7 +1195,13 @@ async function renderReviews(listingId) {
   const { data, error } = await window.sb
     .from('listing_reviews').select('*, profiles(username, full_name)')
     .eq('listing_id', listingId).order('created_at', { ascending: false }).limit(20);
-  if (error) { el.innerHTML = `<div class="review-empty">Couldn't load reviews.</div>`; return; }
+  if (error) {
+    console.error('Review load error:', error);
+    // Surfaced on-screen (not just console) since this often gets tested on
+    // mobile with no devtools — the real reason shows up right here now.
+    el.innerHTML = `<div class="review-empty">Couldn't load reviews: ${error.message || error.code || 'unknown error'}</div>`;
+    return;
+  }
   if (!data || !data.length) { el.innerHTML = `<div class="review-empty">No reviews yet. Be the first to review this product!</div>`; return; }
   el.innerHTML = data.map(r => `
     <div class="review-card">
@@ -1219,7 +1226,11 @@ async function postReview(listingId, userId, getStars) {
     { onConflict: 'listing_id,user_id' }
   );
   btn.disabled = false; btn.textContent = 'Post review';
-  if (error) { console.error('Review post error:', error); alert('Could not post your review — please try again.'); return; }
+  if (error) {
+    console.error('Review post error:', error);
+    alert(`Could not post your review: ${error.message || error.code || 'unknown error'}`);
+    return;
+  }
   document.getElementById('reviewComment').value = '';
   loadListing(userId);
 }

@@ -145,11 +145,19 @@ document.getElementById('openBankBtn').addEventListener('click', async () => {
 });
 
 async function refreshWallet() {
+  const balanceEl = document.getElementById('walletBalance');
   const list = document.getElementById('txList');
+
   try {
     const balance = await window.CPPay.getWalletBalance(myUserId);
-    document.getElementById('walletBalance').textContent = window.CPPay.fmtNaira(balance);
+    balanceEl.textContent = window.CPPay.fmtNaira(balance);
+  } catch (err) {
+    console.error('Wallet balance load error:', err);
+    balanceEl.textContent = '⚠️ Error';
+    balanceEl.title = err.message || 'Could not load balance';
+  }
 
+  try {
     const txs = await window.CPPay.getTransactions(myUserId);
     if (!txs.length) { list.innerHTML = `<p style="color:var(--text3);font-size:13px;">No activity yet.</p>`; return; }
     list.innerHTML = txs.map(t => `
@@ -159,7 +167,7 @@ async function refreshWallet() {
       </div>
     `).join('');
   } catch (err) {
-    console.error('Wallet load error:', err);
+    console.error('Wallet activity load error:', err);
     list.innerHTML = `<p style="color:var(--danger);font-size:13px;">Couldn't load wallet activity: ${err.message}</p>`;
   }
 }

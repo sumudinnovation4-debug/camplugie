@@ -10,7 +10,11 @@
 .food-order-card h3 { margin: 0 0 4px; font-size: 15px; }
 .food-order-status { display: inline-block; font-size: 11.5px; font-weight: 700; padding: 3px 10px; border-radius: 999px; background: var(--surface2); color: var(--text2); margin-bottom: 8px; }
 .food-order-items { font-size: 12.5px; color: var(--text3); margin: 6px 0 10px; }
+.food-order-note { font-size: 12px; color: var(--text2); margin: 0 0 10px; }
 .food-order-card button { width: 100%; margin-top: 6px; }
+.orders-tabs { display: flex; gap: 8px; padding: 12px 16px 0; }
+.orders-tab { flex: 1; border: 1px solid var(--border); background: var(--surface2); color: var(--text2); font: inherit; font-size: 13px; font-weight: 700; padding: 10px; border-radius: 10px; cursor: pointer; }
+.orders-tab.active { background: var(--brand); color: #fff; border-color: var(--brand); }
 </style>
 </head>
 <body>
@@ -20,9 +24,14 @@
     <a class="icon-btn" href="cart.html" aria-label="Back">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
     </a>
-    <h1>Your food orders</h1>
+    <h1>Food orders</h1>
     <span style="width:38px"></span>
   </header>
+
+  <div class="orders-tabs">
+    <button class="orders-tab active" id="buyingTabBtn">Buying</button>
+    <button class="orders-tab" id="sellingTabBtn">Selling</button>
+  </div>
 
   <div id="ordersList"><p style="text-align:center;color:var(--text3);font-size:13px;margin-top:20px">Loading…</p></div>
 </div>
@@ -44,8 +53,15 @@ const STATUS_LABEL = {
   preparing: 'Preparing your order', delivered: 'Delivered — confirm to release payment',
   released: 'Complete', refunded: 'Refunded', cancelled: 'Cancelled',
 };
+// Seller sees their own side of the same statuses, worded for a vendor
+const SELLER_STATUS_LABEL = {
+  awaiting_payment: 'Awaiting payment', paid: 'New — needs preparing',
+  preparing: 'Preparing', delivered: 'Delivered — waiting on buyer to confirm',
+  released: 'Paid out', refunded: 'Refunded', cancelled: 'Cancelled',
+};
 
 let myUserId = null;
+let activeTab = 'buying';
 
 (async () => {
   const { data: { session } } = await window.sb.auth.getSession();
@@ -54,13 +70,33 @@ let myUserId = null;
   loadOrders();
 })();
 
+document.getElementById('buyingTabBtn').addEventListener('click', () => {
+  activeTab = 'buying';
+  document.getElementById('buyingTabBtn').classList.add('active');
+  document.getElementById('sellingTabBtn').classList.remove('active');
+  loadOrders();
+});
+document.getElementById('sellingTabBtn').addEventListener('click', () => {
+  activeTab = 'selling';
+  document.getElementById('sellingTabBtn').classList.add('active');
+  document.getElementById('buyingTabBtn').classList.remove('active');
+  loadOrders();
+});
+
 async function loadOrders() {
+  if (activeTab === 'buying') return loadBuyingOrders();
+  return loadSellingOrders();
+}
+
+async function loadBuyingOrders() {
   const list = document.getElementById('ordersList');
+  list.innerHTML = `<p style="text-align:center;color:var(--text3);font-size:13px;margin-top:20px">Loading…</p>`;
   const { data: orders, error } = await window.sb
     .from('food_orders').select('*, profiles:profiles!food_orders_seller_id_fkey(username, full_name)')
     .eq('buyer_id', myUserId).order('created_at', { ascending: false });
 
-  if (error || !orders || !orders.length) {
+  if (error) { list.innerHTML = `<p style="text-align:center;color:var(--danger);font-size:13px;margin-top:20px">Couldn't load orders: ${error.message}</p>`; return; }
+  if (!orders || !orders.length) {
     list.innerHTML = `<p style="text-align:center;color:var(--text3);font-size:13px;margin-top:20px">No food orders yet.</p>`;
     return;
   }
@@ -86,6 +122,37 @@ async function loadOrders() {
     e.target.disabled = true; e.target.textContent = 'Refunding…';
     try { await window.CPPay.cancelAndRefundFood(e.target.dataset.cancel); loadOrders(); }
     catch (err) { alert(err.message || 'Refund failed'); e.target.disabled = false; }
+  }));
+}
+
+async function loadSellingOrders() {
+  const list = document.getElementById('ordersList');
+  list.innerHTML = `<p style="text-align:center;color:var(--text3);font-size:13px;margin-top:20px">Loading…</p>`;
+  const { data: orders, error } = await window.sb
+    .from('food_orders').select('*, profiles:profiles!food_orders_buyer_id_fkey(username, full_name)')
+    .eq('seller_id', myUserId).order('created_at', { ascending: false });
+
+  if (error) { list.innerHTML = `<p style="text-align:center;color:var(--danger);font-size:13px;margin-top:20px">Couldn't load orders: ${error.message}</p>`; return; }
+  if (!orders || !orders.length) {
+    list.innerHTML = `<p style="text-align:center;color:var(--text3);font-size:13px;margin-top:20px">No orders on your food listings yet.</p>`;
+    return;
+  }
+
+  list.innerHTML = orders.map(o => `
+    <div class="food-order-card" data-id="${o.id}">
+      <span class="food-order-status">${SELLER_STATUS_LABEL[o.status] || o.status}</span>
+      <h3>${o.profiles?.full_name || o.profiles?.username || 'Buyer'}</h3>
+      <div class="food-order-items">${(o.items || []).map(i => `${i.qty}× ${i.title}`).join(', ')} · ${window.CP.fmtNaira(o.amount_kobo / 100)}</div>
+      ${o.dropoff_note ? `<p class="food-order-note">📍 Deliver to: ${o.dropoff_note}</p>` : ''}
+      ${o.status === 'paid' ? `<button class="form-submit" data-deliver="${o.id}">🛵 Mark delivered</button>` : ''}
+    </div>
+  `).join('');
+
+  list.querySelectorAll('[data-deliver]').forEach(btn => btn.addEventListener('click', async (e) => {
+    e.target.disabled = true; e.target.textContent = 'Updating…';
+    const { error: updateError } = await window.sb.from('food_orders').update({ status: 'delivered', updated_at: new Date().toISOString() }).eq('id', e.target.dataset.deliver);
+    if (updateError) { alert(updateError.message || 'Could not update order'); e.target.disabled = false; e.target.textContent = '🛵 Mark delivered'; return; }
+    loadOrders();
   }));
 }
 </script>
