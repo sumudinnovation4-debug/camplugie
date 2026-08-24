@@ -1128,7 +1128,7 @@ img { max-width: 100%; display: block; }
 
     <div class="form-group">
       <label class="form-label">Category</label>
-      <select class="form-select">
+      <select class="form-select" id="categorySelect">
         <option>Textbooks</option>
         <option>Electronics</option>
         <option>Fashion</option>
@@ -1136,6 +1136,18 @@ img { max-width: 100%; display: block; }
         <option>Services</option>
         <option>Other</option>
       </select>
+    </div>
+
+    <div class="form-group" id="stockGroup">
+      <label class="form-label" id="stockLabel">Stock (how many available)</label>
+      <input class="form-input" type="number" id="stockQtyInput" min="1" step="1" value="1">
+    </div>
+
+    <div class="form-group" id="variantsGroup" style="display:none">
+      <label class="form-label">Available colors (comma separated, optional)</label>
+      <input class="form-input" id="colorsInput" placeholder="e.g. Black, Maroon, Grey">
+      <label class="form-label" style="margin-top:12px">Available sizes (comma separated, optional)</label>
+      <input class="form-input" id="sizesInput" placeholder="e.g. S, M, L, XL">
     </div>
 
     <div class="form-group">
@@ -1442,6 +1454,13 @@ document.querySelectorAll('.type-toggle .btn').forEach(btn => {
 
 const CATEGORY_MAP = { Textbooks: 'textbooks', Electronics: 'electronics', Fashion: 'fashion', Food: 'food', Services: 'services', Other: 'more' };
 
+document.getElementById('categorySelect').addEventListener('change', (e) => {
+  const cat = e.target.value;
+  document.getElementById('variantsGroup').style.display = cat === 'Fashion' ? '' : 'none';
+  document.getElementById('stockGroup').style.display = cat === 'Services' ? 'none' : '';
+  document.getElementById('stockLabel').textContent = cat === 'Food' ? 'Stock (how many portions available)' : 'Stock (how many available)';
+});
+
 document.getElementById('listingForm').addEventListener('submit', async (e) => {
   e.preventDefault();
   if (!window.CP_USER || !window.CP_PROFILE?.university_id) { alert('Please sign in again.'); window.location.href = 'auth.html'; return; }
@@ -1450,8 +1469,11 @@ document.getElementById('listingForm').addEventListener('submit', async (e) => {
   const title = form.querySelector('input[placeholder^="e.g. CHM"]').value.trim();
   const description = form.querySelector('textarea').value.trim();
   const price = parseFloat(form.querySelector('input[type="number"]').value) || 0;
-  const categoryLabel = form.querySelector('select').value;
+  const categoryLabel = document.getElementById('categorySelect').value;
   const pickupLabel = document.getElementById('pickupLabelInput').value.trim();
+  const stockQty = Math.max(1, parseInt(document.getElementById('stockQtyInput').value, 10) || 1);
+  const colors = document.getElementById('colorsInput').value.split(',').map(s => s.trim()).filter(Boolean);
+  const sizes = document.getElementById('sizesInput').value.split(',').map(s => s.trim()).filter(Boolean);
 
   if (!title) { alert('Please give your listing a title.'); return; }
 
@@ -1491,6 +1513,9 @@ document.getElementById('listingForm').addEventListener('submit', async (e) => {
     pickup_lat: parseFloat(document.getElementById('pickupLatField').value) || null,
     pickup_lng: parseFloat(document.getElementById('pickupLngField').value) || null,
     media_urls,
+    stock_qty: categoryLabel === 'Services' ? 1 : stockQty,
+    colors: colors.length ? colors : null,
+    sizes: sizes.length ? sizes : null,
     status: 'active',
     is_available: true,
   });

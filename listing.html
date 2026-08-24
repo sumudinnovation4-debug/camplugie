@@ -752,6 +752,16 @@ img { max-width: 100%; display: block; }
 .pdp-stock-pill.out { background: rgba(251,113,133,0.14); color: var(--danger); }
 .pdp-stock-note { font-size: 12.5px; color: var(--text3); }
 
+.pdp-variant-group { margin-top: 16px; }
+.pdp-variant-group label { font-size: 12.5px; font-weight: 700; color: var(--text2); display: block; margin-bottom: 8px; }
+.pdp-variant-pills { display: flex; gap: 8px; flex-wrap: wrap; }
+.pdp-variant-pill {
+  font: inherit; font-size: 12.5px; font-weight: 700; color: var(--text2);
+  background: var(--surface2); border: 1px solid var(--border); border-radius: 999px;
+  padding: 8px 16px; cursor: pointer;
+}
+.pdp-variant-pill.active { background: var(--accent); color: #1A1200; border-color: var(--accent); }
+
 .pdp-seller-card {
   display: flex; align-items: center; gap: 10px; margin-top: 18px; padding: 12px;
   background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm);
@@ -999,7 +1009,7 @@ function getListingId() {
 
 let currentQty = 1;
 
-async function loadListing(userId) {
+async function loadListing(userId, universityId) {
   const content = document.getElementById('listingContent');
   const id = getListingId();
   if (!id) { content.innerHTML = `<div style="text-align:center;padding:40px;color:var(--text3);font-size:13px;">No listing specified.</div>`; return; }
@@ -1013,7 +1023,9 @@ async function loadListing(userId) {
   const media = item.media_urls || [];
   const seller = item.profiles || {};
   const isMine = seller.id === userId;
-  const isSold = item.status === 'sold' || item.is_available === false;
+  const stockQty = item.stock_qty ?? 1;
+  const outOfStock = stockQty <= 0 || item.status === 'sold' || item.is_available === false;
+  const isSold = outOfStock; // kept for the existing sold-badge/price logic below
   const isFood = (item.category || '').toLowerCase() === 'food';
 
   document.getElementById('pdpBreadcrumb').innerHTML = `Home &rsaquo; ${catLabel} &rsaquo; <b>${item.title}</b>`;
@@ -1042,9 +1054,26 @@ async function loadListing(userId) {
       <div class="listing-price" style="margin-top:12px">${window.CP.fmtNaira(item.price)}${isSold ? ' <span style="color:var(--danger);font-size:14px;font-weight:700">· Sold</span>' : ''}</div>
 
       <div class="pdp-stock-row">
-        <span class="pdp-stock-pill${isSold ? ' out' : ''}">${isSold ? 'Sold out' : 'In Stock'}</span>
+        <span class="pdp-stock-pill${outOfStock ? ' out' : ''}">${outOfStock ? 'Sold out' : `In Stock (${stockQty})`}</span>
         <span class="pdp-stock-note">${item.pickup_label ? `Pickup: ${item.pickup_label}` : 'Ready for campus delivery.'}</span>
       </div>
+
+      ${(item.colors && item.colors.length) ? `
+        <div class="pdp-variant-group">
+          <label>Color</label>
+          <div class="pdp-variant-pills" id="colorPicker">
+            ${item.colors.map((c, i) => `<button type="button" class="pdp-variant-pill${i === 0 ? ' active' : ''}" data-value="${c}">${c.toUpperCase()}</button>`).join('')}
+          </div>
+        </div>
+      ` : ''}
+      ${(item.sizes && item.sizes.length) ? `
+        <div class="pdp-variant-group">
+          <label>Size</label>
+          <div class="pdp-variant-pills" id="sizePicker">
+            ${item.sizes.map((s, i) => `<button type="button" class="pdp-variant-pill${i === 0 ? ' active' : ''}" data-value="${s}">${s.toUpperCase()}</button>`).join('')}
+          </div>
+        </div>
+      ` : ''}
 
       <div class="pdp-seller-card" id="sellerCardLink">
         <div class="avatar">${window.CP.initials(seller.full_name || seller.username)}</div>
@@ -1117,9 +1146,23 @@ async function loadListing(userId) {
   document.getElementById('chatWithSellerBtn')?.addEventListener('click', () => openOrCreateConversation(userId, item));
   document.getElementById('shareBtn').onclick = () => sharePage(item);
 
+  let selectedColor = item.colors?.[0] || null;
+  let selectedSize = item.sizes?.[0] || null;
+  document.getElementById('colorPicker')?.addEventListener('click', (e) => {
+    const b = e.target.closest('button'); if (!b) return;
+    selectedColor = b.dataset.value;
+    document.querySelectorAll('#colorPicker .pdp-variant-pill').forEach(p => p.classList.toggle('active', p === b));
+  });
+  document.getElementById('sizePicker')?.addEventListener('click', (e) => {
+    const b = e.target.closest('button'); if (!b) return;
+    selectedSize = b.dataset.value;
+    document.querySelectorAll('#sizePicker .pdp-variant-pill').forEach(p => p.classList.toggle('active', p === b));
+  });
+  const getVariant = () => (selectedColor || selectedSize) ? { color: selectedColor, size: selectedSize } : null;
+
   renderReviews(id);
-  loadRecommended(item);
-  if (!isMine) loadMoreFromSeller(item);
+  loadRecommended(item, universityId);
+  if (!isMine) loadMoreFromSeller(item, universityId);
 
   let selectedStars = 0;
   const starPicker = document.getElementById('reviewStarPicker');
@@ -1130,7 +1173,7 @@ async function loadListing(userId) {
   });
   document.getElementById('postReviewBtn')?.addEventListener('click', () => postReview(id, userId, () => selectedStars));
 
-  renderBuybar(item, userId, isMine, isSold, isFood);
+  renderBuybar(item, userId, isMine, outOfStock, isFood, getVariant);
 }
 
 function sharePage(item) {
@@ -1207,19 +1250,23 @@ function wireCardClicks(rowEl) {
     card.addEventListener('click', () => { window.location.href = `listing.html?id=${card.dataset.id}`; });
   });
 }
-async function loadRecommended(item) {
+async function loadRecommended(item, universityId) {
   const section = document.getElementById('recommendedSection');
   const row = document.getElementById('recommendedRow');
-  const { data, error } = await window.sb.from('listings').select(window.CP.LISTING_SELECT)
+  let q = window.sb.from('listings').select(window.CP.LISTING_SELECT)
     .eq('category', item.category).neq('id', item.id).eq('status', 'active').limit(8);
+  if (universityId) q = q.eq('university_id', universityId);
+  const { data, error } = await q;
   if (error || !data || !data.length) { section.style.display = 'none'; return; }
   row.innerHTML = data.map(storeCardHTML).join('');
   wireCardClicks(row);
 }
-async function loadMoreFromSeller(item) {
+async function loadMoreFromSeller(item, universityId) {
   const row = document.getElementById('moreFromSellerRow');
-  const { data, error } = await window.sb.from('listings').select(window.CP.LISTING_SELECT)
+  let q = window.sb.from('listings').select(window.CP.LISTING_SELECT)
     .eq('seller_id', item.seller_id).neq('id', item.id).eq('status', 'active').limit(8);
+  if (universityId) q = q.eq('university_id', universityId);
+  const { data, error } = await q;
   if (error || !data || !data.length) return;
   document.getElementById('moreFromSellerSection').style.display = '';
   row.innerHTML = data.map(storeCardHTML).join('');
@@ -1227,9 +1274,9 @@ async function loadMoreFromSeller(item) {
 }
 
 // ---- Sticky buy bar ----
-function renderBuybar(item, userId, isMine, isSold, isFood) {
+function renderBuybar(item, userId, isMine, outOfStock, isFood, getVariant) {
   const bar = document.getElementById('pdpBuybar');
-  if (isMine || (isSold && !isFood)) { bar.style.display = 'none'; return; }
+  if (isMine) { bar.style.display = 'none'; return; }
 
   bar.style.display = '';
   bar.innerHTML = `
@@ -1245,31 +1292,36 @@ function renderBuybar(item, userId, isMine, isSold, isFood) {
       <button class="icon-btn" id="messageSellerBtn2" aria-label="Chat with seller">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
       </button>
-      <button class="btn btn-ghost" id="addToCartBtn" style="flex:1">Add to cart</button>
-      <button class="btn btn-primary" id="buyNowBtn" style="flex:1">Buy Now</button>
+      ${outOfStock ? `
+        <button class="btn btn-ghost" style="flex:1" disabled>Sold out</button>
+      ` : `
+        <button class="btn btn-ghost" id="addToCartBtn" style="flex:1">Add to cart</button>
+        <button class="btn btn-primary" id="buyNowBtn" style="flex:1">Buy Now</button>
+      `}
     </div>
   `;
 
   document.getElementById('qtyMinusBtn').addEventListener('click', () => { currentQty = Math.max(1, currentQty - 1); updateQtyUI(item); });
   document.getElementById('qtyPlusBtn').addEventListener('click', () => { currentQty += 1; updateQtyUI(item); });
   document.getElementById('messageSellerBtn2').addEventListener('click', () => openOrCreateConversation(userId, item));
-  document.getElementById('addToCartBtn').addEventListener('click', (e) => addToCart(e.target, userId, item, () => currentQty));
-  document.getElementById('buyNowBtn').addEventListener('click', (e) => orderNow(e.target, userId, item, () => currentQty, isFood));
+  document.getElementById('addToCartBtn')?.addEventListener('click', (e) => addToCart(e.target, userId, item, () => currentQty, getVariant));
+  document.getElementById('buyNowBtn')?.addEventListener('click', (e) => orderNow(e.target, userId, item, () => currentQty, isFood, getVariant));
 }
 function updateQtyUI(item) {
   document.getElementById('qtyValue').textContent = currentQty;
   document.getElementById('buybarTotal').textContent = window.CP.fmtNaira(item.price * currentQty);
 }
 
-async function addToCart(btn, userId, item, getQty) {
+async function addToCart(btn, userId, item, getQty, getVariant) {
   btn.disabled = true; const original = btn.textContent; btn.textContent = 'Adding…';
   try {
     const qty = getQty();
+    const variant = getVariant ? getVariant() : null;
     const { data: existing } = await window.sb.from('cart_items').select('id, quantity').eq('user_id', userId).eq('listing_id', item.id).maybeSingle();
     if (existing) {
-      await window.sb.from('cart_items').update({ quantity: (existing.quantity || 1) + qty }).eq('id', existing.id);
+      await window.sb.from('cart_items').update({ quantity: (existing.quantity || 1) + qty, variant }).eq('id', existing.id);
     } else {
-      await window.sb.from('cart_items').insert({ user_id: userId, listing_id: item.id, quantity: qty, created_at: new Date().toISOString() });
+      await window.sb.from('cart_items').insert({ user_id: userId, listing_id: item.id, quantity: qty, variant, created_at: new Date().toISOString() });
     }
     btn.textContent = '✓ Added';
     setTimeout(() => { btn.disabled = false; btn.textContent = original; }, 1500);
@@ -1283,11 +1335,12 @@ async function addToCart(btn, userId, item, getQty) {
 // everything else goes into escrow_orders tied to a real buyer/seller
 // conversation so the existing chat-thread confirm-received/dispute UI can
 // track it, instead of needing a brand new "my orders" page for items.
-async function orderNow(btn, buyerId, item, getQty, isFood) {
+async function orderNow(btn, buyerId, item, getQty, isFood, getVariant) {
   const dropoffNote = document.getElementById('dropoffNote')?.value.trim();
   if (!dropoffNote) { alert("Add a delivery note so the seller knows where to bring it."); return; }
   if (!navigator.geolocation) { alert('Location not supported on this device.'); return; }
   const qty = getQty();
+  const variant = getVariant ? getVariant() : null;
   const resetText = 'Buy Now';
   btn.disabled = true; btn.textContent = 'Getting your location…';
 
@@ -1303,7 +1356,7 @@ async function orderNow(btn, buyerId, item, getQty, isFood) {
       if (isFood) {
         const { data: order, error } = await window.sb.from('food_orders').insert({
           buyer_id: buyerId, seller_id: item.seller_id, listing_id: item.id,
-          items: [{ listing_id: item.id, title: item.title, price: Number(item.price), qty }],
+          items: [{ listing_id: item.id, title: item.title, price: Number(item.price), qty, variant }],
           amount_kobo, commission_kobo, payout_kobo: amount_kobo - commission_kobo,
           dropoff_lat, dropoff_lng, dropoff_note: dropoffNote, status: 'awaiting_payment',
         }).select().single();
@@ -1317,7 +1370,7 @@ async function orderNow(btn, buyerId, item, getQty, isFood) {
 
         const { data: order, error } = await window.sb.from('escrow_orders').insert({
           kind: 'item', conversation_id: conversationId, listing_id: item.id,
-          buyer_id: buyerId, seller_id: item.seller_id,
+          buyer_id: buyerId, seller_id: item.seller_id, qty, variant,
           amount_kobo, commission_kobo, payout_kobo: amount_kobo - commission_kobo,
           pickup_lat: item.pickup_lat || null, pickup_lng: item.pickup_lng || null,
           dropoff_lat, dropoff_lng, dropoff_note: dropoffNote, status: 'awaiting_payment',
@@ -1345,7 +1398,7 @@ async function openOrCreateConversation(userId, item) {
 }
 
 document.addEventListener('cp-ready', (e) => {
-  loadListing(e.detail.user.id);
+  loadListing(e.detail.user.id, e.detail.profile?.university_id || null);
 });
 
 </script>
