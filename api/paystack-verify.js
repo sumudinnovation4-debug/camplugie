@@ -49,11 +49,39 @@ module.exports = async (req, res) => {
       console.error('notifyOrderPaid failed:', err.message);
     }
 
+    try {
+      await decrementStockForOrder(sb, order_type, order);
+    } catch (err) {
+      console.error('decrementStockForOrder failed:', err.message);
+    }
+
     return res.status(200).json({ ok: true });
   } catch (err) {
     return res.status(500).json({ error: err.message });
   }
 };
+
+// Reduces listings.stock_qty by however many units this order paid for, and
+// marks the listing unavailable once it hits zero. Wrapped by the caller so
+// a bug here never turns a confirmed payment into an error response.
+async function decrementStockForOrder(sb, order_type, order) {
+  if (order_type === 'food') {
+    for (const line of (order.items || [])) {
+      if (line.listing_id) await decrementListingStock(sb, line.listing_id, line.qty || 1);
+    }
+    return;
+  }
+  if (order.listing_id) await decrementListingStock(sb, order.listing_id, order.qty || 1);
+}
+
+async function decrementListingStock(sb, listingId, qty) {
+  const { data: listing } = await sb.from('listings').select('stock_qty').eq('id', listingId).maybeSingle();
+  if (!listing) return;
+  const newStock = Math.max(0, (listing.stock_qty ?? 1) - qty);
+  const updates = { stock_qty: newStock };
+  if (newStock <= 0) updates.is_available = false;
+  await sb.from('listings').update(updates).eq('id', listingId);
+}
 
 // Builds an order-specific message and fires the seller's in-app + email
 // notification. Runs after the DB write above so the order is already marked
@@ -91,4 +119,4 @@ async function notifyOrderPaid(sb, order_type, order) {
     title: 'Item sold! 🎉',
     body: `"${itemTitle}" just sold for ₦${amountNaira}. Head to Camplugie to arrange handoff with the buyer.`,
   });
-}
+                                                        }
