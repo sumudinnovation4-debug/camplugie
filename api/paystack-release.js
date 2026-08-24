@@ -1,12 +1,15 @@
 // POST { order_type: 'escrow' | 'food', order_id }
-// This is THE function that moves real money out to a seller/runner/vendor.
+// This is the function that "releases" a paid order — it used to wire money
+// straight to the seller's bank account immediately. Per the new payout
+// design, it now just credits the seller's in-app WALLET with the full
+// amount. The seller then withdraws from the wallet to their bank whenever
+// they want (see wallet-withdraw.js) — that's the one place commission is
+// taken, exactly like P2P transfers already work (see wallet-p2p-send.js).
 // It is called from three places in the frontend:
 //   1. Buyer taps "Confirm received" on a normal item escrow.
 //   2. A Swift runner enters the buyer's delivery PIN (auto-release, no buyer tap needed).
 //   3. A food vendor marks an order "delivered" (or buyer confirms, your choice in the UI).
-// It always: verifies the order is actually paid, computes 5% commission,
-// transfers the remainder to the recipient's bank via Paystack, and writes a receipt.
-const { paystack, supabaseAdmin, computeCommission, setCors } = require('./_lib');
+const { computeCommission, supabaseAdmin, setCors } = require('./_lib');
 
 module.exports = async (req, res) => {
   setCors(res);
@@ -28,37 +31,32 @@ module.exports = async (req, res) => {
       return res.status(400).json({ error: `Order is "${order.status}", not ready for release` });
     }
 
-    const { data: recipientRow, error: rErr } = await sb
-      .from('payout_recipients').select('*').eq('user_id', order.seller_id).single();
-    if (rErr || !recipientRow) {
-      return res.status(400).json({ error: 'Seller/runner has not added a payout bank account yet' });
-    }
+    // No payout_recipients check here anymore — the seller doesn't need a
+    // bank account added just to RECEIVE money into their wallet. They only
+    // need one when they actually withdraw.
+    const { data: sellerWallet } = await sb.from('wallets').select('balance_kobo').eq('user_id', order.seller_id).maybeSingle();
+    const currentBalance = sellerWallet?.balance_kobo || 0;
 
-    const { commission, payout } = computeCommission(order.amount_kobo);
-
-    const transfer = await paystack('/transfer', {
-      method: 'POST',
-      body: JSON.stringify({
-        source: 'balance',
-        amount: payout,
-        recipient: recipientRow.paystack_recipient_code,
-        reason: order_type === 'escrow' ? 'Camplugie escrow release' : 'Camplugie food order payout',
-      }),
+    // Credit the FULL amount — commission is deferred to withdrawal time so
+    // it's only ever taken once per naira that actually leaves the platform.
+    await sb.from('wallets').upsert({
+      user_id: order.seller_id, balance_kobo: currentBalance + order.amount_kobo, updated_at: new Date().toISOString(),
     });
 
     await sb.from(table).update({
-      status: 'released',
-      paystack_transfer_code: transfer.data.transfer_code,
-      updated_at: new Date().toISOString(),
+      status: 'released', updated_at: new Date().toISOString(),
     }).eq('id', order_id);
 
     await sb.from('wallet_transactions').insert({
-      user_id: order.seller_id, type: 'escrow_release', amount_kobo: payout,
+      user_id: order.seller_id, type: 'escrow_release', amount_kobo: order.amount_kobo,
       related_order_id: order_type === 'escrow' ? order_id : null,
       related_food_order_id: order_type === 'food' ? order_id : null,
-      note: `Payout minus 5% commission (₦${(commission / 100).toFixed(2)})`,
+      note: 'Order payout — full amount credited to wallet (commission taken when you withdraw to your bank)',
     });
 
+    // Informational only — the real commission_kobo is computed and actually
+    // deducted later, in wallet-withdraw.js.
+    const { commission } = computeCommission(order.amount_kobo);
     await sb.from('receipts').insert({
       escrow_order_id: order_type === 'escrow' ? order_id : null,
       food_order_id: order_type === 'food' ? order_id : null,
@@ -66,8 +64,9 @@ module.exports = async (req, res) => {
       amount_kobo: order.amount_kobo, commission_kobo: commission,
     });
 
-    return res.status(200).json({ ok: true, payout_kobo: payout, commission_kobo: commission });
+    return res.status(200).json({ ok: true, credited_kobo: order.amount_kobo });
   } catch (err) {
     return res.status(500).json({ error: err.message });
   }
 };
+      
