@@ -97,7 +97,8 @@ window.CPPay = (function () {
 
   // --- Wallet + P2P ---
   async function getWalletBalance(userId) {
-    const { data } = await window.sb.from('wallets').select('balance_kobo').eq('user_id', userId).maybeSingle();
+    const { data, error } = await window.sb.from('wallets').select('balance_kobo').eq('user_id', userId).maybeSingle();
+    if (error) throw new Error(error.message || 'Could not load wallet balance');
     return data?.balance_kobo || 0;
   }
   async function p2pSend({ senderId, receiverId, amountKobo, note }) {
