@@ -1345,13 +1345,31 @@ async function loadAmbassadors() {
     .from('ambassadors').select('*, profiles!ambassadors_user_id_fkey(full_name, username, email)')
     .eq('university_id', adminUniversityId).order('created_at', { ascending: false });
 
-  if (error) { console.error(error); panel.innerHTML = emptyState("Couldn't load ambassadors."); return; }
+  if (error) { console.error(error); panel.innerHTML = emptyState(`Couldn't load ambassadors: ${error.message}`); return; }
   if (!data || !data.length) { panel.innerHTML = emptyState('No ambassador applications yet.'); return; }
 
-  panel.innerHTML = data.map(a => `
+  // For approved ambassadors, pull their real referral count + total earnings
+  // (same tables the ambassador's own dashboard reads from) so admins can see
+  // who's actually driving signups, not just who applied.
+  const approvedIds = data.filter(a => a.status === 'approved').map(a => a.id);
+  const statsByAmbassador = {};
+  if (approvedIds.length) {
+    const [{ data: referralRows }, { data: earningRows }] = await Promise.all([
+      window.sb.from('ambassador_referrals').select('ambassador_id').in('ambassador_id', approvedIds),
+      window.sb.from('ambassador_earnings').select('ambassador_id, amount_kobo').in('ambassador_id', approvedIds),
+    ]);
+    approvedIds.forEach(id => { statsByAmbassador[id] = { referrals: 0, earnedKobo: 0 }; });
+    (referralRows || []).forEach(r => { statsByAmbassador[r.ambassador_id].referrals++; });
+    (earningRows || []).forEach(e => { statsByAmbassador[e.ambassador_id].earnedKobo += e.amount_kobo || 0; });
+  }
+
+  panel.innerHTML = data.map(a => {
+    const stats = statsByAmbassador[a.id];
+    return `
     <div class="admin-item" data-id="${a.id}">
       <div class="admin-item-top"><span>${a.profiles?.full_name || a.profiles?.username || 'Applicant'}</span><span class="amb-status-badge ${a.status === 'approved' ? 'verified' : a.status}">${a.status}</span></div>
       <div class="admin-item-sub">${a.profiles?.email || ''} · Code: ${a.referral_code}</div>
+      ${stats ? `<div class="admin-item-sub">${stats.referrals} student${stats.referrals === 1 ? '' : 's'} referred · ${window.CP.fmtNaira(stats.earnedKobo / 100)} earned</div>` : ''}
       <div class="admin-item-actions">
         ${a.status === 'pending' ? `
           <button class="btn btn-primary approve-amb-btn">Approve</button>
@@ -1361,7 +1379,8 @@ async function loadAmbassadors() {
         ` : ''}
       </div>
     </div>
-  `).join('');
+  `;
+  }).join('');
 
   panel.querySelectorAll('.approve-amb-btn').forEach(btn => btn.addEventListener('click', async (e) => {
     const item = e.target.closest('.admin-item');

@@ -781,6 +781,11 @@ img { max-width: 100%; display: block; }
 
   <form class="auth-view active" id="onboardingForm" style="margin-top:24px">
     <div class="form-group">
+      <label class="form-label">Username</label>
+      <input class="form-input" type="text" id="onboardUsername" placeholder="e.g. chidinma_o" autocapitalize="none" required>
+    </div>
+
+    <div class="form-group">
       <label class="form-label">Your university</label>
 
       <div class="uni-picker" id="uniPicker">
@@ -798,6 +803,11 @@ img { max-width: 100%; display: block; }
       </div>
 
       <input type="hidden" id="uniIdField" required>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Referral code (optional)</label>
+      <input class="form-input" type="text" id="onboardRefCode" placeholder="e.g. CPCHID2026" autocapitalize="characters">
     </div>
 
     <button type="submit" class="form-submit">Confirm &amp; continue</button>
@@ -970,8 +980,18 @@ uniChange.addEventListener('click', () => {
   uniSearch.focus();
 });
 
+(function prefillReferralCode() {
+  const urlCode = new URLSearchParams(window.location.search).get('ref');
+  if (urlCode) sessionStorage.setItem('ref_code', urlCode);
+  const stored = sessionStorage.getItem('ref_code');
+  if (stored) document.getElementById('onboardRefCode').value = stored;
+})();
+
 document.getElementById('onboardingForm').addEventListener('submit', async (e) => {
   e.preventDefault();
+  const username = document.getElementById('onboardUsername').value.trim().toLowerCase();
+  if (!username) { alert('Please choose a username.'); return; }
+  if (!/^[a-z0-9_]{3,20}$/.test(username)) { alert('Username must be 3-20 characters: letters, numbers, and underscores only.'); return; }
   if (!uniIdField.value) { alert('Please choose your university — this can\u2019t be changed later.'); return; }
 
   const btn = e.target.querySelector('.form-submit');
@@ -982,16 +1002,41 @@ document.getElementById('onboardingForm').addEventListener('submit', async (e) =
   const userId = window.CP_USER?.id || session?.user?.id;
   if (!userId) { window.location.href = 'auth.html'; return; }
 
+  const { data: existing } = await window.sb.from('profiles').select('id').eq('username', username).neq('id', userId).maybeSingle();
+  if (existing) {
+    btn.disabled = false; btn.textContent = 'Confirm & continue';
+    alert('That username is already taken — please choose another.');
+    return;
+  }
+
+  // If a referral code was entered, look up the ambassador and link this
+  // profile to them permanently — mirrors the same flow in auth.html.
+  let ambassadorId = null;
+  const refCode = document.getElementById('onboardRefCode').value.trim();
+  if (refCode) {
+    const { data: ambassador } = await window.sb.from('ambassadors').select('id').eq('referral_code', refCode).eq('status', 'approved').maybeSingle();
+    if (ambassador) {
+      ambassadorId = ambassador.id;
+      sessionStorage.removeItem('ref_code');
+      await window.sb.from('ambassador_referrals').insert({
+        ambassador_id: ambassador.id, student_user_id: userId, student_name: window.CP_PROFILE?.full_name || null,
+        student_email: session?.user?.email || null, student_school: uniLockedName.textContent, status: 'verified', created_at: new Date().toISOString(),
+      });
+    }
+  }
+
   const { error } = await window.sb.from('profiles').update({
+    username,
     university_id: uniIdField.value,
     institution_name: uniLockedName.textContent,
+    referred_by_ambassador_id: ambassadorId,
     onboarding_completed: true,
   }).eq('id', userId);
 
   btn.disabled = false;
   btn.textContent = 'Confirm & continue';
 
-  if (error) { console.error('Onboarding save error:', error); alert('Could not save — please try again.'); return; }
+  if (error) { console.error('Onboarding save error:', error); alert(`Could not save: ${error.message}`); return; }
 
   // Move to the profile-completion steps instead of going straight to home —
   // these are all skippable, so nobody gets stuck here.

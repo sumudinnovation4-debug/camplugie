@@ -1095,19 +1095,34 @@ async function loadPayouts() {
 
 async function init() {
   const root = document.getElementById('ambassadorRoot');
-  const { data } = await window.sb.from('ambassadors').select('*').eq('user_id', myUserId).maybeSingle();
+  const { data, error: fetchError } = await window.sb.from('ambassadors').select('*').eq('user_id', myUserId).maybeSingle();
+  if (fetchError) { console.error(fetchError); root.innerHTML = `<div class="admin-empty">Couldn't load ambassador status: ${fetchError.message}</div>`; return; }
 
   if (data && data.status === 'approved') { myAmbassador = data; renderDashboard(); return; }
   if (data && data.status === 'pending') { root.innerHTML = renderPendingCard(); return; }
 
+  // data may still exist here with status 'declined' or 'revoked' from a
+  // previous application — re-applying must UPDATE that row, not INSERT a
+  // second one (which fails silently on the user_id uniqueness constraint).
   root.innerHTML = renderApplyCard();
-  document.getElementById('applyAmbassadorBtn').addEventListener('click', async () => {
+  document.getElementById('applyAmbassadorBtn').addEventListener('click', async (e) => {
+    const btn = e.target;
+    btn.disabled = true; btn.textContent = 'Submitting…';
     const code = generateReferralCode(myProfile?.full_name);
-    const { error } = await window.sb.from('ambassadors').insert({
-      user_id: myUserId, university_id: myProfile?.university_id,
-      referral_code: code, status: 'pending', created_at: new Date().toISOString(),
-    });
-    if (error) { console.error(error); alert('Could not submit application.'); return; }
+    const { error } = data
+      ? await window.sb.from('ambassadors').update({
+          referral_code: code, status: 'pending', university_id: myProfile?.university_id,
+        }).eq('id', data.id)
+      : await window.sb.from('ambassadors').insert({
+          user_id: myUserId, university_id: myProfile?.university_id,
+          referral_code: code, status: 'pending', created_at: new Date().toISOString(),
+        });
+    if (error) {
+      console.error(error);
+      alert(`Could not submit application: ${error.message}`);
+      btn.disabled = false; btn.textContent = 'Apply now';
+      return;
+    }
     init();
   });
 }
