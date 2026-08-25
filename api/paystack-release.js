@@ -9,7 +9,7 @@
 //   1. Buyer taps "Confirm received" on a normal item escrow.
 //   2. A Swift runner enters the buyer's delivery PIN (auto-release, no buyer tap needed).
 //   3. A food vendor marks an order "delivered" (or buyer confirms, your choice in the UI).
-const { computeCommission, supabaseAdmin, setCors } = require('./_lib');
+const { computeCommission, supabaseAdmin, payAmbassadorCommission, setCors } = require('./_lib');
 
 module.exports = async (req, res) => {
   setCors(res);
@@ -64,9 +64,17 @@ module.exports = async (req, res) => {
       amount_kobo: order.amount_kobo, commission_kobo: commission,
     });
 
+    // If the buyer was referred by an ambassador, pay that ambassador their
+    // 20% cut of the platform's 5% commission — wrapped so a hiccup here
+    // never blocks the seller's own payout, which has already landed above.
+    try {
+      await payAmbassadorCommission(sb, { buyerId: order.buyer_id, amountKobo: order.amount_kobo, orderType: order_type, orderId: order_id });
+    } catch (err) {
+      console.error('payAmbassadorCommission failed:', err.message);
+    }
+
     return res.status(200).json({ ok: true, credited_kobo: order.amount_kobo });
   } catch (err) {
     return res.status(500).json({ error: err.message });
   }
 };
-      
