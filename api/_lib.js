@@ -5,6 +5,7 @@ const { createClient } = require('@supabase/supabase-js');
 
 const PAYSTACK_BASE = 'https://api.paystack.co';
 const COMMISSION_RATE = 0.05; // 5% platform commission
+const AMBASSADOR_SHARE = 0.20; // ambassadors get 20% of the platform's 5% cut, per sale their referred student makes
 
 function supabaseAdmin() {
   // Service-role key bypasses RLS — this is the ONLY place it should be used.
@@ -89,4 +90,36 @@ async function notifySeller(sb, { sellerId, type = 'order', title, body }) {
   }
 }
 
-module.exports = { supabaseAdmin, paystack, computeCommission, setCors, notifySeller, COMMISSION_RATE };
+// If this order's buyer was referred by an ambassador, credits that
+// ambassador 20% of the platform's 5% commission on the sale — straight to
+// their wallet, same as a seller payout. Called once per order, right when
+// the order is released (see paystack-release.js). Safe to call for every
+// order: it's a no-op if the buyer wasn't referred by anyone.
+async function payAmbassadorCommission(sb, { buyerId, amountKobo, orderType, orderId }) {
+  const { data: buyerProfile } = await sb.from('profiles').select('referred_by_ambassador_id').eq('id', buyerId).maybeSingle();
+  const ambassadorId = buyerProfile?.referred_by_ambassador_id;
+  if (!ambassadorId) return;
+
+  const { data: ambassador } = await sb.from('ambassadors').select('user_id, status').eq('id', ambassadorId).maybeSingle();
+  if (!ambassador || ambassador.status !== 'approved') return; // revoked ambassadors stop earning
+
+  const platformCommission = Math.round(amountKobo * COMMISSION_RATE);
+  const ambassadorCut = Math.round(platformCommission * AMBASSADOR_SHARE);
+  if (ambassadorCut <= 0) return;
+
+  const { data: wallet } = await sb.from('wallets').select('balance_kobo').eq('user_id', ambassador.user_id).maybeSingle();
+  const currentBalance = wallet?.balance_kobo || 0;
+
+  await sb.from('wallets').upsert({
+    user_id: ambassador.user_id, balance_kobo: currentBalance + ambassadorCut, updated_at: new Date().toISOString(),
+  });
+  await sb.from('wallet_transactions').insert({
+    user_id: ambassador.user_id, type: 'ambassador_commission', amount_kobo: ambassadorCut,
+    note: `20% referral commission on a student's ${orderType === 'food' ? 'food order' : 'purchase'}`,
+  });
+  await sb.from('ambassador_earnings').insert({
+    ambassador_id: ambassadorId, buyer_id: buyerId, order_type: orderType, order_id: orderId, amount_kobo: ambassadorCut,
+  });
+}
+
+module.exports = { supabaseAdmin, paystack, computeCommission, setCors, notifySeller, payAmbassadorCommission, COMMISSION_RATE, AMBASSADOR_SHARE };
