@@ -109,12 +109,18 @@ window.CP.fmtNaira = (n) => '₦' + Number(n || 0).toLocaleString();
 </script>
 <script>
 (async () => {
-  const { data: { session } } = await window.sb.auth.getSession();
-  if (!session) { window.location.href = 'auth.html'; return; }
-  // Calling init() directly instead of dispatching a 'cp-ready' event —
-  // events can fire before a listener further down the page has even been
-  // registered yet, silently dropping them. A direct function call can't race.
-  init(session.user);
+  try {
+    const { data: { session } } = await window.sb.auth.getSession();
+    if (!session) { window.location.href = 'auth.html'; return; }
+    // Calling init() directly instead of dispatching a 'cp-ready' event —
+    // events can fire before a listener further down the page has even been
+    // registered yet, silently dropping them. A direct function call can't race.
+    init(session.user);
+  } catch (err) {
+    console.error('Wallet init error:', err);
+    document.getElementById('walletBalance').textContent = '⚠️ Error';
+    document.getElementById('txList').innerHTML = `<p style="color:var(--danger);font-size:13px;">Couldn't load your session: ${err.message}. Try reloading.</p>`;
+  }
 })();
 </script>
 <script>
@@ -132,6 +138,16 @@ function init(user) {
   refreshWallet();
 }
 
+// Re-checks the session if myUserId somehow isn't set yet (slow page load,
+// init() not finished) instead of just failing the click. Every wallet
+// action below calls this first.
+async function ensureUserId() {
+  if (myUserId) return myUserId;
+  const { data: { session } } = await window.sb.auth.getSession();
+  if (session) myUserId = session.user.id;
+  return myUserId;
+}
+
 function openModal(id) { document.getElementById(id).classList.add('open'); }
 function closeModal(id) { document.getElementById(id).classList.remove('open'); }
 document.querySelectorAll('[data-close]').forEach(btn => btn.addEventListener('click', (e) => closeModal(e.target.closest('.modal-overlay').id)));
@@ -139,7 +155,9 @@ document.querySelectorAll('[data-close]').forEach(btn => btn.addEventListener('c
 document.getElementById('openSendBtn').addEventListener('click', () => openModal('sendModal'));
 document.getElementById('openWithdrawBtn').addEventListener('click', () => openModal('withdrawModal'));
 document.getElementById('openBankBtn').addEventListener('click', async () => {
-  const { data } = await window.sb.from('payout_recipients').select('*').eq('user_id', myUserId).maybeSingle();
+  const userId = await ensureUserId();
+  if (!userId) { alert('Please reload the page and try again.'); return; }
+  const { data } = await window.sb.from('payout_recipients').select('*').eq('user_id', userId).maybeSingle();
   document.getElementById('bankCurrentInfo').textContent = data ? `Currently: ${data.bank_name || ''} — ${data.account_number} (${data.account_name})` : 'No payout account on file yet.';
   openModal('bankModal');
 });
@@ -196,22 +214,15 @@ document.getElementById('bankSaveBtn').addEventListener('click', async (e) => {
     const bankCode = document.getElementById('bankCode').value;
     const bankName = BANKS.find(b => b[0] === bankCode)[1];
     const accountNumber = document.getElementById('bankAccountNumber').value;
-    // Surface exactly what's missing client-side before even hitting the network —
-    // this pins down whether it's a page-state bug (e.g. myUserId not set yet)
-    // vs. something going wrong in transit.
+    const userId = await ensureUserId();
+    // Surface exactly what's missing client-side before even hitting the network.
     const missing = [];
-    if (!myUserId) {
-      // Page may have finished rendering before the session finished loading —
-      // re-check instead of just failing the click.
-      const { data: { session } } = await window.sb.auth.getSession();
-      if (session) myUserId = session.user.id;
-    }
-    if (!myUserId) missing.push('your user ID — please reload the page and try again');
+    if (!userId) missing.push('your user ID — please reload the page and try again');
     if (!accountNumber) missing.push('account number');
     if (!bankCode) missing.push('bank');
     if (missing.length) throw new Error(`Missing: ${missing.join(', ')}`);
 
-    await window.CPPay.saveBankAccount({ userId: myUserId, accountNumber, bankCode, bankName });
+    await window.CPPay.saveBankAccount({ userId, accountNumber, bankCode, bankName });
     alert('Bank account saved.');
     closeModal('bankModal');
   } catch (err) { alert(err.message || 'Could not save bank account'); }
@@ -224,9 +235,11 @@ document.getElementById('sendSubmitBtn').addEventListener('click', async (e) => 
     const username = document.getElementById('sendUsername').value.replace('@', '').trim();
     const amount = Number(document.getElementById('sendAmount').value);
     if (!username || !amount) throw new Error('Fill in a username and amount');
+    const userId = await ensureUserId();
+    if (!userId) throw new Error('Missing your user ID — please reload the page and try again');
     const { data: receiver, error } = await window.sb.from('profiles').select('id').eq('username', username).single();
     if (error || !receiver) throw new Error('User not found');
-    await window.CPPay.p2pSend({ senderId: myUserId, receiverId: receiver.id, amountKobo: window.CPPay.nairaToKobo(amount), note: document.getElementById('sendNote').value.trim() });
+    await window.CPPay.p2pSend({ senderId: userId, receiverId: receiver.id, amountKobo: window.CPPay.nairaToKobo(amount), note: document.getElementById('sendNote').value.trim() });
     alert('Sent!'); closeModal('sendModal'); refreshWallet();
   } catch (err) { alert(err.message || 'Send failed'); }
   finally { btn.disabled = false; btn.textContent = 'Send'; }
@@ -243,7 +256,9 @@ document.getElementById('withdrawSubmitBtn').addEventListener('click', async (e)
   try {
     const amount = Number(document.getElementById('withdrawAmount').value);
     if (!amount) throw new Error('Enter an amount');
-    await window.CPPay.withdraw({ userId: myUserId, amountKobo: window.CPPay.nairaToKobo(amount) });
+    const userId = await ensureUserId();
+    if (!userId) throw new Error('Missing your user ID — please reload the page and try again');
+    await window.CPPay.withdraw({ userId, amountKobo: window.CPPay.nairaToKobo(amount) });
     alert('Withdrawal initiated — it should land in your bank shortly.'); closeModal('withdrawModal'); refreshWallet();
   } catch (err) { alert(err.message || 'Withdrawal failed'); }
   finally { btn.disabled = false; btn.textContent = 'Withdraw'; }
