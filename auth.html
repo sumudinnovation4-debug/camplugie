@@ -1176,7 +1176,7 @@ img { max-width: 100%; display: block; }
       </div>
     </div>
     <div class="form-group">
-      <label class="form-label">Your university <span style="color:var(--danger)">*</span> (required)</label>
+      <label class="form-label">Your university</label>
       <div class="uni-picker" id="uniPicker">
         <div class="uni-picker-input" id="uniPickerInput">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
@@ -1191,7 +1191,11 @@ img { max-width: 100%; display: block; }
       </div>
       <input type="hidden" id="uniIdField">
     </div>
-    <button type="submit" class="form-submit" id="signupSubmitBtn" disabled title="Choose your university first">Create account</button>
+    <div class="form-group">
+      <label class="form-label">Referral code (optional)</label>
+      <input class="form-input" type="text" id="signupRefCode" placeholder="e.g. CHIDI2026" autocapitalize="characters">
+    </div>
+    <button type="submit" class="form-submit">Create account</button>
   </form>
 
   <p class="auth-foot" id="authFoot">Don't have an account? <a href="#" id="switchToSignup">Sign up</a></p>
@@ -1479,9 +1483,6 @@ uniList.addEventListener('click', (e) => {
   uniPicker.style.display = 'none';
   uniLocked.style.display = 'flex';
   uniList.classList.remove('open');
-  // University is compulsory for signup — only unlock the submit button once one's chosen.
-  const submitBtn = document.getElementById('signupSubmitBtn');
-  if (submitBtn) { submitBtn.disabled = false; submitBtn.title = ''; }
 });
 uniChange.addEventListener('click', () => {
   uniIdField.value = '';
@@ -1489,23 +1490,36 @@ uniChange.addEventListener('click', () => {
   uniLocked.style.display = 'none';
   uniSearch.value = '';
   uniSearch.focus();
-  const submitBtn = document.getElementById('signupSubmitBtn');
-  if (submitBtn) { submitBtn.disabled = true; submitBtn.title = 'Choose your university first'; }
 });
 
 // ---- Referral tracking ----
-async function trackReferralSignup(fullName, phone, universityName) {
-  const code = sessionStorage.getItem('ref_code');
-  if (!code) return;
+// Prefill the code field if someone arrived via an ambassador's link
+// (index.html?ref=CODE or auth.html?ref=CODE), and remember it across a
+// redirect via sessionStorage too.
+(function prefillReferralCode() {
+  const urlCode = new URLSearchParams(window.location.search).get('ref');
+  if (urlCode) sessionStorage.setItem('ref_code', urlCode);
+  const stored = sessionStorage.getItem('ref_code');
+  if (stored) document.getElementById('signupRefCode').value = stored;
+})();
+
+// Looks up the ambassador for whatever code the student typed (or arrived
+// with via a link), and — if real — links this brand-new profile to them
+// and logs a real, verified referral tied to the actual account. Returns
+// the ambassador id (or null) so the caller can also store it on the profile.
+async function trackReferralSignup(userId, fullName, email, universityName) {
+  const code = (document.getElementById('signupRefCode').value || sessionStorage.getItem('ref_code') || '').trim();
+  if (!code) return null;
   try {
     const { data: ambassador } = await window.sb.from('ambassadors').select('id').eq('referral_code', code).eq('status', 'approved').maybeSingle();
-    if (!ambassador) return;
+    if (!ambassador) return null;
     await window.sb.from('ambassador_referrals').insert({
-      ambassador_id: ambassador.id, student_name: fullName, student_phone: phone,
-      student_school: universityName, status: 'pending', created_at: new Date().toISOString(),
+      ambassador_id: ambassador.id, student_user_id: userId, student_name: fullName,
+      student_email: email, student_school: universityName, status: 'verified', created_at: new Date().toISOString(),
     });
     sessionStorage.removeItem('ref_code');
-  } catch (err) { console.error('Referral tracking error:', err); }
+    return ambassador.id;
+  } catch (err) { console.error('Referral tracking error:', err); return null; }
 }
 
 // ---- Show/hide the phone/email login form ----
@@ -1632,6 +1646,7 @@ signupForm.addEventListener('submit', async (e) => {
   // Here we lock in the permanent fields: university_id (never editable again) + name + phone.
   if (data.session && data.user) {
     const username = ('user' + phone.replace(/\D/g, '').slice(-6)).toLowerCase();
+    const ambassadorId = await trackReferralSignup(data.user.id, fullName, data.user.email, universityName);
     const { error: profileError } = await window.sb
       .from('profiles')
       .update({
@@ -1642,12 +1657,12 @@ signupForm.addEventListener('submit', async (e) => {
         university_id: universityId,
         institution_name: universityName,
         onboarding_completed: true,
+        referred_by_ambassador_id: ambassadorId,
       })
       .eq('id', data.user.id);
 
     setLoading(signupForm, false, 'Create account');
     if (profileError) { console.error('Profile update error:', profileError); showError(profileError); return; }
-    await trackReferralSignup(fullName, phone, universityName);
     window.location.href = 'home.html';
   } else {
     // This means "Confirm email" is turned ON in Supabase's Email provider settings.

@@ -190,7 +190,7 @@ async function refreshWallet() {
   }
 }
 function labelFor(type) {
-  return { escrow_release: 'Escrow payout', p2p_in: 'Received', p2p_out: 'Sent', withdrawal: 'Withdrawal', commission: 'Commission', refund: 'Refund' }[type] || type;
+  return { escrow_release: 'Escrow payout', p2p_in: 'Received', p2p_out: 'Sent', withdrawal: 'Withdrawal', commission: 'Commission', refund: 'Refund', ambassador_commission: 'Referral commission 🎓' }[type] || type;
 }
 
 document.getElementById('bankCode').addEventListener('change', () => {

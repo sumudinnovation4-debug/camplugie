@@ -932,7 +932,6 @@ window.CP_signOut = async () => {
 
 </script>
 <script>
-const BANKS = ['Access Bank', 'GTBank', 'Zenith Bank', 'UBA', 'First Bank', 'Kuda Bank', 'OPay', 'PalmPay', 'Moniepoint MFB', 'Fidelity Bank', 'Sterling Bank'];
 
 function generateReferralCode(fullName) {
   const namePart = (fullName || 'USER').slice(0, 4).toUpperCase();
@@ -973,19 +972,18 @@ function renderPendingCard() {
 }
 
 async function loadAmbassadorStats(ambassadorId) {
-  const [{ count: total }, { count: verified }, { data: earningsRows }] = await Promise.all([
+  const [{ count: total }, { data: earningsRows }] = await Promise.all([
     window.sb.from('ambassador_referrals').select('id', { count: 'exact', head: true }).eq('ambassador_id', ambassadorId),
-    window.sb.from('ambassador_referrals').select('id', { count: 'exact', head: true }).eq('ambassador_id', ambassadorId).eq('status', 'verified'),
-    window.sb.from('ambassador_payouts').select('amount').eq('ambassador_id', ambassadorId).eq('status', 'paid'),
+    window.sb.from('ambassador_earnings').select('amount_kobo').eq('ambassador_id', ambassadorId),
   ]);
-  const totalPaid = (earningsRows || []).reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
-  return { total: total || 0, verified: verified || 0, totalPaid };
+  const totalEarnedKobo = (earningsRows || []).reduce((sum, e) => sum + (e.amount_kobo || 0), 0);
+  return { total: total || 0, totalEarnedKobo };
 }
 
 async function renderDashboard() {
   const root = document.getElementById('ambassadorRoot');
   const stats = await loadAmbassadorStats(myAmbassador.id);
-  const tier = calculateTier(stats.verified);
+  const tier = calculateTier(stats.total);
   const link = `${window.location.origin}${window.location.pathname.replace('ambassador.html', 'index.html')}?ref=${myAmbassador.referral_code}`;
 
   root.innerHTML = `
@@ -1002,14 +1000,13 @@ async function renderDashboard() {
     </div>
 
     <div class="amb-stats-row">
-      <div><b>${stats.total}</b><span>Total referrals</span></div>
-      <div><b>${stats.verified}</b><span>Verified</span></div>
-      <div><b>${window.CP.fmtNaira(stats.totalPaid)}</b><span>Earned</span></div>
+      <div><b>${stats.total}</b><span>Students referred</span></div>
+      <div><b>${window.CP.fmtNaira(stats.totalEarnedKobo / 100)}</b><span>Earned (20% of platform fee)</span></div>
     </div>
 
     <div class="amb-tabs" id="ambTabs">
-      <button class="amb-tab active" data-panel="referrals">Referrals</button>
-      <button class="amb-tab" data-panel="payouts">Payouts</button>
+      <button class="amb-tab active" data-panel="referrals">Your Students</button>
+      <button class="amb-tab" data-panel="payouts">Earnings</button>
     </div>
 
     <div class="amb-panel active" id="referralsPanel"></div>
@@ -1046,37 +1043,27 @@ async function renderDashboard() {
 
 async function loadReferrals() {
   const panel = document.getElementById('referralsPanel');
-  panel.innerHTML = `
-    <form id="addReferralForm" style="margin-bottom:14px">
-      <div class="form-group"><label class="form-label">Friend's name</label><input class="form-input" id="refName" required></div>
-      <div class="form-group"><label class="form-label">Friend's email</label><input class="form-input" id="refEmail" type="email" required></div>
-      <button type="submit" class="form-submit">Add referral</button>
-    </form>
-    <div id="referralsList"><div class="admin-empty">Loading…</div></div>
-  `;
+  panel.innerHTML = `<div id="referralsList"><div class="admin-empty">Loading…</div></div>`;
 
-  document.getElementById('addReferralForm').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const student_name = document.getElementById('refName').value.trim();
-    const student_email = document.getElementById('refEmail').value.trim();
-    const { error } = await window.sb.from('ambassador_referrals').insert({
-      ambassador_id: myAmbassador.id, student_name, student_email,
-      student_school: myProfile?.institution_name || null, status: 'pending', created_at: new Date().toISOString(),
-    });
-    if (error) { console.error(error); alert('Could not add referral.'); return; }
-    e.target.reset();
-    loadReferrals();
-  });
+  const { data, error } = await window.sb
+    .from('ambassador_referrals')
+    .select('*, profiles:profiles!ambassador_referrals_student_user_id_fkey(full_name, username, avatar_url, created_at)')
+    .eq('ambassador_id', myAmbassador.id).order('created_at', { ascending: false });
 
-  const { data, error } = await window.sb.from('ambassador_referrals').select('*').eq('ambassador_id', myAmbassador.id).order('created_at', { ascending: false });
   const list = document.getElementById('referralsList');
-  if (error) { list.innerHTML = `<div class="admin-empty">Couldn't load referrals.</div>`; return; }
-  if (!data || !data.length) { list.innerHTML = `<div class="admin-empty">No referrals yet — add your first one above.</div>`; return; }
+  if (error) { list.innerHTML = `<div class="admin-empty">Couldn't load your students: ${error.message}</div>`; return; }
+  if (!data || !data.length) {
+    list.innerHTML = `<div class="admin-empty">No students yet — share your code above. Anyone who signs up with it shows up here automatically.</div>`;
+    return;
+  }
 
   list.innerHTML = data.map(r => `
     <div class="admin-item">
-      <div class="admin-item-top"><span>${r.student_name}</span><span class="amb-status-badge ${r.status}">${r.status}</span></div>
-      <div class="admin-item-sub">${r.student_email}${r.student_school ? ' · ' + r.student_school : ''}</div>
+      <div class="admin-item-top">
+        <span>${r.profiles?.full_name || r.student_name}</span>
+        <span class="amb-status-badge verified">✓ Joined</span>
+      </div>
+      <div class="admin-item-sub">${r.profiles?.username ? '@' + r.profiles.username : (r.student_email || '')}${r.student_school ? ' · ' + r.student_school : ''}</div>
     </div>
   `).join('');
 }
@@ -1084,40 +1071,24 @@ async function loadReferrals() {
 async function loadPayouts() {
   const panel = document.getElementById('payoutsPanel');
   panel.innerHTML = `
-    <form id="payoutForm" style="margin-bottom:14px">
-      <div class="form-group"><label class="form-label">Amount (₦)</label><input class="form-input" id="poAmount" type="number" required></div>
-      <div class="form-group"><label class="form-label">Bank</label>
-        <select class="form-select" id="poBank">${BANKS.map(b => `<option>${b}</option>`).join('')}</select>
-      </div>
-      <div class="form-group"><label class="form-label">Account number</label><input class="form-input" id="poAccount" required></div>
-      <button type="submit" class="form-submit">Request payout</button>
-    </form>
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);padding:14px;margin-bottom:14px;font-size:12.5px;color:var(--text2)">
+      💰 Every sale a referred student makes automatically adds your 20% cut straight to your <a href="wallet.html" style="color:var(--brand);font-weight:700">Wallet</a> — withdraw it from there anytime.
+    </div>
     <div id="payoutsList"><div class="admin-empty">Loading…</div></div>
   `;
 
-  document.getElementById('payoutForm').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const amount = parseFloat(document.getElementById('poAmount').value);
-    const bank_name = document.getElementById('poBank').value;
-    const account_number = document.getElementById('poAccount').value.trim();
-    if (!amount) return;
-    const { error } = await window.sb.from('ambassador_payouts').insert({
-      ambassador_id: myAmbassador.id, amount, bank_name, account_number, status: 'pending', created_at: new Date().toISOString(),
-    });
-    if (error) { console.error(error); alert('Could not submit payout request.'); return; }
-    e.target.reset();
-    loadPayouts();
-  });
+  const { data, error } = await window.sb
+    .from('ambassador_earnings').select('*, profiles:profiles!ambassador_earnings_buyer_id_fkey(full_name, username)')
+    .eq('ambassador_id', myAmbassador.id).order('created_at', { ascending: false }).limit(50);
 
-  const { data, error } = await window.sb.from('ambassador_payouts').select('*').eq('ambassador_id', myAmbassador.id).order('created_at', { ascending: false });
   const list = document.getElementById('payoutsList');
-  if (error) { list.innerHTML = `<div class="admin-empty">Couldn't load payouts.</div>`; return; }
-  if (!data || !data.length) { list.innerHTML = `<div class="admin-empty">No payout requests yet.</div>`; return; }
+  if (error) { list.innerHTML = `<div class="admin-empty">Couldn't load earnings: ${error.message}</div>`; return; }
+  if (!data || !data.length) { list.innerHTML = `<div class="admin-empty">No earnings yet — you'll see one here the moment a referred student's order is released.</div>`; return; }
 
-  list.innerHTML = data.map(p => `
+  list.innerHTML = data.map(e => `
     <div class="admin-item">
-      <div class="admin-item-top"><span>${window.CP.fmtNaira(p.amount)}</span><span class="amb-status-badge ${p.status}">${p.status}</span></div>
-      <div class="admin-item-sub">${p.bank_name} · ${p.account_number}</div>
+      <div class="admin-item-top"><span>+${window.CP.fmtNaira(e.amount_kobo / 100)}</span><span class="amb-status-badge paid">Credited</span></div>
+      <div class="admin-item-sub">${e.profiles?.full_name || e.profiles?.username || 'A student'} · ${e.order_type === 'food' ? 'Food order' : 'Item sale'}</div>
     </div>
   `).join('');
 }
