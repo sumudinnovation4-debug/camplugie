@@ -122,4 +122,72 @@ async function payAmbassadorCommission(sb, { buyerId, amountKobo, orderType, ord
   });
 }
 
-module.exports = { supabaseAdmin, paystack, computeCommission, setCors, notifySeller, payAmbassadorCommission, COMMISSION_RATE, AMBASSADOR_SHARE };
+// Reduces listings.stock_qty by however many units this order paid for, and
+// marks the listing unavailable once it hits zero.
+async function decrementListingStock(sb, listingId, qty) {
+  const { data: listing } = await sb.from('listings').select('stock_qty').eq('id', listingId).maybeSingle();
+  if (!listing) return;
+  const newStock = Math.max(0, (listing.stock_qty ?? 1) - qty);
+  const updates = { stock_qty: newStock };
+  if (newStock <= 0) updates.is_available = false;
+  await sb.from('listings').update(updates).eq('id', listingId);
+}
+
+async function decrementStockForOrder(sb, order_type, order) {
+  if (order_type === 'food') {
+    for (const line of (order.items || [])) {
+      if (line.listing_id) await decrementListingStock(sb, line.listing_id, line.qty || 1);
+    }
+    return;
+  }
+  if (order.listing_id) await decrementListingStock(sb, order.listing_id, order.qty || 1);
+}
+
+// Builds an order-specific message and fires the seller's in-app + email notification.
+async function notifyOrderPaid(sb, order_type, order) {
+  const amountNaira = (order.amount_kobo / 100).toLocaleString('en-NG');
+
+  if (order_type === 'food') {
+    const itemNames = (order.items || []).map((i) => `${i.qty}x ${i.title}`).join(', ') || 'your food listing';
+    await notifySeller(sb, {
+      sellerId: order.seller_id,
+      title: 'New order! 🍔',
+      body: `You've got a new food order for ${itemNames} — ₦${amountNaira}. Head to your orders page on Camplugie to start preparing it.`,
+    });
+    return;
+  }
+
+  if (order.kind === 'swift') {
+    await notifySeller(sb, {
+      sellerId: order.seller_id,
+      title: 'New Swift delivery job 🛵',
+      body: `A buyer has paid for a Swift delivery — ₦${amountNaira}. Check the Swift tab on Camplugie for pickup details.`,
+    });
+    return;
+  }
+
+  let itemTitle = 'your item';
+  if (order.listing_id) {
+    const { data: listing } = await sb.from('listings').select('title').eq('id', order.listing_id).maybeSingle();
+    if (listing?.title) itemTitle = listing.title;
+  }
+  await notifySeller(sb, {
+    sellerId: order.seller_id,
+    title: 'Item sold! 🎉',
+    body: `"${itemTitle}" just sold for ₦${amountNaira}. Head to Camplugie to arrange handoff with the buyer.`,
+  });
+}
+
+// Runs both side-effects of an order flipping to paid, each wrapped so a
+// failure in one never blocks the other or bubbles up to break the caller
+// (which has already recorded the payment by the time this runs).
+async function finalizeOrderPaid(sb, order_type, order) {
+  try { await notifyOrderPaid(sb, order_type, order); }
+  catch (err) { console.error('notifyOrderPaid failed:', err.message); }
+
+  try { await decrementStockForOrder(sb, order_type, order); }
+  catch (err) { console.error('decrementStockForOrder failed:', err.message); }
+}
+
+module.exports = { supabaseAdmin, paystack, computeCommission, setCors, notifySeller, payAmbassadorCommission, finalizeOrderPaid, COMMISSION_RATE, AMBASSADOR_SHARE };
+        
