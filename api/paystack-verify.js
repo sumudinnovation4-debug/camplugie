@@ -11,7 +11,7 @@
 // reading it back here was causing "Order not found" even on successful
 // payments. The client already knows exactly which order it's paying for —
 // we just re-verify the amount actually charged before trusting it.
-const { paystack, supabaseAdmin, notifySeller, setCors } = require('./_lib');
+const { paystack, supabaseAdmin, finalizeOrderPaid, setCors } = require('./_lib');
 
 module.exports = async (req, res) => {
   setCors(res);
@@ -43,80 +43,10 @@ module.exports = async (req, res) => {
       status: paidStatus, paystack_reference: reference, updated_at: new Date().toISOString(),
     }).eq('id', order_id);
 
-    try {
-      await notifyOrderPaid(sb, order_type, order);
-    } catch (err) {
-      console.error('notifyOrderPaid failed:', err.message);
-    }
-
-    try {
-      await decrementStockForOrder(sb, order_type, order);
-    } catch (err) {
-      console.error('decrementStockForOrder failed:', err.message);
-    }
+    await finalizeOrderPaid(sb, order_type, order);
 
     return res.status(200).json({ ok: true });
   } catch (err) {
     return res.status(500).json({ error: err.message });
   }
 };
-
-// Reduces listings.stock_qty by however many units this order paid for, and
-// marks the listing unavailable once it hits zero. Wrapped by the caller so
-// a bug here never turns a confirmed payment into an error response.
-async function decrementStockForOrder(sb, order_type, order) {
-  if (order_type === 'food') {
-    for (const line of (order.items || [])) {
-      if (line.listing_id) await decrementListingStock(sb, line.listing_id, line.qty || 1);
-    }
-    return;
-  }
-  if (order.listing_id) await decrementListingStock(sb, order.listing_id, order.qty || 1);
-}
-
-async function decrementListingStock(sb, listingId, qty) {
-  const { data: listing } = await sb.from('listings').select('stock_qty').eq('id', listingId).maybeSingle();
-  if (!listing) return;
-  const newStock = Math.max(0, (listing.stock_qty ?? 1) - qty);
-  const updates = { stock_qty: newStock };
-  if (newStock <= 0) updates.is_available = false;
-  await sb.from('listings').update(updates).eq('id', listingId);
-}
-
-// Builds an order-specific message and fires the seller's in-app + email
-// notification. Runs after the DB write above so the order is already marked
-// paid even if this part fails for some reason (see notifySeller in _lib.js).
-async function notifyOrderPaid(sb, order_type, order) {
-  const amountNaira = (order.amount_kobo / 100).toLocaleString('en-NG');
-
-  if (order_type === 'food') {
-    const itemNames = (order.items || []).map((i) => `${i.qty}x ${i.title}`).join(', ') || 'your food listing';
-    await notifySeller(sb, {
-      sellerId: order.seller_id,
-      title: 'New order! 🍔',
-      body: `You've got a new food order for ${itemNames} — ₦${amountNaira}. Head to your orders page on Camplugie to start preparing it.`,
-    });
-    return;
-  }
-
-  // escrow: either a normal item sale or a Swift delivery job
-  if (order.kind === 'swift') {
-    await notifySeller(sb, {
-      sellerId: order.seller_id,
-      title: 'New Swift delivery job 🛵',
-      body: `A buyer has paid for a Swift delivery — ₦${amountNaira}. Check the Swift tab on Camplugie for pickup details.`,
-    });
-    return;
-  }
-
-  let itemTitle = 'your item';
-  if (order.listing_id) {
-    const { data: listing } = await sb.from('listings').select('title').eq('id', order.listing_id).maybeSingle();
-    if (listing?.title) itemTitle = listing.title;
-  }
-  await notifySeller(sb, {
-    sellerId: order.seller_id,
-    title: 'Item sold! 🎉',
-    body: `"${itemTitle}" just sold for ₦${amountNaira}. Head to Camplugie to arrange handoff with the buyer.`,
-  });
-                                                        }
