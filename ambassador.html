@@ -1111,10 +1111,10 @@ async function init() {
     const code = generateReferralCode(myProfile?.full_name);
     const { error } = data
       ? await window.sb.from('ambassadors').update({
-          referral_code: code, status: 'pending', university_id: myProfile?.university_id,
+          referral_code: code, status: 'pending',
         }).eq('id', data.id)
       : await window.sb.from('ambassadors').insert({
-          user_id: myUserId, university_id: myProfile?.university_id,
+          user_id: myUserId, full_name: myProfile?.full_name || null,
           referral_code: code, status: 'pending', created_at: new Date().toISOString(),
         });
     if (error) {

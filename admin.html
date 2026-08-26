@@ -1003,7 +1003,16 @@ img { max-width: 100%; display: block; }
     <div class="admin-panel active" id="usersPanel"><div class="admin-empty">Loading…</div></div>
     <div class="admin-panel" id="postsPanel"><div class="admin-empty">Loading…</div></div>
     <div class="admin-panel" id="listingsPanel"><div class="admin-empty">Loading…</div></div>
-    <div class="admin-panel" id="ambassadorsPanel"><div class="admin-empty">Loading…</div></div>
+    <div class="admin-panel" id="ambassadorsPanel">
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);padding:14px;margin-bottom:14px">
+        <label class="form-label">Add any user as ambassador</label>
+        <div style="display:flex;gap:8px;margin-top:8px">
+          <input class="form-input" id="addAmbassadorEmail" placeholder="student's email" style="flex:1">
+          <button class="btn btn-primary" id="addAmbassadorBtn" style="flex:none;padding:0 16px">Add</button>
+        </div>
+      </div>
+      <div id="ambassadorsList"><div class="admin-empty">Loading…</div></div>
+    </div>
     <div class="admin-panel" id="runnersPanel"><div class="admin-empty">Loading…</div></div>
     <div class="admin-panel" id="disputesPanel"><div class="admin-empty">Loading…</div></div>
     <div class="admin-panel" id="feedbackPanel"><div class="admin-empty">Loading…</div></div>
@@ -1173,7 +1182,7 @@ async function loadStats() {
     window.sb.from('swift_runner_applications').select('id', { count: 'exact', head: true }).eq('university_id', adminUniversityId).eq('status', 'pending'),
     window.sb.from('swift_disputes').select('id', { count: 'exact', head: true }).eq('status', 'open'),
     window.sb.from('listings').select('id', { count: 'exact', head: true }).eq('university_id', adminUniversityId).eq('is_available', true),
-    window.sb.from('ambassadors').select('id', { count: 'exact', head: true }).eq('university_id', adminUniversityId).eq('status', 'pending'),
+    window.sb.from('ambassadors').select('id', { count: 'exact', head: true }).eq('status', 'pending'),
   ]);
 
   document.getElementById('statsRow').innerHTML = `
@@ -1241,7 +1250,18 @@ async function loadUsers(query = '') {
 
       if (action === 'verify') await window.sb.from('profiles').update({ is_verified: !btn.classList.contains('on') }).eq('id', userId);
       if (action === 'admin') await window.sb.from('profiles').update({ is_admin: !btn.classList.contains('on') }).eq('id', userId);
-      if (action === 'ambassador') await window.sb.from('profiles').update({ is_ambassador: !btn.classList.contains('on') }).eq('id', userId);
+      if (action === 'ambassador') {
+        const turningOn = !btn.classList.contains('on');
+        await window.sb.from('profiles').update({ is_ambassador: turningOn }).eq('id', userId);
+        // The profile flag alone does nothing for ambassador.html — it looks
+        // for a real row in the `ambassadors` table. Keep both in sync here.
+        if (turningOn) {
+          const user = data.find(u => u.id === userId);
+          await upsertAmbassador(userId, user?.full_name);
+        } else {
+          await window.sb.from('ambassadors').update({ status: 'revoked' }).eq('user_id', userId);
+        }
+      }
       if (action === 'ban') {
         if (btn.classList.contains('on')) {
           await window.sb.from('profiles').update({ is_banned: false, ban_reason: null }).eq('id', userId);
@@ -1255,6 +1275,27 @@ async function loadUsers(query = '') {
       loadStats();
     });
   });
+}
+
+// Creates a fresh, approved ambassador row for this user if none exists yet,
+// or flips an existing declined/revoked row back to approved. Matches the
+// real ambassadors schema (no university_id — ambassadors aren't campus-scoped).
+async function upsertAmbassador(userId, fullName) {
+  const { data: existing } = await window.sb.from('ambassadors').select('id, status').eq('user_id', userId).maybeSingle();
+  if (existing) {
+    const updates = { status: 'approved' };
+    if (!existing.referral_code) updates.referral_code = generateReferralCode(fullName);
+    return window.sb.from('ambassadors').update(updates).eq('id', existing.id);
+  }
+  return window.sb.from('ambassadors').insert({
+    user_id: userId, full_name: fullName || null,
+    referral_code: generateReferralCode(fullName), status: 'approved', created_at: new Date().toISOString(),
+  });
+}
+function generateReferralCode(fullName) {
+  const namePart = (fullName || 'USER').replace(/[^a-zA-Z]/g, '').slice(0, 4).toUpperCase();
+  const randPart = Math.random().toString(36).slice(2, 8).toUpperCase();
+  return `CP${namePart}${randPart}`.slice(0, 12);
 }
 
 // ===================== POSTS =====================
@@ -1340,13 +1381,13 @@ async function loadListings() {
 
 // ===================== AMBASSADORS =====================
 async function loadAmbassadors() {
-  const panel = document.getElementById('ambassadorsPanel');
+  const panel = document.getElementById('ambassadorsList');
   const { data, error } = await window.sb
     .from('ambassadors').select('*, profiles!ambassadors_user_id_fkey(full_name, username, email)')
-    .eq('university_id', adminUniversityId).order('created_at', { ascending: false });
+    .order('created_at', { ascending: false });
 
   if (error) { console.error(error); panel.innerHTML = emptyState(`Couldn't load ambassadors: ${error.message}`); return; }
-  if (!data || !data.length) { panel.innerHTML = emptyState('No ambassador applications yet.'); return; }
+  if (!data || !data.length) { panel.innerHTML = emptyState('No ambassadors yet — add one above, or wait for applications.'); return; }
 
   // For approved ambassadors, pull their real referral count + total earnings
   // (same tables the ambassador's own dashboard reads from) so admins can see
@@ -1367,8 +1408,8 @@ async function loadAmbassadors() {
     const stats = statsByAmbassador[a.id];
     return `
     <div class="admin-item" data-id="${a.id}">
-      <div class="admin-item-top"><span>${a.profiles?.full_name || a.profiles?.username || 'Applicant'}</span><span class="amb-status-badge ${a.status === 'approved' ? 'verified' : a.status}">${a.status}</span></div>
-      <div class="admin-item-sub">${a.profiles?.email || ''} · Code: ${a.referral_code}</div>
+      <div class="admin-item-top"><span>${a.profiles?.full_name || a.full_name || a.profiles?.username || 'Applicant'}</span><span class="amb-status-badge ${a.status === 'approved' ? 'verified' : a.status}">${a.status}</span></div>
+      <div class="admin-item-sub">${a.profiles?.email || ''} · Code: ${a.referral_code || '—'}</div>
       ${stats ? `<div class="admin-item-sub">${stats.referrals} student${stats.referrals === 1 ? '' : 's'} referred · ${window.CP.fmtNaira(stats.earnedKobo / 100)} earned</div>` : ''}
       <div class="admin-item-actions">
         ${a.status === 'pending' ? `
@@ -1376,21 +1417,51 @@ async function loadAmbassadors() {
           <button class="btn btn-ghost decline-amb-btn" style="color:var(--danger)">Decline</button>
         ` : a.status === 'approved' ? `
           <button class="btn btn-ghost revoke-amb-btn" style="color:var(--danger)">Revoke</button>
-        ` : ''}
+        ` : `
+          <button class="btn btn-primary reapprove-amb-btn">Re-approve</button>
+        `}
       </div>
     </div>
   `;
   }).join('');
 
-  panel.querySelectorAll('.approve-amb-btn').forEach(btn => btn.addEventListener('click', async (e) => {
+  document.getElementById('addAmbassadorBtn').onclick = async () => {
+    const emailInput = document.getElementById('addAmbassadorEmail');
+    const email = emailInput.value.trim();
+    if (!email) return;
+    const btn = document.getElementById('addAmbassadorBtn');
+    btn.disabled = true; btn.textContent = '…';
+
+    const { data: user, error: lookupError } = await window.sb.from('profiles').select('id, full_name').eq('email', email).maybeSingle();
+    if (lookupError || !user) {
+      alert(`No user found with email "${email}"`);
+      btn.disabled = false; btn.textContent = 'Add';
+      return;
+    }
+
+    const { error: upsertError } = await upsertAmbassador(user.id, user.full_name);
+    btn.disabled = false; btn.textContent = 'Add';
+    if (upsertError) { alert(`Could not add ambassador: ${upsertError.message}`); return; }
+
+    await window.sb.from('profiles').update({ is_ambassador: true }).eq('id', user.id);
+    emailInput.value = '';
+    loadAmbassadors(); loadStats();
+  };
+
+  panel.querySelectorAll('.approve-amb-btn, .reapprove-amb-btn').forEach(btn => btn.addEventListener('click', async (e) => {
     const item = e.target.closest('.admin-item');
-    await window.sb.from('ambassadors').update({ status: 'approved' }).eq('id', item.dataset.id);
-    await window.sb.from('profiles').update({ is_ambassador: true }).eq('id', data.find(a => a.id === item.dataset.id).user_id);
+    const amb = data.find(a => a.id === item.dataset.id);
+    const updates = { status: 'approved' };
+    if (!amb.referral_code) updates.referral_code = generateReferralCode(amb.full_name || amb.profiles?.full_name);
+    await window.sb.from('ambassadors').update(updates).eq('id', item.dataset.id);
+    await window.sb.from('profiles').update({ is_ambassador: true }).eq('id', amb.user_id);
     loadAmbassadors(); loadStats();
   }));
   panel.querySelectorAll('.decline-amb-btn').forEach(btn => btn.addEventListener('click', async (e) => {
     const item = e.target.closest('.admin-item');
+    const amb = data.find(a => a.id === item.dataset.id);
     await window.sb.from('ambassadors').update({ status: 'declined' }).eq('id', item.dataset.id);
+    await window.sb.from('profiles').update({ is_ambassador: false }).eq('id', amb.user_id);
     loadAmbassadors(); loadStats();
   }));
   panel.querySelectorAll('.revoke-amb-btn').forEach(btn => btn.addEventListener('click', async (e) => {
