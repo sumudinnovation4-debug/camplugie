@@ -275,6 +275,16 @@ img { max-width: 100%; display: block; }
   cursor: pointer;
 }
 .store-like svg { width: 15px; height: 15px; }
+.store-delete {
+  position: absolute; top: 8px; right: 44px;
+  width: 30px; height: 30px; border-radius: 50%;
+  background: rgba(9,7,20,.55);
+  color: #fff;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+}
+.store-delete svg { width: 14px; height: 14px; }
+.store-delete:active { background: #DC2626; }
 .store-card-body { padding: 10px 11px 12px; }
 .store-price { font-weight: 800; font-size: 16px; color: var(--text); }
 .store-title {
@@ -985,6 +995,10 @@ function renderCard(item, i) {
         <span class="store-like${item._liked ? ' on' : ''}" role="button" aria-label="Save" style="${item._liked ? 'color:#EC4899' : ''}">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.6 1-1a5.5 5.5 0 0 0 0-7.8z"/></svg>
         </span>
+        ${state.tab === 'mine' ? `
+        <span class="store-delete" role="button" aria-label="Delete listing">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0-1 14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2L4 6h16z"/></svg>
+        </span>` : ''}
       </div>
       <div class="store-card-body">
         <div class="store-price">${window.CP.fmtNaira(item.price)}</div>
@@ -1093,11 +1107,26 @@ document.addEventListener('cp-ready', (e) => {
   });
 });
 
-// Navigate to listing detail (but not when tapping the like heart)
+// Navigate to listing detail (but not when tapping the like heart or delete button)
 document.addEventListener('click', (e) => {
   const card = e.target.closest('.store-card');
-  if (!card || e.target.closest('.store-like')) return;
+  if (!card || e.target.closest('.store-like') || e.target.closest('.store-delete')) return;
   window.location.href = `listing.html?id=${card.dataset.id}`;
+});
+
+// Delete listing (only rendered on the "Mine" tab)
+document.addEventListener('click', (e) => {
+  const del = e.target.closest('.store-delete');
+  if (!del) return;
+  e.stopPropagation();
+  const card = del.closest('.store-card');
+  const listingId = card?.dataset.id;
+  if (!listingId || !state.userId) return;
+  if (!confirm('Delete this listing? This cannot be undone.')) return;
+  window.sb.from('listings').delete().eq('id', listingId).eq('seller_id', state.userId).then(({ error }) => {
+    if (error) { alert(error.message || 'Could not delete listing'); return; }
+    card.remove();
+  });
 });
 
 // Like/unlike toggle
