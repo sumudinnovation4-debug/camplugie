@@ -1387,11 +1387,21 @@ async function sendMessage() {
   const content = input.value.trim();
   if (!content || !convo) return;
   input.value = '';
-  const { error } = await window.sb.from('messages').insert({
+  const { data: sent, error } = await window.sb.from('messages').insert({
     conversation_id: convo.id, sender_id: myUserId, content, created_at: new Date().toISOString(),
-  });
+  }).select('id').single();
   if (error) { console.error('Send error:', error); alert('Could not send — try again.'); }
   await window.sb.from('conversations').update({ last_message: content, last_message_at: new Date().toISOString() }).eq('id', convo.id);
+
+  // Fire-and-forget: emails the other person + writes their in-app notification.
+  // Never blocks sending and never surfaces an error to the sender if it fails.
+  if (!error && sent) {
+    fetch('/api/notify-message', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ conversation_id: convo.id, message_id: sent.id }),
+    }).catch(err => console.error('notify-message failed:', err));
+  }
 }
 
 document.getElementById('sendBtn').addEventListener('click', sendMessage);
