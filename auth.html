@@ -1504,26 +1504,27 @@ signupForm.addEventListener('submit', async (e) => {
   if (error) { console.error('Signup error:', error); setLoading(signupForm, false, 'Create account'); showError(error); return; }
 
   // A DB trigger auto-creates the profiles row on signup (see handle_new_user.sql).
-  if (data.session && data.user) {
-    // Confirm email is OFF — already logged in. Save the name now; university,
-    // phone, avatar, and referral code are all collected next on onboarding.html
-    // (the exact same page Google sign-ins land on).
-    const { error: profileError } = await window.sb
-      .from('profiles')
-      .update({ full_name: fullName })
-      .eq('id', data.user.id);
-
+  // NOTE: data.session will only be populated if "Confirm email" is turned OFF
+  // in Supabase (Dashboard → Authentication → Providers → Email). That toggle
+  // is required — no frontend code can skip Supabase's own email confirmation gate.
+  if (!data.session || !data.user) {
     setLoading(signupForm, false, 'Create account');
-    if (profileError) { console.error('Profile update error:', profileError); showError(profileError); return; }
-    window.location.href = 'onboarding.html';
-  } else {
-    // Confirm email is ON — Supabase just emailed a real confirmation link to
-    // this address. Send them to the waiting screen; it auto-redirects to
-    // onboarding.html once they click the link.
-    sessionStorage.setItem('pending_verify_email', email);
-    setLoading(signupForm, false, 'Create account');
-    window.location.href = `verify-email.html?email=${encodeURIComponent(email)}`;
+    showError('Account created, but no session was returned. Check that "Confirm email" is turned OFF in Supabase (Authentication → Providers → Email).');
+    console.error('Signup succeeded but no session — Confirm Email is likely still ON in Supabase.');
+    return;
   }
+
+  // Already logged in — save the name now; university, phone, avatar, and
+  // referral code are all collected next on onboarding.html (the exact same
+  // page Google sign-ins land on).
+  const { error: profileError } = await window.sb
+    .from('profiles')
+    .update({ full_name: fullName })
+    .eq('id', data.user.id);
+
+  setLoading(signupForm, false, 'Create account');
+  if (profileError) { console.error('Profile update error:', profileError); showError(profileError); return; }
+  window.location.href = 'onboarding.html';
 });
 
 </script>
