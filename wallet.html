@@ -46,6 +46,11 @@
   </div>
 
   <div class="wallet-section">
+    <h3>Payout account</h3>
+    <div id="payoutAccountInfo" style="font-size:13px;color:var(--text2);">Loading…</div>
+  </div>
+
+  <div class="wallet-section">
     <h3>Recent activity</h3>
     <div id="txList"><p style="color:var(--text3);font-size:13px;">Loading…</p></div>
   </div>
@@ -108,22 +113,6 @@ window.CP = window.CP || {};
 window.CP.fmtNaira = (n) => '₦' + Number(n || 0).toLocaleString();
 </script>
 <script>
-(async () => {
-  try {
-    const { data: { session } } = await window.sb.auth.getSession();
-    if (!session) { window.location.href = 'auth.html'; return; }
-    // Calling init() directly instead of dispatching a 'cp-ready' event —
-    // events can fire before a listener further down the page has even been
-    // registered yet, silently dropping them. A direct function call can't race.
-    init(session.user);
-  } catch (err) {
-    console.error('Wallet init error:', err);
-    document.getElementById('walletBalance').textContent = '⚠️ Error';
-    document.getElementById('txList').innerHTML = `<p style="color:var(--danger);font-size:13px;">Couldn't load your session: ${err.message}. Try reloading.</p>`;
-  }
-})();
-</script>
-<script>
 // Small subset of Nigerian bank codes — extend as needed (see Paystack's /bank list endpoint for the full set).
 const BANKS = [
   ['058', 'GTBank'], ['044', 'Access Bank'], ['057', 'Zenith Bank'], ['011', 'First Bank'],
@@ -136,6 +125,21 @@ let myUserId = null;
 function init(user) {
   myUserId = user.id;
   refreshWallet();
+  loadPayoutAccount();
+}
+
+async function loadPayoutAccount() {
+  const el = document.getElementById('payoutAccountInfo');
+  try {
+    const { data, error } = await window.sb.from('payout_recipients').select('*').eq('user_id', myUserId).maybeSingle();
+    if (error) throw error;
+    el.textContent = data
+      ? `${data.bank_name || 'Bank'} — ${data.account_number} (${data.account_name})`
+      : 'No payout account on file yet. Tap "Bank account" above to add one.';
+  } catch (err) {
+    console.error('Payout account load error:', err);
+    el.textContent = `Couldn't load payout account: ${err.message}`;
+  }
 }
 
 // Re-checks the session if myUserId somehow isn't set yet (slow page load,
@@ -225,6 +229,7 @@ document.getElementById('bankSaveBtn').addEventListener('click', async (e) => {
     await window.CPPay.saveBankAccount({ userId, accountNumber, bankCode, bankName });
     alert('Bank account saved.');
     closeModal('bankModal');
+    loadPayoutAccount();
   } catch (err) { alert(err.message || 'Could not save bank account'); }
   finally { btn.disabled = false; btn.textContent = 'Save bank account'; }
 });
@@ -263,6 +268,21 @@ document.getElementById('withdrawSubmitBtn').addEventListener('click', async (e)
   } catch (err) { alert(err.message || 'Withdrawal failed'); }
   finally { btn.disabled = false; btn.textContent = 'Withdraw'; }
 });
+
+// Session check + first load. This runs last, after init() and every event
+// listener above are already defined, so there's no race where a fast
+// (cached) getSession() resolution could call init() before it exists.
+(async () => {
+  try {
+    const { data: { session } } = await window.sb.auth.getSession();
+    if (!session) { window.location.href = 'auth.html'; return; }
+    init(session.user);
+  } catch (err) {
+    console.error('Wallet init error:', err);
+    document.getElementById('walletBalance').textContent = '⚠️ Error';
+    document.getElementById('txList').innerHTML = `<p style="color:var(--danger);font-size:13px;">Couldn't load your session: ${err.message}. Try reloading.</p>`;
+  }
+})();
 
 
 </script>
