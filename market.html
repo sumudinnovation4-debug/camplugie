@@ -1032,7 +1032,7 @@ async function loadListings() {
   let query = window.sb.from('listings').select(window.CP.LISTING_SELECT).eq('university_id', state.universityId);
 
   if (state.tab === 'mine') {
-    query = query.eq('seller_id', state.userId);
+    query = query.eq('seller_id', state.userId).neq('status', 'deleted');
   } else {
     query = query.eq('is_available', true);
     if (state.tab === 'products') query = query.eq('listing_type', 'product');
@@ -1114,7 +1114,10 @@ document.addEventListener('click', (e) => {
   window.location.href = `listing.html?id=${card.dataset.id}`;
 });
 
-// Delete listing (only rendered on the "Mine" tab)
+// Delete listing (only rendered on the "Mine" tab).
+// This is a soft delete (mark unavailable) rather than a hard DELETE, because
+// listings can be tied to conversations/orders via foreign keys — a hard
+// delete fails once anyone has chatted about or bought the item.
 document.addEventListener('click', (e) => {
   const del = e.target.closest('.store-delete');
   if (!del) return;
@@ -1123,7 +1126,7 @@ document.addEventListener('click', (e) => {
   const listingId = card?.dataset.id;
   if (!listingId || !state.userId) return;
   if (!confirm('Delete this listing? This cannot be undone.')) return;
-  window.sb.from('listings').delete().eq('id', listingId).eq('seller_id', state.userId).then(({ error }) => {
+  window.sb.from('listings').update({ status: 'deleted', is_available: false }).eq('id', listingId).eq('seller_id', state.userId).then(({ error }) => {
     if (error) { alert(error.message || 'Could not delete listing'); return; }
     card.remove();
   });
