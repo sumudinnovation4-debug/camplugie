@@ -36,7 +36,12 @@ function computeCommission(amountKobo) {
 function setCors(res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  // 'Authorization' added so the admin dashboard — deployed on its own,
+  // separate Vercel domain — can call admin-only endpoints (like
+  // admin-wallet-adjust) that need to send the admin's Supabase access
+  // token. Without this, the browser's CORS preflight rejects the request
+  // before it ever reaches this function.
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
 }
 
 // --- Notifications (in-app + email) ---
