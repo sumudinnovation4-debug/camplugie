@@ -863,6 +863,13 @@ img { max-width: 100%; display: block; }
 
 /* ===== Location picker (Leaflet) ===== */
 .loc-picker-map { width: 100%; height: 160px; border-radius: var(--radius-sm); overflow: hidden; margin-top: 8px; background: var(--surface2); cursor: crosshair; }
+/* OSM's raw tiles are light — invert just the tile layer (not markers/popups) so the map matches our dark theme */
+.loc-picker-map .leaflet-tile-pane { filter: invert(1) hue-rotate(180deg) brightness(0.95) contrast(0.9) saturate(0.7); }
+.leaflet-control-attribution {
+  background: rgba(9,7,20,.65) !important; color: var(--text3) !important;
+  font-size: 8.5px !important; padding: 1px 6px !important; line-height: 1.4 !important; border-radius: 4px 0 0 0 !important;
+}
+.leaflet-control-attribution a { color: var(--text3) !important; }
 .loc-picker-hint { font-size: 11px; color: var(--text3); margin-top: 5px; }
 .loc-picker-status { font-size: 11.5px; font-weight: 700; margin-top: 5px; }
 .loc-picker-status.set { color: var(--money); }
@@ -1420,7 +1427,8 @@ function renderPreviews() {
 let pickupMap, pickupMarker;
 function initPickupMap() {
   pickupMap = L.map('pickupMap', { zoomControl: false, attributionControl: false }).setView([7.5189, 4.5286], 15);
-  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { maxZoom: 19 }).addTo(pickupMap);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, subdomains: 'abc', attribution: '&copy; OpenStreetMap' }).addTo(pickupMap);
+  L.control.attribution({ prefix: false, position: 'bottomright' }).addTo(pickupMap);
   pickupMap.on('click', (e) => setPickupPin(e.latlng.lat, e.latlng.lng));
 }
 function setPickupPin(lat, lng) {

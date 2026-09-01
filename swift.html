@@ -796,6 +796,15 @@ img { max-width: 100%; display: block; }
 
 /* ===== Swift map + dispute ===== */
 .swift-map { width: 100%; height: 180px; border-radius: var(--radius-sm); overflow: hidden; margin-top: 12px; background: var(--surface2); position: relative; cursor: pointer; }
+/* OSM's raw tiles are light — invert just the tile layer (not markers/popups) so maps match our dark theme */
+.swift-map .leaflet-tile-pane, .dmap-canvas .leaflet-tile-pane, .loc-picker-map .leaflet-tile-pane {
+  filter: invert(1) hue-rotate(180deg) brightness(0.95) contrast(0.9) saturate(0.7);
+}
+.leaflet-control-attribution {
+  background: rgba(9,7,20,.65) !important; color: var(--text3) !important;
+  font-size: 8.5px !important; padding: 1px 6px !important; line-height: 1.4 !important; border-radius: 4px 0 0 0 !important;
+}
+.leaflet-control-attribution a { color: var(--text3) !important; }
 .swift-map-hint {
   position: absolute; right: 8px; bottom: 8px; z-index: 5; pointer-events: none;
   background: rgba(9,7,20,.78); color: #fff; font-size: 10.5px; font-weight: 800;
@@ -1345,7 +1354,8 @@ function renderMap(containerId, order, pollRunnerId, expandOpts) {
   const center = dropoff || pickup || [7.5189, 4.5286]; // falls back to a campus-ish default
 
   activeMap = L.map(containerId, { zoomControl: false, attributionControl: false, dragging: false, scrollWheelZoom: false, tap: false }).setView(center, 15);
-  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { maxZoom: 19 }).addTo(activeMap);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, subdomains: 'abc', attribution: '&copy; OpenStreetMap' }).addTo(activeMap);
+  L.control.attribution({ prefix: false, position: 'bottomright' }).addTo(activeMap);
 
   let runnerMarker = null;
   if (dropoff) L.marker(dropoff, { icon: dmapIcon('🏁', '#34D399') }).addTo(activeMap).bindPopup('Drop-off');
@@ -1467,7 +1477,8 @@ function openDeliveryMap(order, opts = {}) {
   const startCenter = (activeLeg === 'dropoff' ? dropoff : pickup) || pickup || dropoff || [7.5189, 4.5286];
   const map = L.map('dmapCanvas', { zoomControl: false, attributionControl: false }).setView(startCenter, 16);
   dmapMap = map;
-  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { maxZoom: 19 }).addTo(map);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, subdomains: 'abc', attribution: '&copy; OpenStreetMap' }).addTo(map);
+  L.control.attribution({ prefix: false, position: 'bottomright' }).addTo(map);
 
   const bounds = [];
   if (pickup) { L.marker(pickup, { icon: dmapIcon('🏪', '#FBBF24') }).addTo(map).bindPopup('Seller — pickup'); bounds.push(pickup); }
@@ -1649,7 +1660,8 @@ let campusCenter = null;
 function initPicker(mapId, statusId, onSet) {
   const startCenter = campusCenter ? [campusCenter.lat, campusCenter.lng] : [7.5189, 4.5286];
   const map = L.map(mapId, { zoomControl: false, attributionControl: false }).setView(startCenter, 15);
-  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { maxZoom: 19 }).addTo(map);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, subdomains: 'abc', attribution: '&copy; OpenStreetMap' }).addTo(map);
+  L.control.attribution({ prefix: false, position: 'bottomright' }).addTo(map);
   let marker = null;
   map.on('click', (e) => {
     const pin = { lat: e.latlng.lat, lng: e.latlng.lng };
