@@ -796,38 +796,65 @@ img { max-width: 100%; display: block; }
 
 /* ===== Swift map + dispute ===== */
 .swift-map { width: 100%; height: 180px; border-radius: var(--radius-sm); overflow: hidden; margin-top: 12px; background: var(--surface2); position: relative; cursor: pointer; }
-.swift-map::after {
-  content: '⤢ Tap to open full map'; position: absolute; right: 8px; bottom: 8px; z-index: 1000;
-  background: rgba(18,16,29,.85); color: var(--text); border: 1px solid var(--border); border-radius: 999px;
-  padding: 5px 10px; font-size: 10.5px; font-weight: 700; pointer-events: none;
+.swift-map-hint {
+  position: absolute; right: 8px; bottom: 8px; z-index: 5; pointer-events: none;
+  background: rgba(9,7,20,.78); color: #fff; font-size: 10.5px; font-weight: 800;
+  padding: 6px 11px; border-radius: 999px; display: flex; align-items: center; gap: 4px;
 }
 
-/* ===== Swift fullscreen map (Uber-style) ===== */
-.swift-fullmap-overlay { position: fixed; inset: 0; z-index: 150; background: var(--surface); display: flex; flex-direction: column; }
-.swift-fullmap-canvas { position: absolute; inset: 0; }
-.swift-fullmap-topbar {
-  position: absolute; top: 0; left: 0; right: 0; z-index: 2; display: flex; align-items: center; justify-content: space-between;
-  padding: calc(14px + env(safe-area-inset-top)) 14px 0;
+/* ===== Full-screen delivery map (Uber-style) ===== */
+.dmap-overlay { position: fixed; inset: 0; z-index: 260; background: var(--bg); }
+.dmap-canvas { position: absolute; inset: 0; }
+.dmap-topbar {
+  position: absolute; top: calc(var(--safe-top) + 12px); left: 12px; right: 12px; z-index: 10;
+  display: flex; align-items: center; gap: 10px;
 }
-.swift-fullmap-icon-btn {
-  width: 40px; height: 40px; border-radius: 50%; background: var(--surface); border: 1px solid var(--border); color: var(--text);
-  font-size: 16px; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 2px 10px rgba(0,0,0,.4);
+.dmap-back-btn {
+  width: 42px; height: 42px; border-radius: 50%; background: var(--surface); border: 1px solid var(--border);
+  color: var(--text); display: flex; align-items: center; justify-content: center; cursor: pointer;
+  box-shadow: 0 2px 12px rgba(0,0,0,.35); flex-shrink: 0;
 }
-.swift-fullmap-status-pill { background: var(--surface); border: 1px solid var(--border); border-radius: 999px; padding: 8px 16px; font-size: 12px; font-weight: 700; box-shadow: 0 2px 10px rgba(0,0,0,.4); }
-.swift-fullmap-sheet {
-  position: relative; z-index: 2; margin-top: auto; background: var(--surface);
-  border-top-left-radius: 20px; border-top-right-radius: 20px; padding: 10px 16px calc(20px + env(safe-area-inset-bottom));
-  box-shadow: 0 -6px 24px rgba(0,0,0,.4); max-height: 48vh; overflow-y: auto;
+.dmap-back-btn svg { width: 18px; height: 18px; }
+.dmap-status-chip {
+  background: var(--surface); border: 1px solid var(--border); border-radius: 999px; padding: 10px 16px;
+  font-size: 12.5px; font-weight: 700; box-shadow: 0 2px 12px rgba(0,0,0,.35);
 }
-.swift-fullmap-handle { width: 36px; height: 4px; background: var(--border); border-radius: 999px; margin: 0 auto 14px; }
-.swift-fullmap-stops { padding: 2px 2px 10px; }
-.swift-fullmap-stop { display: flex; gap: 12px; align-items: flex-start; }
-.swift-fullmap-dot { width: 11px; height: 11px; border-radius: 50%; margin-top: 5px; flex-shrink: 0; }
-.swift-fullmap-dot.seller { background: #34D399; }
-.swift-fullmap-dot.buyer { background: #A78BFA; }
-.swift-fullmap-stop-connector { width: 2px; height: 18px; background: var(--border); margin-left: 5px; }
-.swift-fullmap-stop-label { font-size: 10.5px; color: var(--text3); text-transform: uppercase; letter-spacing: .04em; font-weight: 700; }
-.swift-fullmap-stop-place { font-size: 13.5px; font-weight: 600; margin-top: 2px; color: var(--text); }
+.dmap-locate-btn {
+  position: absolute; top: calc(var(--safe-top) + 64px); right: 12px; z-index: 10;
+  width: 42px; height: 42px; border-radius: 50%; background: var(--surface); border: 1px solid var(--border);
+  color: var(--accent); display: flex; align-items: center; justify-content: center; cursor: pointer;
+  box-shadow: 0 2px 12px rgba(0,0,0,.35);
+}
+.dmap-locate-btn svg { width: 19px; height: 19px; }
+.dmap-sheet {
+  position: absolute; left: 0; right: 0; bottom: 0; z-index: 10; background: var(--surface);
+  border-radius: 20px 20px 0 0; padding: 10px 16px calc(16px + var(--safe-bottom));
+  box-shadow: 0 -8px 26px rgba(0,0,0,.4); max-height: 58vh; overflow-y: auto;
+}
+.dmap-sheet-handle { width: 36px; height: 4px; background: var(--border); border-radius: 999px; margin: 0 auto 12px; }
+.dmap-stop { display: flex; align-items: flex-start; gap: 10px; padding: 10px 2px; border-bottom: 1px solid var(--border); cursor: pointer; }
+.dmap-stop:last-of-type { border-bottom: none; }
+.dmap-stop-dot {
+  width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+  font-size: 12px; flex-shrink: 0; margin-top: 1px;
+}
+.dmap-stop-dot.pickup { background: rgba(251,191,36,0.18); color: var(--accent); }
+.dmap-stop-dot.dropoff { background: rgba(52,211,153,0.18); color: var(--money); }
+.dmap-stop-text { flex: 1; min-width: 0; }
+.dmap-stop-text b { font-size: 13.5px; display: block; }
+.dmap-stop-text span { font-size: 11.5px; color: var(--text3); }
+.dmap-stop.active { background: var(--surface2); border-radius: 10px; }
+.dmap-stop.active .dmap-stop-text b { color: var(--accent); }
+.dmap-stop-nav-btn {
+  flex-shrink: 0; align-self: center; background: var(--surface2); border: 1px solid var(--border); color: var(--text2);
+  border-radius: 10px; padding: 8px 11px; font-size: 11px; font-weight: 700; cursor: pointer; white-space: nowrap;
+}
+.dmap-stop.active .dmap-stop-nav-btn { background: var(--accent); border-color: var(--accent); color: #1A1200; }
+.dmap-pin-row { display: flex; gap: 8px; margin-top: 12px; }
+.dmap-pin-row input {
+  flex: 1; background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; padding: 11px;
+  font: inherit; font-size: 16px; letter-spacing: .2em; text-align: center; color: var(--text);
+}
 .swift-report-btn {
   margin-top: 12px; width: 100%; background: none; border: 1px solid var(--danger); color: var(--danger);
   border-radius: var(--radius-sm); padding: 11px; font: inherit; font-size: 12.5px; font-weight: 700; cursor: pointer;
@@ -1298,153 +1325,189 @@ function bindStarRow(containerId, onChange) {
   });
 }
 
-// Keyed by container id, so the small buyer-card map and runner-card map (and the
-// fullscreen map) can all live at once without tearing each other down.
-const mapRegistry = {};
+let activeMap = null;
+let mapPoll = null;
 
-function destroyMap(containerId) {
-  const entry = mapRegistry[containerId];
-  if (!entry) return;
-  if (entry.poll) clearInterval(entry.poll);
-  if (entry.map) entry.map.remove();
-  delete mapRegistry[containerId];
+function destroyMap() {
+  if (mapPoll) { clearInterval(mapPoll); mapPoll = null; }
+  if (activeMap) { activeMap.remove(); activeMap = null; }
 }
 
-// Draws a direction line from pickup to drop-off. Tries OSRM's free public routing API
-// first (actual roads/paths, like Google Maps directions), and falls back to a straight
-// dashed line if that free service is unreachable or rate-limited — so there's always a
-// line showing the runner where to go.
-async function drawRoute(map, pickup, dropoff) {
-  const line = L.polyline([pickup, dropoff], { color: '#A78BFA', weight: 3, dashArray: '2 8', opacity: .8 }).addTo(map);
-  try {
-    const url = `https://router.project-osrm.org/route/v1/foot/${pickup[1]},${pickup[0]};${dropoff[1]},${dropoff[0]}?overview=full&geometries=geojson`;
-    const res = await fetch(url);
-    const json = await res.json();
-    const coords = json?.routes?.[0]?.geometry?.coordinates;
-    if (coords && coords.length) {
-      line.setLatLngs(coords.map(([lng, lat]) => [lat, lng]));
-      line.setStyle({ dashArray: null, weight: 4, opacity: 0.9 });
-    }
-  } catch (err) {
-    console.warn('Route lookup failed, showing straight line instead:', err);
-  }
-  return line;
-}
-
-function stopIcon(kind) {
-  const bg = kind === 'seller' ? '#34D399' : '#A78BFA';
-  const emoji = kind === 'seller' ? '🏪' : '🎒';
-  return L.divIcon({
-    className: 'swift-stop-icon',
-    html: `<div style="width:30px;height:30px;border-radius:50% 50% 50% 0;background:${bg};transform:rotate(-45deg);display:flex;align-items:center;justify-content:center;box-shadow:0 2px 6px rgba(0,0,0,.4);"><span style="transform:rotate(45deg);font-size:14px;">${emoji}</span></div>`,
-    iconSize: [30, 30], iconAnchor: [15, 28],
-  });
-}
-
-// Draws a Leaflet map with a seller (pickup) pin and buyer (drop-off) pin connected by a
-// route line, fit so both are visible together, plus (optionally) a live runner pin
-// polling swift_runners.current_lat/current_lng every 8s while the map is visible.
-// opts.thumb = true renders a small, non-interactive "tap to expand" thumbnail that opens
-// the fullscreen Uber-style map (opts.fullMap) on click.
-function renderMap(containerId, order, pollRunnerId, opts = {}) {
-  destroyMap(containerId);
+// Draws a small Leaflet map thumbnail with a dropoff pin and (optionally) a live runner pin,
+// polling swift_runners.current_lat/current_lng every 8s while the card is visible.
+// Tapping the thumbnail opens the full-screen Uber-style map (see openDeliveryMap below).
+function renderMap(containerId, order, pollRunnerId, expandOpts) {
+  destroyMap();
   const el = document.getElementById(containerId);
   if (!el) return;
-  const pickup = (order.pickup_lat && order.pickup_lng) ? [order.pickup_lat, order.pickup_lng] : null;
   const dropoff = (order.dropoff_lat && order.dropoff_lng) ? [order.dropoff_lat, order.dropoff_lng] : null;
-  const fallback = [7.5189, 4.5286]; // falls back to a campus-ish default
+  const pickup = (order.pickup_lat && order.pickup_lng) ? [order.pickup_lat, order.pickup_lng] : null;
+  const center = dropoff || pickup || [7.5189, 4.5286]; // falls back to a campus-ish default
 
-  const map = L.map(containerId, {
-    zoomControl: false, attributionControl: false,
-    dragging: !opts.thumb, scrollWheelZoom: !opts.thumb, doubleClickZoom: !opts.thumb, tap: !opts.thumb,
-  });
-  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { maxZoom: 19 }).addTo(map);
-
-  if (pickup) L.marker(pickup, { title: 'Seller — pickup', icon: stopIcon('seller') }).addTo(map).bindPopup('Seller — pickup');
-  if (dropoff) L.marker(dropoff, { title: 'Buyer — drop-off', icon: stopIcon('buyer') }).addTo(map).bindPopup('Buyer — drop-off');
-
-  if (pickup && dropoff) {
-    drawRoute(map, pickup, dropoff);
-    map.fitBounds(L.latLngBounds([pickup, dropoff]), { padding: [40, 40] });
-  } else if (pickup || dropoff) {
-    map.setView(pickup || dropoff, 15);
-  } else {
-    map.setView(fallback, 14);
-  }
+  activeMap = L.map(containerId, { zoomControl: false, attributionControl: false, dragging: false, scrollWheelZoom: false, tap: false }).setView(center, 15);
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { maxZoom: 19 }).addTo(activeMap);
 
   let runnerMarker = null;
-  let poll = null;
+  if (dropoff) L.marker(dropoff, { icon: dmapIcon('🏁', '#34D399') }).addTo(activeMap).bindPopup('Drop-off');
+  if (pickup) L.marker(pickup, { icon: dmapIcon('🏪', '#FBBF24') }).addTo(activeMap).bindPopup('Pickup');
+
   async function pollRunner() {
     if (!pollRunnerId) return;
     const { data } = await window.sb.from('swift_runners').select('current_lat, current_lng').eq('id', pollRunnerId).maybeSingle();
     if (!data?.current_lat) return;
     const pos = [data.current_lat, data.current_lng];
-    if (runnerMarker) { runnerMarker.setLatLng(pos); } else { runnerMarker = L.circleMarker(pos, { radius: 8, color: '#FBBF24', fillColor: '#FBBF24', fillOpacity: 1 }).addTo(map).bindPopup('Runner'); }
+    if (runnerMarker) { runnerMarker.setLatLng(pos); } else { runnerMarker = L.circleMarker(pos, { radius: 8, color: '#FBBF24', fillColor: '#FBBF24', fillOpacity: 1 }).addTo(activeMap).bindPopup('Runner'); }
   }
-  if (pollRunnerId) { pollRunner(); poll = setInterval(pollRunner, 8000); }
+  if (pollRunnerId) { pollRunner(); mapPoll = setInterval(pollRunner, 8000); }
 
-  mapRegistry[containerId] = { map, poll };
-
-  if (opts.thumb) {
-    el.onclick = () => openFullMap(order, pollRunnerId, opts.fullMap || {});
+  // Make the small preview map behave like a button that opens the full map.
+  if (expandOpts) {
+    const hint = document.createElement('div');
+    hint.className = 'swift-map-hint';
+    hint.innerHTML = '⛶ Open live map';
+    el.appendChild(hint);
+    el.addEventListener('click', () => openDeliveryMap(order, expandOpts));
   }
 }
 
-// Closes the fullscreen map overlay, if open.
-function closeFullMap() {
-  destroyMap('swiftFullMapCanvas');
-  const overlay = document.getElementById('swiftFullMapOverlay');
+/* ===== Full-screen Uber-style delivery map ===== */
+
+function haversineKm(a, b) {
+  if (!a || !b) return null;
+  const R = 6371, dLat = (b[0] - a[0]) * Math.PI / 180, dLng = (b[1] - a[1]) * Math.PI / 180;
+  const s = Math.sin(dLat / 2) ** 2 + Math.cos(a[0] * Math.PI / 180) * Math.cos(b[0] * Math.PI / 180) * Math.sin(dLng / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(s), Math.sqrt(1 - s));
+}
+
+function mapsDirectionsUrl(lat, lng) {
+  return `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}&travelmode=driving`;
+}
+
+function dmapIcon(emoji, color) {
+  return L.divIcon({
+    className: '',
+    html: `<div style="width:32px;height:32px;border-radius:50% 50% 50% 0;background:${color};transform:rotate(45deg);display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(0,0,0,.45);border:2px solid #fff;"><span style="transform:rotate(-45deg);font-size:14px;">${emoji}</span></div>`,
+    iconSize: [32, 32], iconAnchor: [16, 32], popupAnchor: [0, -30],
+  });
+}
+
+let dmapMap = null;
+let dmapPoll = null;
+
+function closeDeliveryMap() {
+  if (dmapPoll) { clearInterval(dmapPoll); dmapPoll = null; }
+  if (dmapMap) { dmapMap.remove(); dmapMap = null; }
+  const overlay = document.getElementById('dmapOverlay');
   if (overlay) overlay.remove();
 }
 
-// Opens an Uber/delivery-app-style fullscreen map: seller pickup pin, buyer drop-off pin,
-// and the route between them, with a bottom sheet for status + PIN actions + dispute.
-// fullOpts.renderAction() returns HTML for the sheet's action area; fullOpts.bindAction()
-// wires up its buttons and is called with closeFullMap so actions can dismiss the map.
-function openFullMap(order, pollRunnerId, fullOpts = {}) {
-  if (document.getElementById('swiftFullMapOverlay')) return;
+/**
+ * Opens a full-screen, Uber/delivery-app style map so a runner can see and
+ * jump between BOTH the seller (pickup) and buyer (dropoff) stops in one view —
+ * with one tap to launch turn-by-turn directions in Google Maps for either leg.
+ *
+ * order — the swift_orders row (needs pickup_lat/lng, dropoff_lat/lng, place names).
+ * opts.role         — 'runner' or 'buyer'.
+ * opts.activeLeg     — 'pickup' or 'dropoff', which stop is highlighted/centered first.
+ * opts.pollRunnerId  — swift_runners.id to live-poll and show a runner marker (buyer tracking).
+ * opts.onPinConfirm  — (leg, pin) => Promise, called when a PIN is submitted from the sheet.
+ */
+function openDeliveryMap(order, opts = {}) {
+  const { role = 'runner', activeLeg = 'pickup', pollRunnerId = null, onPinConfirm = null } = opts;
+  closeDeliveryMap();
+
+  const pickup = (order.pickup_lat && order.pickup_lng) ? [order.pickup_lat, order.pickup_lng] : null;
+  const dropoff = (order.dropoff_lat && order.dropoff_lng) ? [order.dropoff_lat, order.dropoff_lng] : null;
+
   const overlay = document.createElement('div');
-  overlay.id = 'swiftFullMapOverlay';
-  overlay.className = 'swift-fullmap-overlay';
+  overlay.className = 'dmap-overlay';
+  overlay.id = 'dmapOverlay';
   overlay.innerHTML = `
-    <div class="swift-fullmap-canvas" id="swiftFullMapCanvas"></div>
-    <div class="swift-fullmap-topbar">
-      <button class="swift-fullmap-icon-btn" id="swiftFullMapClose" aria-label="Close">✕</button>
-      <div class="swift-fullmap-status-pill">🛵 ${STATUS_LABEL[order.status] || 'Delivery'}</div>
-      <button class="swift-fullmap-icon-btn" id="swiftFullMapRecenter" aria-label="Recenter">⌖</button>
+    <div class="dmap-canvas" id="dmapCanvas"></div>
+    <div class="dmap-topbar">
+      <button class="dmap-back-btn" id="dmapBackBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg></button>
+      <div class="dmap-status-chip">${STATUS_LABEL[order.status] || 'On the way'}</div>
     </div>
-    <div class="swift-fullmap-sheet">
-      <div class="swift-fullmap-handle"></div>
-      <div class="swift-fullmap-stops">
-        <div class="swift-fullmap-stop">
-          <span class="swift-fullmap-dot seller"></span>
-          <div><div class="swift-fullmap-stop-label">Seller · Pickup</div><div class="swift-fullmap-stop-place">${order.pickup_place || 'Pickup location'}</div></div>
+    <button class="dmap-locate-btn" id="dmapLocateBtn" title="Center on me"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg></button>
+    <div class="dmap-sheet" id="dmapSheet">
+      <div class="dmap-sheet-handle"></div>
+      ${pickup ? `
+      <div class="dmap-stop${activeLeg === 'pickup' ? ' active' : ''}" data-leg="pickup">
+        <div class="dmap-stop-dot pickup">🏪</div>
+        <div class="dmap-stop-text">
+          <b>${order.pickup_place || 'Seller — pickup'}</b>
+          <span>${role === 'runner' ? 'Collect the item from the seller here' : 'Where your item is picked up from'}</span>
         </div>
-        <div class="swift-fullmap-stop-connector"></div>
-        <div class="swift-fullmap-stop">
-          <span class="swift-fullmap-dot buyer"></span>
-          <div><div class="swift-fullmap-stop-label">Buyer · Drop-off</div><div class="swift-fullmap-stop-place">${order.dropoff_place || 'Drop-off location'}</div></div>
+        <button class="dmap-stop-nav-btn" data-lat="${pickup[0]}" data-lng="${pickup[1]}">↗ Navigate</button>
+      </div>` : ''}
+      ${dropoff ? `
+      <div class="dmap-stop${activeLeg === 'dropoff' ? ' active' : ''}" data-leg="dropoff">
+        <div class="dmap-stop-dot dropoff">🏁</div>
+        <div class="dmap-stop-text">
+          <b>${order.dropoff_place || 'Buyer — drop-off'}</b>
+          <span>${role === 'runner' ? 'Hand the item to the buyer here' : 'Where it gets delivered to you'}</span>
         </div>
-      </div>
-      <div id="swiftFullMapAction"></div>
+        <button class="dmap-stop-nav-btn" data-lat="${dropoff[0]}" data-lng="${dropoff[1]}">↗ Navigate</button>
+      </div>` : ''}
+      ${role === 'runner' && onPinConfirm ? `
+      <div class="dmap-pin-row">
+        <input type="text" id="dmapPinInput" placeholder="${activeLeg === 'pickup' ? 'Pickup' : 'Delivery'} PIN" maxlength="4" inputmode="numeric">
+        <button class="btn btn-primary" id="dmapPinConfirmBtn">Confirm</button>
+      </div>` : ''}
     </div>
   `;
   document.body.appendChild(overlay);
-  renderMap('swiftFullMapCanvas', order, pollRunnerId, {});
 
-  document.getElementById('swiftFullMapClose').addEventListener('click', closeFullMap);
-  document.getElementById('swiftFullMapRecenter').addEventListener('click', () => {
-    const entry = mapRegistry['swiftFullMapCanvas'];
-    if (!entry) return;
-    const pickup = (order.pickup_lat && order.pickup_lng) ? [order.pickup_lat, order.pickup_lng] : null;
-    const dropoff = (order.dropoff_lat && order.dropoff_lng) ? [order.dropoff_lat, order.dropoff_lng] : null;
-    if (pickup && dropoff) entry.map.fitBounds(L.latLngBounds([pickup, dropoff]), { padding: [40, 40] });
-    else if (pickup || dropoff) entry.map.setView(pickup || dropoff, 15);
+  document.getElementById('dmapBackBtn').addEventListener('click', closeDeliveryMap);
+  overlay.querySelectorAll('.dmap-stop-nav-btn').forEach(btn => btn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    window.open(mapsDirectionsUrl(btn.dataset.lat, btn.dataset.lng), '_blank');
+  }));
+
+  const startCenter = (activeLeg === 'dropoff' ? dropoff : pickup) || pickup || dropoff || [7.5189, 4.5286];
+  const map = L.map('dmapCanvas', { zoomControl: false, attributionControl: false }).setView(startCenter, 16);
+  dmapMap = map;
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { maxZoom: 19 }).addTo(map);
+
+  const bounds = [];
+  if (pickup) { L.marker(pickup, { icon: dmapIcon('🏪', '#FBBF24') }).addTo(map).bindPopup('Seller — pickup'); bounds.push(pickup); }
+  if (dropoff) { L.marker(dropoff, { icon: dmapIcon('🏁', '#34D399') }).addTo(map).bindPopup('Buyer — drop-off'); bounds.push(dropoff); }
+  if (pickup && dropoff) L.polyline([pickup, dropoff], { color: '#8D86AA', weight: 2, dashArray: '6,8', opacity: .7 }).addTo(map);
+
+  let runnerMarker = null;
+  async function pollRunnerPos() {
+    if (!pollRunnerId) return;
+    const { data } = await window.sb.from('swift_runners').select('current_lat, current_lng').eq('id', pollRunnerId).maybeSingle();
+    if (!data?.current_lat) return;
+    const pos = [data.current_lat, data.current_lng];
+    if (runnerMarker) runnerMarker.setLatLng(pos);
+    else runnerMarker = L.marker(pos, { icon: dmapIcon('🛵', '#A78BFA') }).addTo(map).bindPopup('Runner');
+  }
+  if (pollRunnerId) { pollRunnerPos(); dmapPoll = setInterval(pollRunnerPos, 6000); }
+
+  if (bounds.length > 1) map.fitBounds(bounds, { padding: [70, 70] });
+
+  document.getElementById('dmapLocateBtn').addEventListener('click', () => {
+    if (!navigator.geolocation) return;
+    navigator.geolocation.getCurrentPosition((pos) => map.setView([pos.coords.latitude, pos.coords.longitude], 16));
   });
 
-  const actionSlot = document.getElementById('swiftFullMapAction');
-  if (fullOpts.renderAction) actionSlot.innerHTML = fullOpts.renderAction();
-  if (fullOpts.bindAction) fullOpts.bindAction(closeFullMap);
+  overlay.querySelectorAll('.dmap-stop').forEach(row => row.addEventListener('click', (e) => {
+    if (e.target.closest('.dmap-stop-nav-btn')) return;
+    const leg = row.dataset.leg;
+    const target = leg === 'pickup' ? pickup : dropoff;
+    if (target) map.setView(target, 16);
+    overlay.querySelectorAll('.dmap-stop').forEach(r => r.classList.toggle('active', r === row));
+  }));
+
+  if (role === 'runner' && onPinConfirm) {
+    document.getElementById('dmapPinConfirmBtn').addEventListener('click', async () => {
+      const entered = document.getElementById('dmapPinInput').value.trim();
+      if (!entered) return;
+      const ok = await onPinConfirm(entered);
+      if (ok) closeDeliveryMap();
+    });
+  }
 }
 
 function disputeButton(orderId, userId, againstId) {
@@ -1538,7 +1601,7 @@ function renderRequestForm() {
           <label class="form-label">Pickup location</label>
           <input class="form-input" id="reqPickup" placeholder="e.g. Mama Put, behind Fajuyi Hall" value="${linkedListing?.pickup_label || ''}" required>
           <div id="pickupMap" class="loc-picker-map"></div>
-          <div class="loc-picker-hint">Tap the map to drop a pin, or use your current location — pinch to zoom in for doorstep accuracy.</div>
+          <div class="loc-picker-hint">Tap the map to drop a pin, or use your current location.</div>
           <div style="display:flex;gap:8px;margin-top:6px">
             <button type="button" class="locate-btn" id="pickupLocateBtn" style="flex:1">📍 Use my current location</button>
           </div>
@@ -1550,7 +1613,7 @@ function renderRequestForm() {
           <label class="form-label">Drop-off location</label>
           <input class="form-input" id="reqDropoff" placeholder="e.g. Angola Hall, Room 14" required>
           <div id="dropoffMap" class="loc-picker-map"></div>
-          <div class="loc-picker-hint">Tap the map to drop a pin, or use your current location — pinch to zoom in for doorstep accuracy.</div>
+          <div class="loc-picker-hint">Tap the map to drop a pin, or use your current location.</div>
           <div style="display:flex;gap:8px;margin-top:6px">
             <button type="button" class="locate-btn" id="dropoffLocateBtn" style="flex:1">📍 Use my current location</button>
           </div>
@@ -1598,7 +1661,7 @@ function initPicker(mapId, statusId, onSet) {
   return { map, setPin: (pin) => {
     const latlng = [pin.lat, pin.lng];
     if (marker) marker.setLatLng(latlng); else marker = L.marker(latlng).addTo(map);
-    map.setView(latlng, 18); // zoom in close so the pin can be nudged to the exact doorstep
+    map.setView(latlng, 16);
     document.getElementById(statusId).textContent = `📍 Pin set — ${pin.lat.toFixed(5)}, ${pin.lng.toFixed(5)}`;
     document.getElementById(statusId).className = 'loc-picker-status set';
   }};
@@ -1636,8 +1699,7 @@ function bindRequestForm(userId, universityId) {
     if (!navigator.geolocation) { alert('Location not available on this device.'); return; }
     navigator.geolocation.getCurrentPosition(
       (pos) => { pickupPin = { lat: pos.coords.latitude, lng: pos.coords.longitude }; pickupCtl.setPin(pickupPin); document.getElementById('reqPickupLat').value = pickupPin.lat; document.getElementById('reqPickupLng').value = pickupPin.lng; updateFeeDisplay(); },
-      () => alert('Could not get your location — check permissions.'),
-      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+      () => alert('Could not get your location — check permissions.')
     );
   });
   document.getElementById('dropoffLocateBtn').addEventListener('click', () => {
@@ -1649,8 +1711,7 @@ function bindRequestForm(userId, universityId) {
         if (!document.getElementById('reqDropoff').value) document.getElementById('reqDropoff').value = 'My current location';
         updateFeeDisplay();
       },
-      () => alert('Could not get your location — check permissions.'),
-      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+      () => alert('Could not get your location — check permissions.')
     );
   });
 
@@ -1797,10 +1858,9 @@ async function loadActiveOrder(userId) {
     ${disputeButton(data.id, userId, data.runner_id)}
   `;
   renderMap('buyerMap', data, data.runner_id, {
-    thumb: true,
-    fullMap: {
-      renderAction: () => pinRow(data) + disputeButton(data.id, userId, data.runner_id),
-    },
+    role: 'buyer',
+    activeLeg: data.status === 'picked_up' || data.status === 'delivered' ? 'dropoff' : 'pickup',
+    pollRunnerId: data.runner_id,
   });
 }
 
@@ -1906,6 +1966,28 @@ async function renderRunnerDashboard(runner) {
   loadRunnerActiveOrder(runner);
 }
 
+// Shared by the inline PIN form and the full-screen map's PIN box, so both
+// paths behave identically. Returns true on success (caller can close the map).
+async function confirmPickup(data, runner, entered) {
+  if (String(entered) !== String(data.pickup_pin)) { alert('Wrong pickup PIN.'); return false; }
+  await window.sb.from('swift_orders').update({ status: 'picked_up', updated_at: new Date().toISOString() }).eq('id', data.id);
+  loadRunnerActiveOrder(runner);
+  return true;
+}
+
+async function confirmDelivery(data, runner, entered) {
+  if (String(entered) !== String(data.delivery_pin)) { alert('Wrong delivery PIN.'); return false; }
+  await window.sb.from('swift_orders').update({ status: 'delivered', updated_at: new Date().toISOString() }).eq('id', data.id);
+  // Correct PIN = proof of delivery -> auto-release escrow to the runner (minus 5% commission), no buyer tap needed.
+  const { data: escrow } = await window.sb.from('escrow_orders').select('*').eq('swift_order_id', data.id).maybeSingle();
+  if (escrow && escrow.status === 'paid_escrow') {
+    try { await window.CPPay.swiftAutoRelease(escrow.id); }
+    catch (err) { console.error('Auto-payout failed:', err); alert('Delivery confirmed, but payout failed — this order was flagged for manual payout.'); }
+  }
+  loadRunnerActiveOrder(runner);
+  return true;
+}
+
 async function loadRunnerActiveOrder(runner) {
   const card = document.getElementById('runnerActiveOrderCard');
   if (!card) return;
@@ -1943,29 +2025,14 @@ async function loadRunnerActiveOrder(runner) {
       <div class="swift-map" id="runnerMap"></div>
       ${disputeButton(data.id, myUserId, data.buyer_id)}
     `;
-    const doPickupConfirm = async (inputId, onDone) => {
-      const entered = document.getElementById(inputId).value.trim();
-      if (String(entered) !== String(data.pickup_pin)) { alert('Wrong pickup PIN.'); return; }
-      await window.sb.from('swift_orders').update({ status: 'picked_up', updated_at: new Date().toISOString() }).eq('id', data.id);
-      onDone();
-    };
     renderMap('runnerMap', data, null, {
-      thumb: true,
-      fullMap: {
-        renderAction: () => `
-          <p style="font-size:12.5px;color:var(--text2);margin:0 0 4px">Ask for the pickup PIN and enter it here to confirm you've collected the item.</p>
-          <div class="pin-entry-row">
-            <input type="text" id="fullPickupPinInput" placeholder="4-digit PIN" maxlength="4" inputmode="numeric">
-            <button class="btn btn-primary" id="fullConfirmPickupBtn">Confirm</button>
-          </div>
-          ${disputeButton(data.id, myUserId, data.buyer_id)}
-        `,
-        bindAction: (close) => {
-          document.getElementById('fullConfirmPickupBtn').addEventListener('click', () => doPickupConfirm('fullPickupPinInput', () => { close(); loadRunnerActiveOrder(runner); }));
-        },
-      },
+      role: 'runner', activeLeg: 'pickup',
+      onPinConfirm: (pin) => confirmPickup(data, runner, pin),
     });
-    document.getElementById('confirmPickupBtn').addEventListener('click', () => doPickupConfirm('pickupPinInput', () => loadRunnerActiveOrder(runner)));
+    document.getElementById('confirmPickupBtn').addEventListener('click', () => {
+      const entered = document.getElementById('pickupPinInput').value.trim();
+      confirmPickup(data, runner, entered);
+    });
     return;
   }
 
@@ -1981,37 +2048,14 @@ async function loadRunnerActiveOrder(runner) {
       <div class="swift-map" id="runnerMap"></div>
       ${disputeButton(data.id, myUserId, data.buyer_id)}
     `;
-    const doDeliveryConfirm = async (inputId, btn, onDone) => {
-      const entered = document.getElementById(inputId).value.trim();
-      if (String(entered) !== String(data.delivery_pin)) { alert('Wrong delivery PIN.'); return; }
-      btn.disabled = true; btn.textContent = 'Releasing payment…';
-      await window.sb.from('swift_orders').update({ status: 'delivered', updated_at: new Date().toISOString() }).eq('id', data.id);
-      // Correct PIN = proof of delivery -> auto-release escrow to the runner (minus 5% commission), no buyer tap needed.
-      const { data: escrow } = await window.sb.from('escrow_orders').select('*').eq('swift_order_id', data.id).maybeSingle();
-      if (escrow && escrow.status === 'paid_escrow') {
-        try { await window.CPPay.swiftAutoRelease(escrow.id); }
-        catch (err) { console.error('Auto-payout failed:', err); alert('Delivery confirmed, but payout failed — this order was flagged for manual payout.'); }
-      }
-      onDone();
-    };
     renderMap('runnerMap', data, null, {
-      thumb: true,
-      fullMap: {
-        renderAction: () => `
-          <p style="font-size:12.5px;color:var(--text2);margin:0 0 4px">Enter the delivery PIN from the buyer once you've handed it over.</p>
-          <div class="pin-entry-row">
-            <input type="text" id="fullDeliveryPinInput" placeholder="4-digit PIN" maxlength="4" inputmode="numeric">
-            <button class="btn btn-primary" id="fullConfirmDeliveryBtn">Confirm</button>
-          </div>
-          ${disputeButton(data.id, myUserId, data.buyer_id)}
-        `,
-        bindAction: (close) => {
-          const btn = document.getElementById('fullConfirmDeliveryBtn');
-          btn.addEventListener('click', () => doDeliveryConfirm('fullDeliveryPinInput', btn, () => { close(); loadRunnerActiveOrder(runner); }));
-        },
-      },
+      role: 'runner', activeLeg: 'dropoff',
+      onPinConfirm: (pin) => confirmDelivery(data, runner, pin),
     });
-    document.getElementById('confirmDeliveryBtn').addEventListener('click', (e) => doDeliveryConfirm('deliveryPinInput', e.target, () => loadRunnerActiveOrder(runner)));
+    document.getElementById('confirmDeliveryBtn').addEventListener('click', () => {
+      const entered = document.getElementById('deliveryPinInput').value.trim();
+      confirmDelivery(data, runner, entered);
+    });
     return;
   }
 
