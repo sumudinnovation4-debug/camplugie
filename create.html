@@ -1154,7 +1154,7 @@ img { max-width: 100%; display: block; }
       <label class="form-label">Pickup location</label>
       <input class="form-input" id="pickupLabelInput" placeholder="e.g. Awo Hall gate">
       <div id="pickupMap" class="loc-picker-map"></div>
-      <div class="loc-picker-hint">Pin exactly where a Swift Runner should pick this up — makes delivery pricing accurate. Optional, but recommended.</div>
+      <div class="loc-picker-hint">Pin exactly where a Swift Runner should pick this up — pinch to zoom in and drop the pin right at the doorstep. Optional, but recommended.</div>
       <button type="button" class="locate-btn" id="pickupLocateBtn" style="margin-top:6px;width:100%">📍 Use my current location</button>
       <div class="loc-picker-status unset" id="pickupPinStatus">No pin set yet</div>
       <input type="hidden" id="pickupLatField"><input type="hidden" id="pickupLngField">
@@ -1426,7 +1426,7 @@ function initPickupMap() {
 function setPickupPin(lat, lng) {
   const latlng = [lat, lng];
   if (pickupMarker) pickupMarker.setLatLng(latlng); else pickupMarker = L.marker(latlng).addTo(pickupMap);
-  pickupMap.setView(latlng, 16);
+  pickupMap.setView(latlng, 18); // zoom in close so the pin can be nudged to the exact doorstep
   document.getElementById('pickupLatField').value = lat;
   document.getElementById('pickupLngField').value = lng;
   document.getElementById('pickupPinStatus').textContent = `📍 Pin set — ${lat.toFixed(5)}, ${lng.toFixed(5)}`;
@@ -1438,7 +1438,8 @@ document.getElementById('pickupLocateBtn').addEventListener('click', () => {
   if (!navigator.geolocation) { alert('Location not available on this device.'); return; }
   navigator.geolocation.getCurrentPosition(
     (pos) => setPickupPin(pos.coords.latitude, pos.coords.longitude),
-    () => alert('Could not get your location — check permissions.')
+    () => alert('Could not get your location — check permissions.'),
+    { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
   );
 });
 
