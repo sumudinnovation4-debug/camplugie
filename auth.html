@@ -1276,9 +1276,21 @@ window.CP.uploadMultipleToCloudinary = function (files, opts) {
 
 </script>
 <script>
-// If already logged in, skip straight to Home.
+// Sends the user back to whatever page sent them here (e.g. a guest who was
+// browsing Market/Yard/a listing and tapped a "Sign up to continue" prompt),
+// instead of always dropping them on Home. Only same-site relative .html
+// paths are honored — anything else (a full URL, javascript:, etc.) is
+// ignored — so this can't be used as an open redirect.
+function cpReturnTo() {
+  const params = new URLSearchParams(window.location.search);
+  const rt = params.get('returnTo');
+  if (rt && /^[a-zA-Z0-9_\-]+\.html(\?[^\s]*)?$/.test(rt)) return rt;
+  return 'home.html';
+}
+
+// If already logged in, skip straight to Home (or back to where they came from).
 window.sb.auth.getSession().then(({ data: { session } }) => {
-  if (session) window.location.href = 'home.html';
+  if (session) window.location.href = cpReturnTo();
 });
 
 // ---- Phone number normalization (Nigerian-first: 0801... -> +234801...) ----
@@ -1320,7 +1332,7 @@ document.getElementById('testConnectionBtn').addEventListener('click', async () 
 document.getElementById('googleBtn').addEventListener('click', async () => {
   const { error } = await window.sb.auth.signInWithOAuth({
     provider: 'google',
-    options: { redirectTo: window.location.origin + '/onboarding.html' },
+    options: { redirectTo: window.location.origin + '/onboarding.html?returnTo=' + encodeURIComponent(cpReturnTo()) },
   });
   if (error) { console.error('Google sign-in error:', error); showError(error); }
 });
@@ -1440,7 +1452,7 @@ loginForm.addEventListener('submit', async (e) => {
     if (loginMode === 'email') {
       const { error } = await window.sb.auth.signInWithPassword({ email: identifier, password });
       if (error) { showError(error); return; }
-      window.location.href = 'home.html';
+      window.location.href = cpReturnTo();
       return;
     }
 
@@ -1451,7 +1463,7 @@ loginForm.addEventListener('submit', async (e) => {
     // optional "add a phone number & password" step).
     const phone = normalizePhone(identifier);
     const synthetic = await window.sb.auth.signInWithPassword({ email: phoneToSyntheticEmail(phone), password });
-    if (!synthetic.error) { window.location.href = 'home.html'; return; }
+    if (!synthetic.error) { window.location.href = cpReturnTo(); return; }
 
     const lookupRes = await fetch('/api/lookup-email-by-phone', {
       method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ phone }),
@@ -1461,7 +1473,7 @@ loginForm.addEventListener('submit', async (e) => {
 
     const { error } = await window.sb.auth.signInWithPassword({ email: lookupData.email, password });
     if (error) { showError(error); return; }
-    window.location.href = 'home.html';
+    window.location.href = cpReturnTo();
   } catch (thrown) {
     console.error('Login threw (network-level):', thrown);
     showError(`Network error: ${thrown?.name || 'unknown'} — ${thrown?.message || 'the request never reached the server.'}`);
@@ -1524,7 +1536,7 @@ signupForm.addEventListener('submit', async (e) => {
 
   setLoading(signupForm, false, 'Create account');
   if (profileError) { console.error('Profile update error:', profileError); showError(profileError); return; }
-  window.location.href = 'onboarding.html';
+  window.location.href = 'onboarding.html?returnTo=' + encodeURIComponent(cpReturnTo());
 });
 
 </script>

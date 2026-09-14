@@ -953,14 +953,24 @@ window.CP.openOrCreateConversation = async function (meId, otherUserId, listingI
 
 </script>
 <script>
-// Include on every protected page (Home, Yard, Notifications, Profile, Create).
-// Redirects to auth.html if there's no session, loads the user's profile
-// (university is locked in from signup), and fires 'cp-ready' once done.
+// Listing detail is a browse page: guests can view a listing without an
+// account (e.g. a parent shopping for their child) so window.CP_USER stays
+// null instead of redirecting. Messaging/buying/saving are gated
+// individually via CP_requireAuth() where those buttons are wired up below.
 (async () => {
   const { data: { session } } = await window.sb.auth.getSession();
 
+  window.CP_requireAuth = () => {
+    if (window.CP_USER) return true;
+    const returnTo = window.location.pathname.split('/').pop() + window.location.search;
+    window.location.href = 'auth.html?returnTo=' + encodeURIComponent(returnTo);
+    return false;
+  };
+
   if (!session) {
-    window.location.href = 'auth.html';
+    window.CP_USER = null;
+    window.CP_PROFILE = null;
+    document.dispatchEvent(new CustomEvent('cp-ready', { detail: { user: null, profile: null } }));
     return;
   }
 
@@ -1143,7 +1153,7 @@ async function loadListing(userId, universityId) {
   });
 
   document.getElementById('sellerCardLink').addEventListener('click', () => { window.location.href = `profile-view.html?id=${seller.id}`; });
-  document.getElementById('chatWithSellerBtn')?.addEventListener('click', () => openOrCreateConversation(userId, item));
+  document.getElementById('chatWithSellerBtn')?.addEventListener('click', () => { if (window.CP_requireAuth()) openOrCreateConversation(userId, item); });
   document.getElementById('shareBtn').onclick = () => sharePage(item);
 
   let selectedColor = item.colors?.[0] || null;
@@ -1171,7 +1181,7 @@ async function loadListing(userId, universityId) {
     selectedStars = Number(b.dataset.star);
     starPicker.querySelectorAll('button').forEach(x => x.classList.toggle('active', Number(x.dataset.star) <= selectedStars));
   });
-  document.getElementById('postReviewBtn')?.addEventListener('click', () => postReview(id, userId, () => selectedStars));
+  document.getElementById('postReviewBtn')?.addEventListener('click', () => { if (window.CP_requireAuth()) postReview(id, userId, () => selectedStars); });
 
   renderBuybar(item, userId, isMine, outOfStock, isFood, getVariant);
 }
@@ -1314,9 +1324,9 @@ function renderBuybar(item, userId, isMine, outOfStock, isFood, getVariant) {
 
   document.getElementById('qtyMinusBtn').addEventListener('click', () => { currentQty = Math.max(1, currentQty - 1); updateQtyUI(item); });
   document.getElementById('qtyPlusBtn').addEventListener('click', () => { currentQty += 1; updateQtyUI(item); });
-  document.getElementById('messageSellerBtn2').addEventListener('click', () => openOrCreateConversation(userId, item));
-  document.getElementById('addToCartBtn')?.addEventListener('click', (e) => addToCart(e.target, userId, item, () => currentQty, getVariant));
-  document.getElementById('buyNowBtn')?.addEventListener('click', (e) => orderNow(e.target, userId, item, () => currentQty, isFood, getVariant));
+  document.getElementById('messageSellerBtn2').addEventListener('click', () => { if (window.CP_requireAuth()) openOrCreateConversation(userId, item); });
+  document.getElementById('addToCartBtn')?.addEventListener('click', (e) => { if (window.CP_requireAuth()) addToCart(e.target, userId, item, () => currentQty, getVariant); });
+  document.getElementById('buyNowBtn')?.addEventListener('click', (e) => { if (window.CP_requireAuth()) orderNow(e.target, userId, item, () => currentQty, isFood, getVariant); });
 }
 function updateQtyUI(item) {
   document.getElementById('qtyValue').textContent = currentQty;
@@ -1409,7 +1419,7 @@ async function openOrCreateConversation(userId, item) {
 }
 
 document.addEventListener('cp-ready', (e) => {
-  loadListing(e.detail.user.id, e.detail.profile?.university_id || null);
+  loadListing(e.detail.user?.id || null, e.detail.profile?.university_id || null);
 });
 
 </script>

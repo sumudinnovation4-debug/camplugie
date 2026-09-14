@@ -1272,14 +1272,23 @@ window.CP.uploadMultipleToCloudinary = function (files, opts) {
 
 </script>
 <script>
-// Include on every protected page (Home, Yard, Notifications, Profile, Create).
-// Redirects to auth.html if there's no session, loads the user's profile
-// (university is locked in from signup), and fires 'cp-ready' once done.
+// The Yard is a browse page: guests can view the campus feed without an
+// account (window.CP_USER stays null instead of redirecting). Posting,
+// liking, and commenting are gated individually via CP_requireAuth().
 (async () => {
   const { data: { session } } = await window.sb.auth.getSession();
 
+  window.CP_requireAuth = () => {
+    if (window.CP_USER) return true;
+    const returnTo = window.location.pathname.split('/').pop() + window.location.search;
+    window.location.href = 'auth.html?returnTo=' + encodeURIComponent(returnTo);
+    return false;
+  };
+
   if (!session) {
-    window.location.href = 'auth.html';
+    window.CP_USER = null;
+    window.CP_PROFILE = null;
+    document.dispatchEvent(new CustomEvent('cp-ready', { detail: { user: null, profile: null } }));
     return;
   }
 
@@ -1574,16 +1583,60 @@ function initMediaInteractions() {
 }
 
 document.addEventListener('cp-ready', (e) => {
-  myUserId = e.detail.user.id;
-  currentUniversityId = e.detail.profile?.university_id;
+  myUserId = e.detail.user?.id || null;
+  currentUniversityId = e.detail.profile?.university_id || null;
+
+  if (!e.detail.user) {
+    initGuestFeedBrowsing();
+    return;
+  }
+
   if (!currentUniversityId) return;
   loadFeed(currentUniversityId);
 });
 
+// Guests have no profile (so no locked-in university) — let them pick one to
+// browse The Yard, same as Market. Remembered in localStorage.
+async function initGuestFeedBrowsing() {
+  const composeFab = document.getElementById('composeFab');
+  if (composeFab) composeFab.style.display = 'none';
+
+  const banner = document.createElement('div');
+  banner.style.cssText = 'background:var(--surface2);border-radius:12px;padding:12px 14px;margin:10px 14px;font-size:13px;color:var(--text2);display:flex;flex-direction:column;gap:8px;';
+  banner.innerHTML = `
+    <div><b style="color:var(--text)">Browsing as a guest.</b> Sign up to post, like, or comment.</div>
+    <select id="guestUniPickerYard" style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:9px;font:inherit;color:var(--text)">
+      <option value="">Loading campuses…</option>
+    </select>
+    <a href="auth.html" class="btn" style="text-align:center;text-decoration:none;">Sign up free</a>
+  `;
+  document.body.insertBefore(banner, document.body.firstChild.nextSibling || document.body.firstChild);
+
+  const picker = document.getElementById('guestUniPickerYard');
+  const { data: unis, error } = await window.sb.from('universities').select('id, name').order('name');
+  if (error) { console.error('University load error:', error); return; }
+
+  picker.innerHTML = (unis || []).map(u => `<option value="${u.id}">${u.name}</option>`).join('');
+  const saved = localStorage.getItem('cp_guest_university_id');
+  const params = new URLSearchParams(window.location.search);
+  const preferred = params.get('uni') || saved || unis?.[0]?.id || '';
+  picker.value = preferred;
+  currentUniversityId = preferred || null;
+
+  picker.addEventListener('change', () => {
+    currentUniversityId = picker.value;
+    localStorage.setItem('cp_guest_university_id', picker.value);
+    loadFeed(currentUniversityId);
+  });
+
+  if (currentUniversityId) loadFeed(currentUniversityId);
+}
+
 // ---- Likes (optimistic UI + real upsert/delete) ----
 document.addEventListener('click', async (e) => {
   const btn = e.target.closest('.zap-btn');
-  if (!btn || !myUserId) return;
+  if (!btn) return;
+  if (!window.CP_requireAuth()) return;
   const postId = btn.closest('.post-card')?.dataset.id;
   if (!postId) return;
 
@@ -1607,7 +1660,7 @@ document.addEventListener('click', async (e) => {
 // ================= Compose =================
 let composeFiles = []; // { file, type: 'image'|'video' }
 
-function openCompose() { document.getElementById('composeOverlay').style.display = 'flex'; }
+function openCompose() { if (!window.CP_requireAuth()) return; document.getElementById('composeOverlay').style.display = 'flex'; }
 function closeCompose() {
   document.getElementById('composeOverlay').style.display = 'none';
   document.getElementById('composeText').value = '';
@@ -1658,6 +1711,7 @@ function renderComposeMedia() {
 }
 
 document.getElementById('composeSubmitBtn').addEventListener('click', async () => {
+  if (!window.CP_requireAuth()) return;
   if (!myUserId || !currentUniversityId) return;
   const body = document.getElementById('composeText').value.trim();
   const submitBtn = document.getElementById('composeSubmitBtn');
@@ -1769,6 +1823,7 @@ document.getElementById('commentSendBtn').addEventListener('click', sendComment)
 document.getElementById('commentInput').addEventListener('keydown', (e) => { if (e.key === 'Enter') sendComment(); });
 
 async function sendComment() {
+  if (!window.CP_requireAuth()) return;
   const input = document.getElementById('commentInput');
   const content = input.value.trim();
   if (!content || !activePostId || !myUserId) return;

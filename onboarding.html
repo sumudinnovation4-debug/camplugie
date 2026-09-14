@@ -1132,7 +1132,13 @@ document.getElementById('step3Continue').addEventListener('click', async () => {
 
 // ---- Step 4: matric number / school email (optional, self-reported) ----
 async function finishOnboarding() {
-  window.location.href = 'home.html';
+  // Send them back to whatever page they were trying to reach when they
+  // signed up (e.g. a listing a guest wanted to buy or message about),
+  // instead of always dropping new users on Home.
+  const params = new URLSearchParams(window.location.search);
+  const rt = params.get('returnTo');
+  const dest = (rt && /^[a-zA-Z0-9_\-]+\.html(\?[^\s]*)?$/.test(rt)) ? rt : 'home.html';
+  window.location.href = dest;
 }
 document.getElementById('step4Skip').addEventListener('click', finishOnboarding);
 document.getElementById('step4Finish').addEventListener('click', async () => {
