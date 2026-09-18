@@ -1276,8 +1276,6 @@ window.CP.uploadMultipleToCloudinary = function (files, opts) {
 // account (window.CP_USER stays null instead of redirecting). Posting,
 // liking, and commenting are gated individually via CP_requireAuth().
 (async () => {
-  const { data: { session } } = await window.sb.auth.getSession();
-
   window.CP_requireAuth = () => {
     if (window.CP_USER) return true;
     const returnTo = window.location.pathname.split('/').pop() + window.location.search;
@@ -1285,10 +1283,27 @@ window.CP.uploadMultipleToCloudinary = function (files, opts) {
     return false;
   };
 
+  let session;
+  try {
+    ({ data: { session } } = await window.sb.auth.getSession());
+  } catch (err) {
+    console.error('getSession() failed — continuing as guest:', err);
+    window.CP_USER = null;
+    window.CP_PROFILE = null;
+    window.CP_READY_DETAIL = { user: null, profile: null };
+    document.dispatchEvent(new CustomEvent('cp-ready', { detail: window.CP_READY_DETAIL }));
+    return;
+  }
+
   if (!session) {
     window.CP_USER = null;
     window.CP_PROFILE = null;
-    document.dispatchEvent(new CustomEvent('cp-ready', { detail: { user: null, profile: null } }));
+    // Guests resolve after a single await, which can finish before a later
+    // script on the page registers its 'cp-ready' listener — caching the
+    // detail lets onCpReady() catch up instead of waiting forever (looks
+    // exactly like a page stuck on "Loading…" otherwise).
+    window.CP_READY_DETAIL = { user: null, profile: null };
+    document.dispatchEvent(new CustomEvent('cp-ready', { detail: window.CP_READY_DETAIL }));
     return;
   }
 
@@ -1323,8 +1338,16 @@ window.CP.uploadMultipleToCloudinary = function (files, opts) {
   const uniName = profile?.universities?.name || profile?.institution_name || 'Your Campus';
   document.querySelectorAll('[data-uni-name]').forEach(el => { el.textContent = uniName; });
 
-  document.dispatchEvent(new CustomEvent('cp-ready', { detail: { user: session.user, profile } }));
+  document.dispatchEvent(new CustomEvent('cp-ready', { detail: (window.CP_READY_DETAIL = { user: session.user, profile }) }));
 })();
+
+// Runs `handler` once the auth guard above has resolved — even if that
+// already happened before this line ran. Always use this instead of
+// document.addEventListener('cp-ready', ...) directly.
+window.onCpReady = (handler) => {
+  if (window.CP_READY_DETAIL) { handler({ detail: window.CP_READY_DETAIL }); return; }
+  document.addEventListener('cp-ready', handler, { once: true });
+};
 
 // Sign out helper, wired up from Profile page
 window.CP_signOut = async () => {
@@ -1470,7 +1493,17 @@ function renderPost(p, likedIds) {
 async function loadFeed(universityId) {
   const feed = document.getElementById('feed');
   feed.innerHTML = `<div style="text-align:center;padding:30px;color:var(--text3);font-size:13px;">Loading feed…</div>`;
+  try {
+    await loadFeedInner(universityId, feed);
+  } catch (err) {
+    // Anything that throws (rather than returning an { error }) used to leave
+    // the feed showing "Loading feed…" forever. Always land on a real message.
+    console.error('Feed load threw:', err);
+    feed.innerHTML = `<div style="text-align:center;padding:30px;color:var(--text3);font-size:13px;">Couldn't load the feed.<br><span style="font-size:11px;opacity:.7">${err.message || err}</span></div>`;
+  }
+}
 
+async function loadFeedInner(universityId, feed) {
   let { data, error } = await window.sb
     .from('posts')
     .select(window.CP.POST_SELECT)
@@ -1582,7 +1615,7 @@ function initMediaInteractions() {
   });
 }
 
-document.addEventListener('cp-ready', (e) => {
+window.onCpReady((e) => {
   myUserId = e.detail.user?.id || null;
   currentUniversityId = e.detail.profile?.university_id || null;
 
@@ -1608,28 +1641,51 @@ async function initGuestFeedBrowsing() {
     <select id="guestUniPickerYard" style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:9px;font:inherit;color:var(--text)">
       <option value="">Loading campuses…</option>
     </select>
-    <a href="auth.html" class="btn" style="text-align:center;text-decoration:none;">Sign up free</a>
+    <a href="auth.html?view=signup" class="btn" style="text-align:center;text-decoration:none;">Sign up free</a>
   `;
   document.body.insertBefore(banner, document.body.firstChild.nextSibling || document.body.firstChild);
 
   const picker = document.getElementById('guestUniPickerYard');
-  const { data: unis, error } = await window.sb.from('universities').select('id, name').order('name');
-  if (error) { console.error('University load error:', error); return; }
+  const feed = document.getElementById('feed');
 
-  picker.innerHTML = (unis || []).map(u => `<option value="${u.id}">${u.name}</option>`).join('');
-  const saved = localStorage.getItem('cp_guest_university_id');
+  // Prefer the school already chosen on browse.html (?uni=... or localStorage)
+  // and load the feed from it immediately, so the feed never waits on the
+  // universities query just to fill in the picker's labels.
   const params = new URLSearchParams(window.location.search);
-  const preferred = params.get('uni') || saved || unis?.[0]?.id || '';
-  picker.value = preferred;
-  currentUniversityId = preferred || null;
+  const preferred = params.get('uni') || localStorage.getItem('cp_guest_university_id') || '';
+  if (preferred) {
+    currentUniversityId = preferred;
+    loadFeed(preferred);
+  }
+
+  let unis = null;
+  try {
+    const res = await window.sb.from('universities').select('id, name').order('name');
+    if (res.error) throw res.error;
+    unis = res.data || [];
+  } catch (err) {
+    console.error('University load error:', err);
+    picker.remove();
+    if (!preferred) feed.innerHTML = `<div style="text-align:center;padding:30px;color:var(--text3);font-size:13px;">Couldn't load campuses. Please refresh, or pick a school again.</div>`;
+    return;
+  }
+
+  picker.innerHTML = unis.map(u => `<option value="${u.id}">${u.name}</option>`).join('');
+  const chosen = (preferred && unis.some(u => u.id === preferred)) ? preferred : (unis[0]?.id || '');
+  picker.value = chosen;
+
+  if (chosen && chosen !== preferred) {
+    currentUniversityId = chosen;
+    loadFeed(chosen);
+  } else {
+    currentUniversityId = chosen || null;
+  }
 
   picker.addEventListener('change', () => {
     currentUniversityId = picker.value;
     localStorage.setItem('cp_guest_university_id', picker.value);
     loadFeed(currentUniversityId);
   });
-
-  if (currentUniversityId) loadFeed(currentUniversityId);
 }
 
 // ---- Likes (optimistic UI + real upsert/delete) ----
