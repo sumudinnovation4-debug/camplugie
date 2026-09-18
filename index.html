@@ -582,13 +582,24 @@ img { max-width: 100%; display: block; }
 .landing-hero img { width: 168px; margin: 0 auto; }
 
 .landing-headline {
-  font-size: 27px; font-weight: 800; color: #fff; text-align: center;
-  line-height: 1.25; margin-top: 36px; position: relative; z-index: 1;
+  font-size: 31px; font-weight: 900; color: #fff; text-align: center;
+  line-height: 1.2; letter-spacing: -0.02em; margin-top: 36px; position: relative; z-index: 1;
 }
 .landing-sub {
   font-size: 14.5px; color: rgba(255,255,255,0.82); text-align: center; line-height: 1.6;
   margin-top: 14px; position: relative; z-index: 1;
 }
+.landing-cta-row {
+  display: flex; gap: 10px; margin-top: 26px; position: relative; z-index: 1;
+}
+.landing-cta {
+  flex: 1; text-align: center; border-radius: 999px; padding: 15px 8px;
+  font-size: 14.5px; font-weight: 800; cursor: pointer; border: none;
+  text-decoration: none; white-space: nowrap;
+}
+.landing-cta-browse { background: rgba(255,255,255,0.14); color: #fff; border: 1.5px solid rgba(255,255,255,0.35); }
+.landing-cta-signup { background: #fff; color: var(--brand-dark); box-shadow: 0 10px 26px rgba(0,0,0,0.2); }
+.landing-cta-signin { background: transparent; color: #fff; border: 1.5px solid rgba(255,255,255,0.35); }
 .landing-google-lg {
   display: flex; align-items: center; justify-content: center; gap: 10px;
   width: 100%; background: #fff; color: var(--brand-dark);
@@ -723,12 +734,6 @@ img { max-width: 100%; display: block; }
 
   <nav class="landing-nav">
     <div class="landing-pill">⚡ Campus marketplace</div>
-    <a class="landing-login" href="market.html">Browse without signing up</a>
-    <a class="landing-login" href="auth.html">Log in</a>
-    <button class="landing-google-sm" id="googleSmBtn">
-      <svg width="16" height="16" viewBox="0 0 48 48"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.8 32.7 29.3 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.1 8 3l5.7-5.7C34.6 6 29.6 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.7-.4-3.5z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.6 15.6 18.9 13 24 13c3.1 0 5.8 1.1 8 3l5.7-5.7C34.6 6 29.6 4 24 4c-7.3 0-13.6 4.1-16.7 10.1z"/><path fill="#4CAF50" d="M24 44c5.4 0 10.4-2 14.1-5.4l-6.5-5.5C29.6 34.8 26.9 36 24 36c-5.3 0-9.7-3.3-11.3-7.9l-6.6 5.1C9.1 39.6 15.9 44 24 44z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.7 2.1-2.1 3.9-3.9 5.2l6.5 5.5C39.8 40.3 44 33.7 44 24c0-1.3-.1-2.7-.4-3.5z"/></svg>
-      Continue with Google
-    </button>
   </nav>
 
   <div class="landing-hero">
@@ -738,10 +743,11 @@ img { max-width: 100%; display: block; }
   <h1 class="landing-headline">Everything your campus is<br>buying, selling &amp; gisting.</h1>
   <p class="landing-sub">Camplugie is the marketplace built for your school. Find deals from students next door, message the seller, and get it delivered — all in one app.</p>
 
-  <button class="landing-google-lg" id="googleLgBtn">
-    <svg width="18" height="18" viewBox="0 0 48 48"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.8 32.7 29.3 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.1 8 3l5.7-5.7C34.6 6 29.6 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.7-.4-3.5z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.6 15.6 18.9 13 24 13c3.1 0 5.8 1.1 8 3l5.7-5.7C34.6 6 29.6 4 24 4c-7.3 0-13.6 4.1-16.7 10.1z"/><path fill="#4CAF50" d="M24 44c5.4 0 10.4-2 14.1-5.4l-6.5-5.5C29.6 34.8 26.9 36 24 36c-5.3 0-9.7-3.3-11.3-7.9l-6.6 5.1C9.1 39.6 15.9 44 24 44z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.7 2.1-2.1 3.9-3.9 5.2l6.5 5.5C39.8 40.3 44 33.7 44 24c0-1.3-.1-2.7-.4-3.5z"/></svg>
-    Continue with Google
-  </button>
+  <div class="landing-cta-row">
+    <a class="landing-cta landing-cta-browse" href="browse.html">Browse</a>
+    <a class="landing-cta landing-cta-signup" href="auth.html?view=signup">Sign up</a>
+    <a class="landing-cta landing-cta-signin" href="auth.html?view=login">Sign in</a>
+  </div>
 
   <div class="landing-stats">
     <div class="landing-stat"><b>Your</b><span>campus</span></div>
@@ -807,17 +813,6 @@ window.CP.initials = (name) => (name || 'U').slice(0, 2).toUpperCase();
 window.sb.auth.getSession().then(({ data: { session } }) => {
   if (session) window.location.href = 'home.html';
 });
-
-async function continueWithGoogle() {
-  const { error } = await window.sb.auth.signInWithOAuth({
-    provider: 'google',
-    options: { redirectTo: window.location.origin + '/onboarding.html' },
-  });
-  if (error) { console.error('Google sign-in error:', error); alert('Could not start Google sign-in — please try again.'); }
-}
-
-document.getElementById('googleSmBtn').addEventListener('click', continueWithGoogle);
-document.getElementById('googleLgBtn').addEventListener('click', continueWithGoogle);
 
 </script>
 </body>
