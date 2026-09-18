@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Camplugie — Listing</title>
+<title>Camplugie — Market</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Clash+Display:wght@500;600;700&family=Satoshi:wght@400;500;700;900&display=swap');
 
@@ -275,6 +275,16 @@ img { max-width: 100%; display: block; }
   cursor: pointer;
 }
 .store-like svg { width: 15px; height: 15px; }
+.store-delete {
+  position: absolute; top: 8px; right: 44px;
+  width: 30px; height: 30px; border-radius: 50%;
+  background: rgba(9,7,20,.55);
+  color: #fff;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+}
+.store-delete svg { width: 14px; height: 14px; }
+.store-delete:active { background: #DC2626; }
 .store-card-body { padding: 10px 11px 12px; }
 .store-price { font-weight: 800; font-size: 16px; color: var(--text); }
 .store-title {
@@ -287,6 +297,16 @@ img { max-width: 100%; display: block; }
   background: linear-gradient(135deg, var(--brand), var(--brand-dark));
 }
 .store-seller-name { font-size: 11px; color: var(--text3); font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.store-badge { position: absolute; font-size: 9.5px; font-weight: 800; padding: 3px 7px; border-radius: 6px; color: #fff; letter-spacing: .3px; }
+.store-badge.sold { top: 8px; left: 8px; background: rgba(9,7,20,.75); }
+.store-badge.new { top: 8px; left: 8px; background: #16A34A; }
+.store-cat-chip {
+  position: absolute; bottom: 8px; left: 8px;
+  background: rgba(9,7,20,.55); color: #fff; font-size: 9.5px; font-weight: 700;
+  padding: 3px 8px; border-radius: 20px; backdrop-filter: blur(4px); text-transform: capitalize;
+}
+.store-rating { font-size: 11px; font-weight: 700; color: #F59E0B; flex-shrink: 0; }
+.store-verified { color: var(--brand); font-weight: 800; }
 
 /* ===== Bottom nav ===== */
 .cp-bottom-nav {
@@ -667,6 +687,16 @@ img { max-width: 100%; display: block; }
 .market-tab.active { background: var(--brand); color: #fff; border-color: var(--brand); }
 .market-sort-row { display: flex; align-items: center; justify-content: space-between; padding: 10px 16px 2px; }
 .market-sort-row select { background: var(--surface2); border: 1px solid var(--border); color: var(--text2); border-radius: 10px; padding: 8px 10px; font: inherit; font-size: 12.5px; }
+.cp-hero-scroll { display: flex; gap: 10px; overflow-x: auto; padding: 4px 16px 14px; scroll-snap-type: x mandatory; }
+.cp-hero-scroll::-webkit-scrollbar { display: none; }
+.cp-hero-card {
+  flex: 0 0 88%; scroll-snap-align: start; border-radius: 18px; padding: 18px 20px;
+  color: #fff; text-decoration: none; position: relative; overflow: hidden; min-height: 92px;
+  display: flex; flex-direction: column; justify-content: center;
+}
+.cp-hero-card h2 { font-size: 16.5px; margin: 0 0 4px; }
+.cp-hero-card p { font-size: 12px; opacity: .9; margin: 0 0 10px; }
+.cp-hero-card .cp-hero-cta { font-size: 12.5px; font-weight: 800; }
 .market-count { font-size: 12px; color: var(--text3); }
 
 /* ===== Swift ===== */
@@ -715,130 +745,26 @@ img { max-width: 100%; display: block; }
 .pin-entry-row input { flex: 1; background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; padding: 11px; font: inherit; font-size: 16px; letter-spacing: .2em; text-align: center; color: var(--text); }
 .pin-entry-row button { flex-shrink: 0; }
 
-/* ===== Listing detail (product page) ===== */
-.pdp-breadcrumb {
-  font-size: 12px; color: var(--text3); font-weight: 600;
-  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-}
-.pdp-breadcrumb b { color: var(--text2); }
-
-.pdp-carousel-main {
+/* ===== Listing detail ===== */
+.listing-media {
   width: 100%; aspect-ratio: 1/1; display: flex; align-items: center; justify-content: center;
-  font-size: 90px; position: relative; background: var(--surface2);
+  font-size: 90px; position: relative;
 }
-.pdp-carousel-main img { width: 100%; height: 100%; object-fit: cover; }
-.pdp-thumbs { display: flex; gap: 8px; padding: 10px 16px; overflow-x: auto; scrollbar-width: none; }
-.pdp-thumbs::-webkit-scrollbar { display: none; }
-.pdp-thumb {
-  flex-shrink: 0; width: 60px; height: 60px; border-radius: 10px; overflow: hidden;
-  border: 2px solid var(--border); cursor: pointer; background: var(--surface2);
-}
-.pdp-thumb img { width: 100%; height: 100%; object-fit: cover; }
-.pdp-thumb.active { border-color: var(--accent); }
-
-.pdp-rating-row { display: flex; align-items: center; gap: 8px; margin-top: 6px; }
-.pdp-stars { color: var(--accent); font-size: 13px; letter-spacing: 1px; }
-.pdp-rating-count { font-size: 12.5px; color: var(--text3); }
-.pdp-badge-new {
-  font-size: 10.5px; font-weight: 700; color: var(--money); background: rgba(52,211,153,0.14);
-  border-radius: 999px; padding: 3px 9px;
-}
-
-.pdp-stock-row { display: flex; align-items: center; gap: 10px; margin-top: 14px; flex-wrap: wrap; }
-.pdp-stock-pill {
-  font-size: 11.5px; font-weight: 700; border-radius: 999px; padding: 4px 11px;
-  background: rgba(52,211,153,0.14); color: var(--money);
-}
-.pdp-stock-pill.out { background: rgba(251,113,133,0.14); color: var(--danger); }
-.pdp-stock-note { font-size: 12.5px; color: var(--text3); }
-
-.pdp-variant-group { margin-top: 16px; }
-.pdp-variant-group label { font-size: 12.5px; font-weight: 700; color: var(--text2); display: block; margin-bottom: 8px; }
-.pdp-variant-pills { display: flex; gap: 8px; flex-wrap: wrap; }
-.pdp-variant-pill {
-  font: inherit; font-size: 12.5px; font-weight: 700; color: var(--text2);
-  background: var(--surface2); border: 1px solid var(--border); border-radius: 999px;
-  padding: 8px 16px; cursor: pointer;
-}
-.pdp-variant-pill.active { background: var(--accent); color: #1A1200; border-color: var(--accent); }
-
-.pdp-seller-card {
+.listing-body { padding: 18px 16px; }
+.listing-price { font-size: 26px; font-weight: 800; }
+.listing-title { font-size: 17px; font-weight: 700; margin-top: 6px; }
+.listing-badges { display: flex; gap: 6px; margin-top: 8px; }
+.listing-badge { font-size: 11px; font-weight: 700; background: var(--surface2); border: 1px solid var(--border); border-radius: 999px; padding: 4px 10px; color: var(--text2); }
+.listing-desc { font-size: 13.5px; color: var(--text2); line-height: 1.6; margin-top: 14px; }
+.listing-seller-row {
   display: flex; align-items: center; gap: 10px; margin-top: 18px; padding: 12px;
   background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm);
-  cursor: pointer;
 }
-.pdp-seller-card .info { flex: 1; min-width: 0; }
-.pdp-seller-card b { font-size: 13.5px; display: flex; align-items: center; gap: 5px; }
-.pdp-seller-card span { font-size: 11.5px; color: var(--text3); }
-.pdp-seller-card .chev { color: var(--text3); flex-shrink: 0; }
-.pdp-seller-card .chev svg { width: 18px; height: 18px; }
-.pdp-chat-btn {
-  width: 100%; margin-top: 8px; background: var(--surface2); border: 1px solid var(--border);
-  color: var(--text); border-radius: var(--radius-sm); padding: 12px; font: inherit; font-size: 13.5px;
-  font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px;
-}
-
-.pdp-delivery-info { margin-top: 16px; display: flex; flex-direction: column; gap: 10px; }
-.pdp-delivery-info div { display: flex; align-items: center; gap: 10px; font-size: 12.5px; color: var(--text2); }
-.pdp-delivery-info span.ic { font-size: 15px; flex-shrink: 0; }
-
-.pdp-section { margin-top: 26px; }
-.pdp-section h3 { font-size: 15.5px; font-weight: 700; margin-bottom: 10px; }
-
-.review-summary { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
-.review-summary .avg { font-size: 22px; font-weight: 800; }
-.review-card {
-  background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm);
-  padding: 12px 13px; margin-bottom: 10px;
-}
-.review-card .top { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
-.review-card .name { font-size: 13px; font-weight: 700; }
-.review-card .stars { color: var(--accent); font-size: 12px; }
-.review-card .comment { font-size: 12.5px; color: var(--text2); margin-top: 6px; line-height: 1.5; }
-.review-card .time { font-size: 11px; color: var(--text3); margin-top: 4px; }
-.review-empty { text-align: center; padding: 20px; color: var(--text3); font-size: 12.5px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm); }
-
-.review-form { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 14px; margin-top: 12px; }
-.review-form label { font-size: 12.5px; font-weight: 700; color: var(--text2); display: block; margin-bottom: 8px; }
-.review-star-picker { display: flex; gap: 4px; margin-bottom: 14px; }
-.review-star-picker button { background: none; border: none; font-size: 24px; color: var(--border); cursor: pointer; padding: 0; }
-.review-star-picker button.active { color: var(--accent); }
-.review-form textarea {
-  width: 100%; background: var(--surface2); border: 1px solid var(--border); border-radius: var(--radius-sm);
-  padding: 12px; font: inherit; font-size: 13px; color: var(--text); outline: none; resize: vertical; min-height: 70px;
-}
-.review-form button.submit {
-  width: 100%; margin-top: 10px; background: var(--accent); color: #1A1200; border: none;
-  border-radius: var(--radius-sm); padding: 12px; font: inherit; font-size: 13.5px; font-weight: 800; cursor: pointer;
-}
-
-.pdp-carousel-row { display: flex; gap: 12px; overflow-x: auto; scrollbar-width: none; padding: 4px 16px 6px; }
-.pdp-carousel-row::-webkit-scrollbar { display: none; }
-.pdp-carousel-row .store-card { flex-shrink: 0; width: 148px; }
-
-/* ===== Sticky buy bar ===== */
-.pdp-buybar {
-  position: fixed; left: 50%; transform: translateX(-50%); bottom: 0;
-  width: 100%; max-width: 480px;
-  background: rgba(18, 16, 29, 0.95); backdrop-filter: blur(16px);
-  border-top: 1px solid var(--border);
-  padding: 12px 16px calc(12px + var(--safe-bottom));
-  z-index: 30;
-}
-.pdp-buybar-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
-.pdp-buybar-total { font-size: 12px; color: var(--text3); }
-.pdp-buybar-total b { display: block; font-size: 17px; color: var(--text); font-weight: 800; }
-.pdp-qty-stepper { display: flex; align-items: center; gap: 10px; }
-.pdp-qty-stepper button {
-  width: 30px; height: 30px; border-radius: 8px; border: 1px solid var(--border);
-  background: var(--surface2); color: var(--text); font-size: 15px; cursor: pointer;
-}
-.pdp-qty-stepper span { font-size: 14px; font-weight: 700; min-width: 18px; text-align: center; }
-.pdp-buybar-actions { display: flex; gap: 8px; }
-.pdp-buybar-actions .icon-btn { flex-shrink: 0; }
-.pdp-buybar-actions .btn { flex: 1; padding: 12px; font-size: 13.5px; }
-
-@media (min-width: 481px) { .pdp-buybar { border-radius: 20px 20px 0 0; } }
+.listing-seller-row .info { flex: 1; }
+.listing-seller-row b { font-size: 13.5px; display: block; }
+.listing-seller-row span { font-size: 11.5px; color: var(--text3); }
+.listing-actions { display: flex; gap: 10px; margin-top: 18px; }
+.listing-actions .btn { flex: 1; padding: 13px; font-size: 14px; }
 
 /* ===== Swift map + dispute ===== */
 .swift-map { width: 100%; height: 180px; border-radius: var(--radius-sm); overflow: hidden; margin-top: 12px; background: var(--surface2); }
@@ -877,30 +803,94 @@ img { max-width: 100%; display: block; }
 </head>
 <body>
 
-<div class="app-shell" style="padding-bottom:120px">
+<div class="app-shell">
 
   <header class="cp-page-header">
-    <a class="icon-btn" href="market.html" aria-label="Back">
+    <a class="icon-btn" id="marketBackBtn" href="home.html" aria-label="Back">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
     </a>
-    <div class="pdp-breadcrumb" id="pdpBreadcrumb">Listing</div>
-    <button class="icon-btn" id="shareBtn" aria-label="Share">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
-    </button>
+    <h1>Market</h1>
+    <span style="width:38px"></span>
   </header>
 
-  <div id="listingContent">
-    <div style="text-align:center;padding:40px;color:var(--text3);font-size:13px;">Loading…</div>
+  <div class="cp-search-wrap">
+    <div class="cp-search">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input type="text" id="marketSearch" placeholder="Search everything for sale…">
+    </div>
   </div>
+
+  <div class="cp-hero-scroll">
+    <a class="cp-hero-card" href="market.html?tab=all&cat=food" style="background:linear-gradient(135deg,#EA580C,#FBBF24)">
+      <h2>🍱 Hungry?</h2>
+      <p>Order food from campus vendors — no chat needed, just pay and it's on the way.</p>
+      <span class="cp-hero-cta">Order now →</span>
+    </a>
+    <a class="cp-hero-card" href="swift.html" style="background:linear-gradient(135deg,#2563EB,#60A5FA)">
+      <h2>🛵 Need a delivery?</h2>
+      <p>Get a Swift runner to pick up and drop off anywhere on campus.</p>
+      <span class="cp-hero-cta">Request Swift →</span>
+    </a>
+    <a class="cp-hero-card" href="create.html" style="background:linear-gradient(135deg,#7C3AED,#A78BFA)">
+      <h2>💰 Got something to sell?</h2>
+      <p>List it in minutes and reach buyers on your campus.</p>
+      <span class="cp-hero-cta">Start selling →</span>
+    </a>
+  </div>
+
+  <div class="cp-chiprow" id="categoryRow">
+    <button class="cp-chip active" data-cat="all">🛍️ All</button>
+    <button class="cp-chip" data-cat="textbooks">📚 Textbooks</button>
+    <button class="cp-chip" data-cat="electronics">💻 Electronics</button>
+    <button class="cp-chip" data-cat="fashion">👕 Fashion</button>
+    <button class="cp-chip" data-cat="services">🛠 Services</button>
+    <button class="cp-chip" data-cat="food">🍱 Food</button>
+  </div>
+
+  <div class="market-tabs" id="marketTabs">
+    <button class="market-tab active" data-tab="all">All</button>
+    <button class="market-tab" data-tab="products">Products</button>
+    <button class="market-tab" data-tab="services">Services</button>
+    <button class="market-tab" data-tab="saved">Saved</button>
+    <button class="market-tab" data-tab="mine">Mine</button>
+  </div>
+
+  <div class="market-sort-row">
+    <span class="market-count" id="marketCount">Loading…</span>
+    <select id="marketSort">
+      <option value="new">Newest first</option>
+      <option value="price_asc">Price: low to high</option>
+      <option value="price_desc">Price: high to low</option>
+    </select>
+  </div>
+
+  <div class="cp-store-grid" id="marketGrid"></div>
 
 </div>
 
-<div class="pdp-buybar" id="pdpBuybar" style="display:none"></div>
+<nav class="cp-bottom-nav">
+  <a class="cp-nav-item active" href="home.html">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+    Home
+  </a>
+  <a class="cp-nav-item" href="yard.html">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
+    Yard
+  </a>
+  <a class="cp-nav-fab" href="create.html" aria-label="Sell">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+  </a>
+  <a class="cp-nav-item" href="notifications.html">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+    Notifications
+  </a>
+  <a class="cp-nav-item" href="profile.html">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+    Profile
+  </a>
+</nav>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
-<script src="https://js.paystack.co/v1/inline.js"></script>
-<script src="config.js?v=2"></script>
-<script src="payments.js?v=2"></script>
 <script>
 // Shared Supabase client — loaded on every page after the Supabase UMD script.
 // Uses the same project as the React app (public anon key, safe to expose client-side; RLS enforces access).
@@ -927,36 +917,13 @@ window.CP.timeAgo = (iso) => {
 
 window.CP.initials = (name) => (name || 'U').slice(0, 2).toUpperCase();
 
-/**
- * Opens (or creates) a direct conversation between the current user and
- * otherUserId, checking both buyer/seller directions so two people never end
- * up with duplicate threads. Pass listingId to tie it to a specific item.
- * Returns the conversation id.
- */
-window.CP.openOrCreateConversation = async function (meId, otherUserId, listingId = null) {
-  if (!meId || !otherUserId || meId === otherUserId) return null;
-
-  let existingQuery = window.sb.from('conversations').select('id')
-    .or(`and(buyer_id.eq.${meId},seller_id.eq.${otherUserId}),and(buyer_id.eq.${otherUserId},seller_id.eq.${meId})`);
-  existingQuery = listingId ? existingQuery.eq('listing_id', listingId) : existingQuery.is('listing_id', null);
-
-  const { data: existing } = await existingQuery.maybeSingle();
-  if (existing) return existing.id;
-
-  const { data: created, error } = await window.sb.from('conversations')
-    .insert({ buyer_id: meId, seller_id: otherUserId, listing_id: listingId })
-    .select('id').single();
-
-  if (error) { console.error('Conversation create error:', error); return null; }
-  return created.id;
-};
-
 </script>
 <script>
-// Listing detail is a browse page: guests can view a listing without an
-// account (e.g. a parent shopping for their child) so window.CP_USER stays
-// null instead of redirecting. Messaging/buying/saving are gated
-// individually via CP_requireAuth() where those buttons are wired up below.
+// Redirects to auth.html if there's no session on protected pages. Market is
+// a browse page: guests are let through (window.CP_USER stays null) so
+// non-students — e.g. a parent shopping for their child — can view listings
+// without an account. Actions that need an account (chat seller, buy, save,
+// sell) are gated individually further down via CP_requireAuth().
 (async () => {
   window.CP_requireAuth = () => {
     if (window.CP_USER) return true;
@@ -969,6 +936,8 @@ window.CP.openOrCreateConversation = async function (meId, otherUserId, listingI
   try {
     ({ data: { session } } = await window.sb.auth.getSession());
   } catch (err) {
+    // If even checking for a session blows up (bad network, Supabase hiccup),
+    // fail open as a guest rather than leaving the page stuck loading forever.
     console.error('getSession() failed — continuing as guest:', err);
     window.CP_USER = null;
     window.CP_PROFILE = null;
@@ -980,10 +949,13 @@ window.CP.openOrCreateConversation = async function (meId, otherUserId, listingI
   if (!session) {
     window.CP_USER = null;
     window.CP_PROFILE = null;
-    // Guests resolve after a single await, which can finish before a later
-    // script on the page registers its 'cp-ready' listener — caching the
-    // detail lets onCpReady() catch up instead of waiting forever (looks
-    // exactly like a page stuck on "Loading…" otherwise).
+    // Guests resolve after a single await (just getSession()), which can
+    // finish fast enough that this event fires before the script further
+    // down the page has even registered its listener — the listener would
+    // then wait forever for an event that already happened, which looks
+    // exactly like a page stuck on "Loading…". window.CP_READY_DETAIL below
+    // is a cache of the last dispatch so a late listener (via onCpReady) can
+    // just check it instead of only listening for the live event.
     window.CP_READY_DETAIL = { user: null, profile: null };
     document.dispatchEvent(new CustomEvent('cp-ready', { detail: window.CP_READY_DETAIL }));
     return;
@@ -1017,7 +989,8 @@ window.CP.openOrCreateConversation = async function (meId, otherUserId, listingI
 })();
 
 // Runs `handler` once the auth guard above has resolved — even if that
-// already happened before this line ran. Always use this instead of
+// already happened before this line ran (see the race-condition note next
+// to CP_READY_DETAIL). Always use this instead of
 // document.addEventListener('cp-ready', ...) directly.
 window.onCpReady = (handler) => {
   if (window.CP_READY_DETAIL) { handler({ detail: window.CP_READY_DETAIL }); return; }
@@ -1032,417 +1005,271 @@ window.CP_signOut = async () => {
 
 </script>
 <script>
+const TILE_COLORS = [
+  'linear-gradient(135deg,#7C3AED,#A78BFA)',
+  'linear-gradient(135deg,#0D9488,#34D399)',
+  'linear-gradient(135deg,#EA580C,#FBBF24)',
+  'linear-gradient(135deg,#DB2777,#F472B6)',
+  'linear-gradient(135deg,#2563EB,#60A5FA)',
+  'linear-gradient(135deg,#65A30D,#A3E635)',
+];
 const CATEGORY_EMOJI = { textbooks: '📚', electronics: '💻', fashion: '👕', services: '🛠', food: '🍱', more: '🛍' };
-const CATEGORY_LABEL = { textbooks: 'Textbooks', electronics: 'Electronics', fashion: 'Fashion', services: 'Services', food: 'Food', more: 'More' };
-const TILE_BG = 'linear-gradient(135deg,#7C3AED,#A78BFA)';
 
-function getListingId() {
-  return new URLSearchParams(window.location.search).get('id');
-}
+let state = { tab: 'all', sort: 'new', search: '', category: 'all', universityId: null, userId: null };
 
-let currentQty = 1;
-
-async function loadListing(userId, universityId) {
-  const content = document.getElementById('listingContent');
-  const id = getListingId();
-  if (!id) { content.innerHTML = `<div style="text-align:center;padding:40px;color:var(--text3);font-size:13px;">No listing specified.</div>`; return; }
-
-  const { data: item, error } = await window.sb.from('listings').select(window.CP.LISTING_SELECT).eq('id', id).single();
-  if (error || !item) { content.innerHTML = `<div style="text-align:center;padding:40px;color:var(--text3);font-size:13px;">This listing couldn't be found — it may have been removed.</div>`; return; }
-
-  currentQty = 1;
+function renderCard(item, i) {
+  const bg = TILE_COLORS[i % TILE_COLORS.length];
   const emoji = CATEGORY_EMOJI[(item.category || '').toLowerCase()] || '🛍';
-  const catLabel = CATEGORY_LABEL[(item.category || '').toLowerCase()] || item.category || 'General';
-  const media = item.media_urls || [];
-  const seller = item.profiles || {};
-  const isMine = seller.id === userId;
-  const stockQty = item.stock_qty ?? 1;
-  const outOfStock = stockQty <= 0 || item.status === 'sold' || item.is_available === false;
-  const isSold = outOfStock; // kept for the existing sold-badge/price logic below
-  const isFood = (item.category || '').toLowerCase() === 'food';
-
-  document.getElementById('pdpBreadcrumb').innerHTML = `Home &rsaquo; ${catLabel} &rsaquo; <b>${item.title}</b>`;
-
-  const { count: reviewCount, avg } = await getReviewSummary(id);
-  const roundedAvg = Math.round(avg);
-
-  content.innerHTML = `
-    <div class="pdp-carousel-main" id="pdpMainMedia" style="${media.length ? '' : `background:${TILE_BG}`}">
-      ${media.length ? `<img src="${media[0]}" alt="">` : emoji}
-    </div>
-    ${media.length > 1 ? `
-      <div class="pdp-thumbs">
-        ${media.map((url, i) => `<div class="pdp-thumb${i === 0 ? ' active' : ''}" data-src="${url}"><img src="${url}" alt=""></div>`).join('')}
-      </div>
-    ` : ''}
-
-    <div class="listing-body">
-      <div class="listing-title">${item.title}</div>
-      <div class="pdp-rating-row">
-        <span class="pdp-stars">${'★'.repeat(roundedAvg)}${'☆'.repeat(5 - roundedAvg)}</span>
-        <span class="pdp-rating-count">${reviewCount ? `${reviewCount} verified rating${reviewCount === 1 ? '' : 's'}` : '0 verified ratings'}</span>
-        ${reviewCount ? '' : '<span class="pdp-badge-new">new</span>'}
-      </div>
-
-      <div class="listing-price" style="margin-top:12px">${window.CP.fmtNaira(item.price)}${isSold ? ' <span style="color:var(--danger);font-size:14px;font-weight:700">· Sold</span>' : ''}</div>
-
-      <div class="pdp-stock-row">
-        <span class="pdp-stock-pill${outOfStock ? ' out' : ''}">${outOfStock ? 'Sold out' : `In Stock (${stockQty})`}</span>
-        <span class="pdp-stock-note">${item.pickup_label ? `Pickup: ${item.pickup_label}` : 'Ready for campus delivery.'}</span>
-      </div>
-
-      ${(item.colors && item.colors.length) ? `
-        <div class="pdp-variant-group">
-          <label>Color</label>
-          <div class="pdp-variant-pills" id="colorPicker">
-            ${item.colors.map((c, i) => `<button type="button" class="pdp-variant-pill${i === 0 ? ' active' : ''}" data-value="${c}">${c.toUpperCase()}</button>`).join('')}
-          </div>
-        </div>
-      ` : ''}
-      ${(item.sizes && item.sizes.length) ? `
-        <div class="pdp-variant-group">
-          <label>Size</label>
-          <div class="pdp-variant-pills" id="sizePicker">
-            ${item.sizes.map((s, i) => `<button type="button" class="pdp-variant-pill${i === 0 ? ' active' : ''}" data-value="${s}">${s.toUpperCase()}</button>`).join('')}
-          </div>
-        </div>
-      ` : ''}
-
-      <div class="pdp-seller-card" id="sellerCardLink">
-        <div class="avatar">${window.CP.initials(seller.full_name || seller.username)}</div>
-        <div class="info">
-          <b>${seller.full_name || seller.username || 'Camplugie seller'}</b>
-          <span>${seller.is_verified ? '✓ Verified seller' : 'Seller'}</span>
-        </div>
-        <div class="chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></div>
-      </div>
-      ${!isMine ? `<button class="pdp-chat-btn" id="chatWithSellerBtn">💬 Chat with seller</button>` : ''}
-
-      <div class="pdp-delivery-info">
-        <div><span class="ic">🚚</span> Campus delivery to hostel or faculty</div>
-        <div><span class="ic">⏱</span> Contact vendor for timing</div>
-        <div><span class="ic">🛡</span> 24h returns if not as described</div>
-      </div>
-
-      ${(!isMine && !isSold) ? `
-        <div class="form-group" style="margin-top:16px">
-          <label class="form-label">Delivery note (room / hostel / landmark)</label>
-          <input class="form-input" id="dropoffNote" placeholder="e.g. Hall B, Room 204">
-        </div>
-      ` : ''}
-
-      ${isMine ? `<div class="listing-actions"><a class="btn btn-ghost" href="market.html?tab=mine" style="flex:1">Manage in My listings</a></div>` : ''}
-
-      <div class="pdp-section">
-        <h3>Product Details</h3>
-        <p class="listing-desc" style="margin-top:0">${item.description || 'No description provided.'}</p>
-      </div>
-
-      <div class="pdp-section">
-        <h3>Customer Reviews</h3>
-        <div id="reviewsList">Loading reviews…</div>
-        ${!isMine ? `
-          <div class="review-form">
-            <label>Your rating</label>
-            <div class="review-star-picker" id="reviewStarPicker">
-              ${[1, 2, 3, 4, 5].map(n => `<button type="button" data-star="${n}">★</button>`).join('')}
-            </div>
-            <label>Your comment</label>
-            <textarea id="reviewComment" placeholder="Share your experience…"></textarea>
-            <button class="submit" id="postReviewBtn">Post review</button>
-          </div>
-        ` : ''}
-      </div>
-
-      <div class="pdp-section" id="recommendedSection" style="margin-left:-16px;margin-right:-16px">
-        <div class="cp-section-head"><h3>Recommended for You</h3></div>
-        <div class="pdp-carousel-row" id="recommendedRow"></div>
-      </div>
-
-      <div class="pdp-section" id="moreFromSellerSection" style="margin-left:-16px;margin-right:-16px;display:none">
-        <div class="cp-section-head"><h3>More from ${seller.full_name || seller.username || 'this seller'}</h3></div>
-        <div class="pdp-carousel-row" id="moreFromSellerRow"></div>
-      </div>
-    </div>
-  `;
-
-  // Thumbnail swap
-  document.querySelectorAll('.pdp-thumb').forEach(t => {
-    t.addEventListener('click', () => {
-      document.querySelectorAll('.pdp-thumb').forEach(x => x.classList.remove('active'));
-      t.classList.add('active');
-      document.getElementById('pdpMainMedia').innerHTML = `<img src="${t.dataset.src}" alt="">`;
-    });
-  });
-
-  document.getElementById('sellerCardLink').addEventListener('click', () => { window.location.href = `profile-view.html?id=${seller.id}`; });
-  document.getElementById('chatWithSellerBtn')?.addEventListener('click', () => { if (window.CP_requireAuth()) openOrCreateConversation(userId, item); });
-  document.getElementById('shareBtn').onclick = () => sharePage(item);
-
-  let selectedColor = item.colors?.[0] || null;
-  let selectedSize = item.sizes?.[0] || null;
-  document.getElementById('colorPicker')?.addEventListener('click', (e) => {
-    const b = e.target.closest('button'); if (!b) return;
-    selectedColor = b.dataset.value;
-    document.querySelectorAll('#colorPicker .pdp-variant-pill').forEach(p => p.classList.toggle('active', p === b));
-  });
-  document.getElementById('sizePicker')?.addEventListener('click', (e) => {
-    const b = e.target.closest('button'); if (!b) return;
-    selectedSize = b.dataset.value;
-    document.querySelectorAll('#sizePicker .pdp-variant-pill').forEach(p => p.classList.toggle('active', p === b));
-  });
-  const getVariant = () => (selectedColor || selectedSize) ? { color: selectedColor, size: selectedSize } : null;
-
-  renderReviews(id);
-  loadRecommended(item, universityId);
-  if (!isMine) loadMoreFromSeller(item, universityId);
-
-  let selectedStars = 0;
-  const starPicker = document.getElementById('reviewStarPicker');
-  starPicker?.addEventListener('click', (e) => {
-    const b = e.target.closest('button'); if (!b) return;
-    selectedStars = Number(b.dataset.star);
-    starPicker.querySelectorAll('button').forEach(x => x.classList.toggle('active', Number(x.dataset.star) <= selectedStars));
-  });
-  document.getElementById('postReviewBtn')?.addEventListener('click', () => { if (window.CP_requireAuth()) postReview(id, userId, () => selectedStars); });
-
-  renderBuybar(item, userId, isMine, outOfStock, isFood, getVariant);
-}
-
-function sharePage(item) {
-  const url = window.location.href;
-  if (navigator.share) { navigator.share({ title: item.title, url }).catch(() => {}); }
-  else { navigator.clipboard?.writeText(url); alert('Link copied!'); }
-}
-
-// ---- Reviews ----
-async function getReviewSummary(listingId) {
-  const { data, error } = await window.sb.from('listing_reviews').select('rating').eq('listing_id', listingId);
-  if (error) { console.error('Review summary error:', error); return { count: 0, avg: 0 }; }
-  if (!data || !data.length) return { count: 0, avg: 0 };
-  return { count: data.length, avg: data.reduce((s, r) => s + r.rating, 0) / data.length };
-}
-
-async function renderReviews(listingId) {
-  const el = document.getElementById('reviewsList');
-  const { data, error } = await window.sb
-    .from('listing_reviews').select('*, profiles(username, full_name)')
-    .eq('listing_id', listingId).order('created_at', { ascending: false }).limit(20);
-  if (error) {
-    console.error('Review load error:', error);
-    // Surfaced on-screen (not just console) since this often gets tested on
-    // mobile with no devtools — the real reason shows up right here now.
-    el.innerHTML = `<div class="review-empty">Couldn't load reviews: ${error.message || error.code || 'unknown error'}</div>`;
-    return;
-  }
-  if (!data || !data.length) { el.innerHTML = `<div class="review-empty">No reviews yet. Be the first to review this product!</div>`; return; }
-  el.innerHTML = data.map(r => `
-    <div class="review-card">
-      <div class="top">
-        <span class="name">${r.profiles?.full_name || r.profiles?.username || 'Camplugie user'}</span>
-        <span class="stars">${'★'.repeat(r.rating)}${'☆'.repeat(5 - r.rating)}</span>
-      </div>
-      ${r.comment ? `<div class="comment">${r.comment}</div>` : ''}
-      <div class="time">${window.CP.timeAgo(r.created_at)}</div>
-    </div>
-  `).join('');
-}
-
-async function postReview(listingId, userId, getStars) {
-  const stars = getStars();
-  const comment = document.getElementById('reviewComment').value.trim();
-  if (!stars) { alert('Please pick a star rating.'); return; }
-  const btn = document.getElementById('postReviewBtn');
-  btn.disabled = true; btn.textContent = 'Posting…';
-  const { error } = await window.sb.from('listing_reviews').upsert(
-    { listing_id: listingId, user_id: userId, rating: stars, comment, created_at: new Date().toISOString() },
-    { onConflict: 'listing_id,user_id' }
-  );
-  btn.disabled = false; btn.textContent = 'Post review';
-  if (error) {
-    console.error('Review post error:', error);
-    alert(`Could not post your review: ${error.message || error.code || 'unknown error'}`);
-    return;
-  }
-  document.getElementById('reviewComment').value = '';
-  loadListing(userId);
-}
-
-// ---- Recommendation carousels ----
-function storeCardHTML(listing) {
-  const emoji = CATEGORY_EMOJI[(listing.category || '').toLowerCase()] || '🛍';
-  const media = listing.media_urls?.[0];
-  const sellerName = listing.profiles?.full_name || listing.profiles?.username || 'Seller';
+  const seller = item.profiles?.full_name || item.profiles?.username || 'Camplugie seller';
+  const media = item.media_urls?.[0];
+  const isSold = item.status === 'sold';
+  const isNew = !isSold && item.created_at && (Date.now() - new Date(item.created_at).getTime()) < 3 * 24 * 60 * 60 * 1000;
+  const rating = item.profiles?.rating;
+  const isVerified = item.profiles?.is_verified;
   return `
-    <button class="store-card" data-id="${listing.id}">
-      <div class="store-card-media" style="background:${TILE_BG}">
+    <button class="store-card" data-id="${item.id}">
+      <div class="store-card-media" style="background:${bg}">
         ${media ? `<img src="${media}" alt="" style="width:100%;height:100%;object-fit:cover">` : emoji}
+        ${isSold ? `<span class="store-badge sold">SOLD</span>` : isNew ? `<span class="store-badge new">NEW</span>` : ''}
+        <span class="store-cat-chip">${emoji} ${item.category || 'General'}</span>
+        <span class="store-like${item._liked ? ' on' : ''}" role="button" aria-label="Save" style="${item._liked ? 'color:#EC4899' : ''}">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.6 1-1a5.5 5.5 0 0 0 0-7.8z"/></svg>
+        </span>
+        ${state.tab === 'mine' ? `
+        <span class="store-delete" role="button" aria-label="Delete listing">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0-1 14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2L4 6h16z"/></svg>
+        </span>` : ''}
       </div>
       <div class="store-card-body">
-        <div class="store-price">${window.CP.fmtNaira(listing.price)}</div>
-        <div class="store-title">${listing.title}</div>
+        <div class="store-price">${window.CP.fmtNaira(item.price)}</div>
+        <div class="store-title">${item.title}</div>
         <div class="store-seller">
-          <div class="store-av"></div>
-          <span class="store-seller-name">${sellerName}</span>
+          ${rating ? `<span class="store-rating">★ ${Number(rating).toFixed(1)}</span>` : ''}
+          <span class="store-av"></span>
+          <span class="store-seller-name">${seller}${isVerified ? ' <span class="store-verified">✓</span>' : ''}</span>
         </div>
       </div>
     </button>
   `;
 }
-function wireCardClicks(rowEl) {
-  rowEl.querySelectorAll('.store-card').forEach(card => {
-    card.addEventListener('click', () => { window.location.href = `listing.html?id=${card.dataset.id}`; });
-  });
-}
-async function loadRecommended(item, universityId) {
-  const section = document.getElementById('recommendedSection');
-  const row = document.getElementById('recommendedRow');
-  let q = window.sb.from('listings').select(window.CP.LISTING_SELECT)
-    .eq('category', item.category).neq('id', item.id).eq('status', 'active').limit(8);
-  if (universityId) q = q.eq('university_id', universityId);
-  const { data, error } = await q;
-  if (error || !data || !data.length) { section.style.display = 'none'; return; }
-  row.innerHTML = data.map(storeCardHTML).join('');
-  wireCardClicks(row);
-}
-async function loadMoreFromSeller(item, universityId) {
-  const row = document.getElementById('moreFromSellerRow');
-  let q = window.sb.from('listings').select(window.CP.LISTING_SELECT)
-    .eq('seller_id', item.seller_id).neq('id', item.id).eq('status', 'active').limit(8);
-  if (universityId) q = q.eq('university_id', universityId);
-  const { data, error } = await q;
-  if (error || !data || !data.length) return;
-  document.getElementById('moreFromSellerSection').style.display = '';
-  row.innerHTML = data.map(storeCardHTML).join('');
-  wireCardClicks(row);
+
+function emptyState(msg) {
+  return `<div style="grid-column:1/-1;text-align:center;padding:26px 10px;color:var(--text3);font-size:13px;">${msg}</div>`;
 }
 
-// ---- Sticky buy bar ----
-function renderBuybar(item, userId, isMine, outOfStock, isFood, getVariant) {
-  const bar = document.getElementById('pdpBuybar');
-  if (isMine) { bar.style.display = 'none'; return; }
-
-  bar.style.display = '';
-  bar.innerHTML = `
-    <div class="pdp-buybar-top">
-      <div class="pdp-buybar-total">Total<b id="buybarTotal">${window.CP.fmtNaira(item.price)}</b></div>
-      <div class="pdp-qty-stepper">
-        <button type="button" id="qtyMinusBtn">−</button>
-        <span id="qtyValue">1</span>
-        <button type="button" id="qtyPlusBtn">+</button>
-      </div>
-    </div>
-    <div class="pdp-buybar-actions">
-      <button class="icon-btn" id="messageSellerBtn2" aria-label="Chat with seller">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
-      </button>
-      ${outOfStock ? `
-        <button class="btn btn-ghost" style="flex:1" disabled>Sold out</button>
-      ` : `
-        <button class="btn btn-ghost" id="addToCartBtn" style="flex:1">Add to cart</button>
-        <button class="btn btn-primary" id="buyNowBtn" style="flex:1">Buy Now</button>
-      `}
-    </div>
-  `;
-
-  document.getElementById('qtyMinusBtn').addEventListener('click', () => { currentQty = Math.max(1, currentQty - 1); updateQtyUI(item); });
-  document.getElementById('qtyPlusBtn').addEventListener('click', () => { currentQty += 1; updateQtyUI(item); });
-  document.getElementById('messageSellerBtn2').addEventListener('click', () => { if (window.CP_requireAuth()) openOrCreateConversation(userId, item); });
-  document.getElementById('addToCartBtn')?.addEventListener('click', (e) => { if (window.CP_requireAuth()) addToCart(e.target, userId, item, () => currentQty, getVariant); });
-  document.getElementById('buyNowBtn')?.addEventListener('click', (e) => { if (window.CP_requireAuth()) orderNow(e.target, userId, item, () => currentQty, isFood, getVariant); });
-}
-function updateQtyUI(item) {
-  document.getElementById('qtyValue').textContent = currentQty;
-  document.getElementById('buybarTotal').textContent = window.CP.fmtNaira(item.price * currentQty);
-}
-
-async function addToCart(btn, userId, item, getQty, getVariant) {
-  btn.disabled = true; const original = btn.textContent; btn.textContent = 'Adding…';
+async function loadListings() {
+  const grid = document.getElementById('marketGrid');
+  const countEl = document.getElementById('marketCount');
+  grid.innerHTML = emptyState('Loading…');
   try {
-    const qty = getQty();
-    const variant = getVariant ? getVariant() : null;
-    const { data: existing } = await window.sb.from('cart_items').select('id, quantity').eq('user_id', userId).eq('listing_id', item.id).maybeSingle();
-    if (existing) {
-      await window.sb.from('cart_items').update({ quantity: (existing.quantity || 1) + qty, variant }).eq('id', existing.id);
-    } else {
-      await window.sb.from('cart_items').insert({ user_id: userId, listing_id: item.id, quantity: qty, variant, created_at: new Date().toISOString() });
-    }
-    btn.textContent = '✓ Added';
-    setTimeout(() => { btn.disabled = false; btn.textContent = original; }, 1500);
+    await loadListingsInner(grid, countEl);
   } catch (err) {
-    alert(err.message || 'Could not add to cart');
-    btn.disabled = false; btn.textContent = original;
+    // Anything that throws (rather than returning an { error }) used to leave
+    // the grid showing "Loading…" forever. Always land on a real message.
+    console.error('Market load threw:', err);
+    grid.innerHTML = emptyState(`Couldn't load listings: ${err.message || err}`);
+    countEl.textContent = '';
   }
 }
 
-// Unified "order & pay now" flow — food goes into food_orders (as before);
-// everything else goes into escrow_orders tied to a real buyer/seller
-// conversation so the existing chat-thread confirm-received/dispute UI can
-// track it, instead of needing a brand new "my orders" page for items.
-async function orderNow(btn, buyerId, item, getQty, isFood, getVariant) {
-  const dropoffNote = document.getElementById('dropoffNote')?.value.trim();
-  if (!dropoffNote) { alert("Add a delivery note so the seller knows where to bring it."); return; }
-  if (!navigator.geolocation) { alert('Location not supported on this device.'); return; }
-  const qty = getQty();
-  const variant = getVariant ? getVariant() : null;
-  const resetText = 'Buy Now';
-  btn.disabled = true; btn.textContent = 'Getting your location…';
+async function loadListingsInner(grid, countEl) {
+  let ids = null;
+  if (state.tab === 'saved') {
+    const { data: likes } = await window.sb.from('listing_likes').select('listing_id').eq('user_id', state.userId);
+    ids = (likes || []).map(l => l.listing_id);
+    if (!ids.length) { grid.innerHTML = emptyState('Nothing saved yet — tap the heart on a listing to save it.'); countEl.textContent = '0 items'; return; }
+  }
 
-  navigator.geolocation.getCurrentPosition(async (pos) => {
-    const dropoff_lat = pos.coords.latitude, dropoff_lng = pos.coords.longitude;
-    try {
-      const { data: { session } } = await window.sb.auth.getSession();
-      const email = session.user.email;
-      const amount_kobo = window.CPPay.nairaToKobo(item.price * qty);
-      const commission_kobo = Math.round(amount_kobo * 0.05);
-      btn.textContent = 'Opening payment…';
+  let query = window.sb.from('listings').select(window.CP.LISTING_SELECT).eq('university_id', state.universityId);
 
-      if (isFood) {
-        const { data: order, error } = await window.sb.from('food_orders').insert({
-          buyer_id: buyerId, seller_id: item.seller_id, listing_id: item.id,
-          items: [{ listing_id: item.id, title: item.title, price: Number(item.price), qty, variant }],
-          amount_kobo, commission_kobo, payout_kobo: amount_kobo - commission_kobo,
-          dropoff_lat, dropoff_lng, dropoff_note: dropoffNote, status: 'awaiting_payment',
-        }).select().single();
-        if (error) throw error;
-        await window.CPPay.payFoodOrder({ foodOrderId: order.id, amountKobo: amount_kobo, email });
-        alert('Order placed! Track it on your food orders page.');
-        window.location.href = 'orders.html';
-      } else {
-        const conversationId = await window.CP.openOrCreateConversation(buyerId, item.seller_id, item.id);
-        if (!conversationId) throw new Error('Could not start a chat with the seller — please try again.');
+  if (state.tab === 'mine') {
+    query = query.eq('seller_id', state.userId).neq('status', 'removed');
+  } else {
+    query = query.eq('is_available', true);
+    if (state.tab === 'products') query = query.eq('listing_type', 'product');
+    if (state.tab === 'services') query = query.eq('listing_type', 'service');
+    if (state.tab === 'saved') query = query.in('id', ids);
+  }
 
-        const { data: order, error } = await window.sb.from('escrow_orders').insert({
-          kind: 'item', conversation_id: conversationId, listing_id: item.id,
-          buyer_id: buyerId, seller_id: item.seller_id, qty, variant,
-          amount_kobo, commission_kobo, payout_kobo: amount_kobo - commission_kobo,
-          pickup_lat: item.pickup_lat || null, pickup_lng: item.pickup_lng || null,
-          dropoff_lat, dropoff_lng, dropoff_note: dropoffNote, status: 'awaiting_payment',
-        }).select().single();
-        if (error) throw error;
+  if (state.search) query = query.ilike('title', `%${state.search}%`);
+  if (state.category && state.category !== 'all') query = query.eq('category', state.category);
 
-        await window.CPPay.payEscrowOrder({ escrowOrderId: order.id, amountKobo: amount_kobo, email });
-        alert('Order placed and paid! Head to the chat to track delivery and confirm once received.');
-        window.location.href = `chat-thread.html?id=${conversationId}`;
-      }
-    } catch (err) {
-      alert(err.message || 'Payment failed — you were not charged.');
-      btn.disabled = false; btn.textContent = resetText;
-    }
-  }, () => {
-    alert('Turn on location so the seller can find you.');
-    btn.disabled = false; btn.textContent = resetText;
+  if (state.sort === 'price_asc') query = query.order('price', { ascending: true });
+  else if (state.sort === 'price_desc') query = query.order('price', { ascending: false });
+  else query = query.order('created_at', { ascending: false });
+
+  const { data, error } = await query.limit(40);
+  if (error) { console.error('Market load error:', error); grid.innerHTML = emptyState(`Couldn't load listings: ${error.message}`); countEl.textContent = ''; return; }
+
+  const likedIds = new Set((data || []).flatMap(d => (d.listing_likes || []).filter(l => l.user_id === state.userId).map(() => d.id)));
+  const items = (data || []).map(d => ({ ...d, _liked: likedIds.has(d.id) }));
+
+  countEl.textContent = `${items.length} item${items.length === 1 ? '' : 's'}`;
+  grid.innerHTML = items.length ? items.map(renderCard).join('') : emptyState('Nothing here yet.');
+}
+
+// Guests have no profile (and so no locked-in university) — let them pick
+// one to browse. Remembered in localStorage so it sticks across visits.
+async function initGuestBrowsing() {
+  document.getElementById('marketTabs').querySelectorAll('[data-tab="saved"],[data-tab="mine"]').forEach(t => t.style.display = 'none');
+
+  const banner = document.createElement('div');
+  banner.style.cssText = 'background:var(--surface2);border-radius:12px;padding:12px 14px;margin:0 0 12px;font-size:13px;color:var(--text2);display:flex;flex-direction:column;gap:8px;';
+  banner.innerHTML = `
+    <div><b style="color:var(--text)">Browsing as a guest.</b> Sign up to message sellers, save items, or buy.</div>
+    <select id="guestUniPicker" style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:9px;font:inherit;color:var(--text)">
+      <option value="">Loading campuses…</option>
+    </select>
+    <a href="auth.html?view=signup" class="btn" style="text-align:center;text-decoration:none;">Sign up free</a>
+  `;
+  document.querySelector('.cp-search-wrap').insertAdjacentElement('afterend', banner);
+
+  const picker = document.getElementById('guestUniPicker');
+  const grid = document.getElementById('marketGrid');
+
+  // Prefer the school already chosen on browse.html (?uni=... or localStorage).
+  // Load listings from it immediately, so the grid never waits on the
+  // universities query just to fill in the picker's labels.
+  const params = new URLSearchParams(window.location.search);
+  const preferred = params.get('uni') || localStorage.getItem('cp_guest_university_id') || '';
+  if (preferred) {
+    state.universityId = preferred;
+    loadListings();
+  }
+
+  let unis = null;
+  try {
+    const res = await window.sb.from('universities').select('id, name').order('name');
+    if (res.error) throw res.error;
+    unis = res.data || [];
+  } catch (err) {
+    console.error('University load error:', err);
+    // The picker can't be filled, but if a school was already chosen the
+    // listings above are loading fine — just drop the picker rather than
+    // leaving it reading "Loading campuses…" forever.
+    picker.remove();
+    if (!preferred) grid.innerHTML = emptyState("Couldn't load campuses. Please refresh, or pick a school again.");
+    return;
+  }
+
+  picker.innerHTML = unis.map(u => `<option value="${u.id}">${u.name}</option>`).join('');
+  const chosen = (preferred && unis.some(u => u.id === preferred)) ? preferred : (unis[0]?.id || '');
+  picker.value = chosen;
+
+  // Only (re)load if we didn't already kick one off above with this same id.
+  if (chosen && chosen !== preferred) {
+    state.universityId = chosen;
+    loadListings();
+  } else {
+    state.universityId = chosen || null;
+  }
+
+  picker.addEventListener('change', () => {
+    state.universityId = picker.value;
+    localStorage.setItem('cp_guest_university_id', picker.value);
+    loadListings();
   });
 }
 
-async function openOrCreateConversation(userId, item) {
-  const conversationId = await window.CP.openOrCreateConversation(userId, item.seller_id, item.id);
-  if (!conversationId) { alert('Could not start a chat — please try again.'); return; }
-  window.location.href = `chat-thread.html?id=${conversationId}`;
-}
-
 window.onCpReady((e) => {
-  loadListing(e.detail.user?.id || null, e.detail.profile?.university_id || null);
+  state.userId = e.detail.user?.id || null;
+  state.universityId = e.detail.profile?.university_id || null;
+
+  // Guests aren't signed in, so "Back" should go to the public landing page
+  // rather than Home (which would just bounce them to auth.html anyway).
+  if (!e.detail.user) document.getElementById('marketBackBtn').href = 'index.html';
+
+  if (!e.detail.user) {
+    initGuestBrowsing(); // resolves the university picker itself, then loads listings
+  } else if (!state.universityId) {
+    return;
+  }
+
+  // Respect ?tab=saved / ?tab=mine from links like profile.html
+  const params = new URLSearchParams(window.location.search);
+  const requestedTab = params.get('tab');
+  if (requestedTab && document.querySelector(`.market-tab[data-tab="${requestedTab}"]`)) {
+    state.tab = requestedTab;
+    document.querySelectorAll('.market-tab').forEach(t => t.classList.toggle('active', t.dataset.tab === requestedTab));
+  }
+  const requestedCat = params.get('cat');
+  if (requestedCat && document.querySelector(`.cp-chip[data-cat="${requestedCat}"]`)) {
+    state.category = requestedCat;
+    document.querySelectorAll('.cp-chip').forEach(c => c.classList.toggle('active', c.dataset.cat === requestedCat));
+  }
+
+  if (e.detail.user) loadListings(); // guest load is triggered by initGuestBrowsing once a university is picked
+
+  document.getElementById('categoryRow').addEventListener('click', (ev) => {
+    const chip = ev.target.closest('.cp-chip');
+    if (!chip) return;
+    document.querySelectorAll('.cp-chip').forEach(c => c.classList.remove('active'));
+    chip.classList.add('active');
+    state.category = chip.dataset.cat;
+    loadListings();
+  });
+
+  document.getElementById('marketTabs').addEventListener('click', (ev) => {
+    const tab = ev.target.closest('.market-tab');
+    if (!tab) return;
+    document.querySelectorAll('.market-tab').forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+    state.tab = tab.dataset.tab;
+    loadListings();
+  });
+
+  document.getElementById('marketSort').addEventListener('change', (ev) => {
+    state.sort = ev.target.value;
+    loadListings();
+  });
+
+  let debounce;
+  document.getElementById('marketSearch').addEventListener('input', (ev) => {
+    clearTimeout(debounce);
+    debounce = setTimeout(() => { state.search = ev.target.value.trim(); loadListings(); }, 350);
+  });
+});
+
+// Navigate to listing detail (but not when tapping the like heart or delete button)
+document.addEventListener('click', (e) => {
+  const card = e.target.closest('.store-card');
+  if (!card || e.target.closest('.store-like') || e.target.closest('.store-delete')) return;
+  window.location.href = `listing.html?id=${card.dataset.id}`;
+});
+
+// Delete listing (only rendered on the "Mine" tab).
+// This is a soft delete (mark unavailable) rather than a hard DELETE, because
+// listings can be tied to conversations/orders via foreign keys — a hard
+// delete fails once anyone has chatted about or bought the item.
+document.addEventListener('click', (e) => {
+  const del = e.target.closest('.store-delete');
+  if (!del) return;
+  e.stopPropagation();
+  const card = del.closest('.store-card');
+  const listingId = card?.dataset.id;
+  if (!listingId || !state.userId) return;
+  if (!confirm('Delete this listing? This cannot be undone.')) return;
+  window.sb.from('listings').update({ status: 'removed', is_available: false }).eq('id', listingId).eq('seller_id', state.userId).then(({ error }) => {
+    if (error) { alert(error.message || 'Could not delete listing'); return; }
+    card.remove();
+  });
+});
+
+// Like/unlike toggle
+document.addEventListener('click', (e) => {
+  const like = e.target.closest('.store-like');
+  if (!like) return;
+  e.stopPropagation();
+  if (!window.CP_requireAuth()) return;
+  like.classList.toggle('on');
+  like.style.color = like.classList.contains('on') ? '#EC4899' : '#fff';
+  const listingId = like.closest('.store-card')?.dataset.id;
+  if (!listingId || !state.userId) return;
+  if (like.classList.contains('on')) {
+    window.sb.from('listing_likes').upsert({ listing_id: listingId, user_id: state.userId }).then(({ error }) => { if (error) console.error(error); });
+  } else {
+    window.sb.from('listing_likes').delete().eq('listing_id', listingId).eq('user_id', state.userId).then(({ error }) => { if (error) console.error(error); });
+  }
 });
 
 </script>
