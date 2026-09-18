@@ -958,8 +958,6 @@ window.CP.openOrCreateConversation = async function (meId, otherUserId, listingI
 // null instead of redirecting. Messaging/buying/saving are gated
 // individually via CP_requireAuth() where those buttons are wired up below.
 (async () => {
-  const { data: { session } } = await window.sb.auth.getSession();
-
   window.CP_requireAuth = () => {
     if (window.CP_USER) return true;
     const returnTo = window.location.pathname.split('/').pop() + window.location.search;
@@ -967,10 +965,27 @@ window.CP.openOrCreateConversation = async function (meId, otherUserId, listingI
     return false;
   };
 
+  let session;
+  try {
+    ({ data: { session } } = await window.sb.auth.getSession());
+  } catch (err) {
+    console.error('getSession() failed — continuing as guest:', err);
+    window.CP_USER = null;
+    window.CP_PROFILE = null;
+    window.CP_READY_DETAIL = { user: null, profile: null };
+    document.dispatchEvent(new CustomEvent('cp-ready', { detail: window.CP_READY_DETAIL }));
+    return;
+  }
+
   if (!session) {
     window.CP_USER = null;
     window.CP_PROFILE = null;
-    document.dispatchEvent(new CustomEvent('cp-ready', { detail: { user: null, profile: null } }));
+    // Guests resolve after a single await, which can finish before a later
+    // script on the page registers its 'cp-ready' listener — caching the
+    // detail lets onCpReady() catch up instead of waiting forever (looks
+    // exactly like a page stuck on "Loading…" otherwise).
+    window.CP_READY_DETAIL = { user: null, profile: null };
+    document.dispatchEvent(new CustomEvent('cp-ready', { detail: window.CP_READY_DETAIL }));
     return;
   }
 
@@ -998,8 +1013,16 @@ window.CP.openOrCreateConversation = async function (meId, otherUserId, listingI
   const uniName = profile?.universities?.name || profile?.institution_name || 'Your Campus';
   document.querySelectorAll('[data-uni-name]').forEach(el => { el.textContent = uniName; });
 
-  document.dispatchEvent(new CustomEvent('cp-ready', { detail: { user: session.user, profile } }));
+  document.dispatchEvent(new CustomEvent('cp-ready', { detail: (window.CP_READY_DETAIL = { user: session.user, profile }) }));
 })();
+
+// Runs `handler` once the auth guard above has resolved — even if that
+// already happened before this line ran. Always use this instead of
+// document.addEventListener('cp-ready', ...) directly.
+window.onCpReady = (handler) => {
+  if (window.CP_READY_DETAIL) { handler({ detail: window.CP_READY_DETAIL }); return; }
+  document.addEventListener('cp-ready', handler, { once: true });
+};
 
 // Sign out helper, wired up from Profile page
 window.CP_signOut = async () => {
@@ -1418,7 +1441,7 @@ async function openOrCreateConversation(userId, item) {
   window.location.href = `chat-thread.html?id=${conversationId}`;
 }
 
-document.addEventListener('cp-ready', (e) => {
+window.onCpReady((e) => {
   loadListing(e.detail.user?.id || null, e.detail.profile?.university_id || null);
 });
 
