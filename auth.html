@@ -1366,6 +1366,10 @@ function setView(name) {
 }
 tabs.forEach(t => t.addEventListener('click', () => setView(t.dataset.view)));
 bindSwitchLink('login');
+// Let links elsewhere (e.g. the landing page's "Sign up" button) land
+// directly on the signup tab instead of always defaulting to login.
+const initialView = new URLSearchParams(window.location.search).get('view');
+if (initialView === 'signup') setView('signup');
 
 // ---- Password show/hide ----
 document.querySelectorAll('.password-toggle').forEach(btn => {
