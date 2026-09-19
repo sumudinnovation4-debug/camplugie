@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Camplugie — Wallet</title>
+<link rel="stylesheet" href="style.css">
+<style>
+.wallet-balance-card { margin: 16px; padding: 22px; border-radius: var(--radius); background: linear-gradient(135deg, var(--brand-dark), var(--brand) 130%); color: #fff; }
+.wallet-balance-card span { font-size: 12.5px; opacity: .85; }
+.wallet-balance-card b { display: block; font-size: 30px; margin-top: 4px; }
+.wallet-actions { display: flex; gap: 10px; margin-top: 16px; }
+.wallet-actions button { flex: 1; background: rgba(255,255,255,0.16); border: none; color: #fff; font-weight: 700; font-size: 13px; padding: 11px; border-radius: 10px; cursor: pointer; }
+.wallet-section { margin: 20px 16px; }
+.wallet-section h3 { font-size: 14px; margin: 0 0 10px; }
+.tx-row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid var(--border); font-size: 13px; }
+.tx-row .tx-note { color: var(--text3); font-size: 11.5px; display: block; margin-top: 2px; }
+.tx-amt.pos { color: var(--money); font-weight: 700; }
+.tx-amt.neg { color: var(--danger); font-weight: 700; }
+.modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); display: none; align-items: flex-end; justify-content: center; z-index: 50; }
+.modal-overlay.open { display: flex; }
+.modal-sheet { width: 100%; max-width: 480px; background: var(--surface); border-radius: 20px 20px 0 0; padding: 20px 16px calc(20px + var(--safe-bottom)); }
+.modal-sheet h3 { margin: 0 0 14px; }
+.modal-close { float: right; background: none; border: none; color: var(--text3); font-size: 20px; cursor: pointer; }
+</style>
+<link rel="manifest" href="/manifest.webmanifest">
+<meta name="theme-color" content="#7C3AED">
+<meta name="color-scheme" content="dark light">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Camplugie">
+<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+<link rel="icon" href="/icons/icon-192.png" type="image/png">
+</head>
+<body>
+
+<div class="app-shell" style="padding-bottom:30px">
+  <header class="cp-page-header">
+    <a class="icon-btn" href="profile.html" aria-label="Back">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+    </a>
+    <h1>Wallet</h1>
+    <span style="width:38px"></span>
+  </header>
+
+  <div class="wallet-balance-card">
+    <span>Wallet balance</span>
+    <b id="walletBalance">₦0.00</b>
+    <div class="wallet-actions">
+      <button id="openSendBtn">Send to a user</button>
+      <button id="openWithdrawBtn">Withdraw</button>
+      <button id="openBankBtn">Bank account</button>
+    </div>
+  </div>
+
+  <div class="wallet-section">
+    <h3>Payout account</h3>
+    <div id="payoutAccountInfo" style="font-size:13px;color:var(--text2);">Loading…</div>
+  </div>
+
+  <div class="wallet-section">
+    <h3>Recent activity</h3>
+    <div id="txList"><p style="color:var(--text3);font-size:13px;">Loading…</p></div>
+  </div>
+</div>
+
+<!-- Send P2P -->
+<div class="modal-overlay" id="sendModal">
+  <div class="modal-sheet">
+    <button class="modal-close" data-close>×</button>
+    <h3>Send money</h3>
+    <div class="form-group"><label class="form-label">Recipient username</label>
+      <input class="form-input" id="sendUsername" placeholder="@username"></div>
+    <div class="form-group"><label class="form-label">Amount (₦)</label>
+      <input class="form-input" id="sendAmount" type="number" min="1" placeholder="0.00"></div>
+    <div class="form-group"><label class="form-label">Note (optional)</label>
+      <input class="form-input" id="sendNote" placeholder="What's this for?"></div>
+    <button class="form-submit" id="sendSubmitBtn">Send</button>
+    <p style="font-size:11px;color:var(--text3);text-align:center;margin-top:8px">Money goes straight into their wallet — no fee. We only take our cut when they withdraw to their bank.</p>
+  </div>
+</div>
+
+<!-- Withdraw -->
+<div class="modal-overlay" id="withdrawModal">
+  <div class="modal-sheet">
+    <button class="modal-close" data-close>×</button>
+    <h3>Withdraw to bank</h3>
+    <div class="form-group"><label class="form-label">Amount (₦)</label>
+      <input class="form-input" id="withdrawAmount" type="number" min="1" placeholder="0.00"></div>
+    <p id="withdrawPreview" style="font-size:12px;color:var(--text3)"></p>
+    <button class="form-submit" id="withdrawSubmitBtn">Withdraw</button>
+    <p style="font-size:11px;color:var(--text3);text-align:center;margin-top:8px">5% platform commission is deducted here — the rest lands in your bank account via Paystack.</p>
+  </div>
+</div>
+
+<!-- Bank account setup -->
+<div class="modal-overlay" id="bankModal">
+  <div class="modal-sheet">
+    <button class="modal-close" data-close>×</button>
+    <h3>Payout bank account</h3>
+    <div id="bankCurrentInfo" style="font-size:13px;color:var(--text2);margin-bottom:10px"></div>
+    <div class="form-group"><label class="form-label">Bank</label>
+      <select class="form-input" id="bankCode"></select></div>
+    <div class="form-group"><label class="form-label">Account number</label>
+      <input class="form-input" id="bankAccountNumber" maxlength="10" inputmode="numeric" placeholder="0123456789"></div>
+    <p id="bankResolvedName" style="font-size:13px;color:var(--money);font-weight:700"></p>
+    <button class="form-submit" id="bankSaveBtn">Save bank account</button>
+    <p style="font-size:11px;color:var(--text3);text-align:center;margin-top:8px">This is where escrow releases, Swift payouts, and wallet withdrawals are sent.</p>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="https://js.paystack.co/v1/inline.js"></script>
+<script src="config.js?v=2"></script>
+<script src="payments.js?v=2"></script>
+<script>
+window.CP = window.CP || {};
+// Escapes anything user-controlled before it goes into HTML. Listing titles,
+// usernames, comments and dispute notes are all free text a student typed —
+// without this, "<img src=x onerror=...>" in a username runs in everyone's
+// browser, including the admin dashboard.
+window.CP.esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g,
+  c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+const SUPABASE_URL = 'https://zgzamthhfykhjaldosvb.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpnemFtdGhoZnlraGphbGRvc3ZiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg0Nzc2NjksImV4cCI6MjA5NDA1MzY2OX0.YpH9Zn2a2XVDZnZIlWd4d4CxhUbkURZ_H7Yegw9vih4';
+window.sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+window.CP = window.CP || {};
+window.CP.fmtNaira = (n) => '₦' + Number(n || 0).toLocaleString();
+</script>
+<script>
+// Small subset of Nigerian bank codes — extend as needed (see Paystack's /bank list endpoint for the full set).
+const BANKS = [
+  ['058', 'GTBank'], ['044', 'Access Bank'], ['057', 'Zenith Bank'], ['011', 'First Bank'],
+  ['033', 'UBA'], ['232', 'Sterling Bank'], ['050', 'Ecobank'], ['070', 'Fidelity Bank'],
+  ['221', 'Stanbic IBTC'], ['214', 'FCMB'], ['999992', 'Opay'], ['999991', 'PalmPay'],
+];
+document.getElementById('bankCode').innerHTML = BANKS.map(([code, name]) => `<option value="${code}">${name}</option>`).join('');
+
+let myUserId = null;
+function init(user) {
+  myUserId = user.id;
+  refreshWallet();
+  loadPayoutAccount();
+}
+
+async function loadPayoutAccount() {
+  const el = document.getElementById('payoutAccountInfo');
+  try {
+    const { data, error } = await window.sb.from('payout_recipients').select('*').eq('user_id', myUserId).maybeSingle();
+    if (error) throw error;
+    el.textContent = data
+      ? `${data.bank_name || 'Bank'} — ${data.account_number} (${data.account_name})`
+      : 'No payout account on file yet. Tap "Bank account" above to add one.';
+  } catch (err) {
+    console.error('Payout account load error:', err);
+    el.textContent = `Couldn't load payout account: ${err.message}`;
+  }
+}
+
+// Re-checks the session if myUserId somehow isn't set yet (slow page load,
+// init() not finished) instead of just failing the click. Every wallet
+// action below calls this first.
+async function ensureUserId() {
+  if (myUserId) return myUserId;
+  const { data: { session } } = await window.sb.auth.getSession();
+  if (session) myUserId = session.user.id;
+  return myUserId;
+}
+
+function openModal(id) { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+document.querySelectorAll('[data-close]').forEach(btn => btn.addEventListener('click', (e) => closeModal(e.target.closest('.modal-overlay').id)));
+
+document.getElementById('openSendBtn').addEventListener('click', () => openModal('sendModal'));
+document.getElementById('openWithdrawBtn').addEventListener('click', () => openModal('withdrawModal'));
+document.getElementById('openBankBtn').addEventListener('click', async () => {
+  const userId = await ensureUserId();
+  if (!userId) { alert('Please reload the page and try again.'); return; }
+  const { data } = await window.sb.from('payout_recipients').select('*').eq('user_id', userId).maybeSingle();
+  document.getElementById('bankCurrentInfo').textContent = data ? `Currently: ${data.bank_name || ''} — ${data.account_number} (${data.account_name})` : 'No payout account on file yet.';
+  openModal('bankModal');
+});
+
+async function refreshWallet() {
+  const balanceEl = document.getElementById('walletBalance');
+  const list = document.getElementById('txList');
+
+  try {
+    const balance = await window.CPPay.getWalletBalance(myUserId);
+    balanceEl.textContent = window.CPPay.fmtNaira(balance);
+  } catch (err) {
+    console.error('Wallet balance load error:', err);
+    balanceEl.textContent = '⚠️ Error';
+    balanceEl.title = err.message || 'Could not load balance';
+  }
+
+  try {
+    const txs = await window.CPPay.getTransactions(myUserId);
+    if (!txs.length) { list.innerHTML = `<p style="color:var(--text3);font-size:13px;">No activity yet.</p>`; return; }
+    list.innerHTML = txs.map(t => `
+      <div class="tx-row">
+        <div><b>${labelFor(t.type)}</b><span class="tx-note">${CP.esc(t.note || '')} · ${window.CP.timeAgoShort ? window.CP.timeAgoShort(t.created_at) : new Date(t.created_at).toLocaleDateString()}</span></div>
+        <span class="tx-amt ${t.amount_kobo >= 0 ? 'pos' : 'neg'}">${t.amount_kobo >= 0 ? '+' : ''}${window.CPPay.fmtNaira(t.amount_kobo)}</span>
+      </div>
+    `).join('');
+  } catch (err) {
+    console.error('Wallet activity load error:', err);
+    list.innerHTML = `<p style="color:var(--danger);font-size:13px;">Couldn't load wallet activity: ${CP.esc(err.message)}</p>`;
+  }
+}
+function labelFor(type) {
+  return { escrow_release: 'Escrow payout', p2p_in: 'Received', p2p_out: 'Sent', withdrawal: 'Withdrawal', commission: 'Commission', refund: 'Refund', ambassador_commission: 'Referral commission 🎓' }[type] || type;
+}
+
+document.getElementById('bankCode').addEventListener('change', () => {
+  // Bank changed — re-trigger resolution against the current account number.
+  document.getElementById('bankAccountNumber').dispatchEvent(new Event('input'));
+});
+document.getElementById('bankAccountNumber').addEventListener('input', async (e) => {
+  const resolvedEl = document.getElementById('bankResolvedName');
+  resolvedEl.textContent = '';
+  resolvedEl.style.color = '';
+  if (e.target.value.length !== 10) return;
+  try {
+    const { account_name } = await window.CPPay.resolveAccount(e.target.value, document.getElementById('bankCode').value);
+    resolvedEl.textContent = `✓ ${account_name}`;
+  } catch { resolvedEl.textContent = ''; }
+});
+
+document.getElementById('bankSaveBtn').addEventListener('click', async (e) => {
+  const btn = e.target; btn.disabled = true; btn.textContent = 'Saving…';
+  try {
+    const bankCode = document.getElementById('bankCode').value;
+    const bankName = BANKS.find(b => b[0] === bankCode)[1];
+    const accountNumber = document.getElementById('bankAccountNumber').value;
+    const userId = await ensureUserId();
+    // Surface exactly what's missing client-side before even hitting the network.
+    const missing = [];
+    if (!userId) missing.push('your user ID — please reload the page and try again');
+    if (!accountNumber) missing.push('account number');
+    if (!bankCode) missing.push('bank');
+    if (missing.length) throw new Error(`Missing: ${missing.join(', ')}`);
+
+    await window.CPPay.saveBankAccount({ userId, accountNumber, bankCode, bankName });
+    alert('Bank account saved.');
+    closeModal('bankModal');
+    loadPayoutAccount();
+  } catch (err) { alert(err.message || 'Could not save bank account'); }
+  finally { btn.disabled = false; btn.textContent = 'Save bank account'; }
+});
+
+document.getElementById('sendSubmitBtn').addEventListener('click', async (e) => {
+  const btn = e.target; btn.disabled = true; btn.textContent = 'Sending…';
+  try {
+    const username = document.getElementById('sendUsername').value.replace('@', '').trim();
+    const amount = Number(document.getElementById('sendAmount').value);
+    if (!username || !amount) throw new Error('Fill in a username and amount');
+    const userId = await ensureUserId();
+    if (!userId) throw new Error('Missing your user ID — please reload the page and try again');
+    const { data: receiver, error } = await window.sb.from('profiles').select('id').eq('username', username).single();
+    if (error || !receiver) throw new Error('User not found');
+    await window.CPPay.p2pSend({ senderId: userId, receiverId: receiver.id, amountKobo: window.CPPay.nairaToKobo(amount), note: document.getElementById('sendNote').value.trim() });
+    alert('Sent!'); closeModal('sendModal'); refreshWallet();
+  } catch (err) { alert(err.message || 'Send failed'); }
+  finally { btn.disabled = false; btn.textContent = 'Send'; }
+});
+
+document.getElementById('withdrawAmount').addEventListener('input', (e) => {
+  const amt = Number(e.target.value) || 0;
+  const commission = amt * 0.05;
+  document.getElementById('withdrawPreview').textContent = amt ? `You'll receive ${window.CP.fmtNaira(amt - commission)} after a ${window.CP.fmtNaira(commission)} commission.` : '';
+});
+
+document.getElementById('withdrawSubmitBtn').addEventListener('click', async (e) => {
+  const btn = e.target; btn.disabled = true; btn.textContent = 'Withdrawing…';
+  try {
+    const amount = Number(document.getElementById('withdrawAmount').value);
+    if (!amount) throw new Error('Enter an amount');
+    const userId = await ensureUserId();
+    if (!userId) throw new Error('Missing your user ID — please reload the page and try again');
+    await window.CPPay.withdraw({ userId, amountKobo: window.CPPay.nairaToKobo(amount) });
+    alert('Withdrawal initiated — it should land in your bank shortly.'); closeModal('withdrawModal'); refreshWallet();
+  } catch (err) { alert(err.message || 'Withdrawal failed'); }
+  finally { btn.disabled = false; btn.textContent = 'Withdraw'; }
+});
+
+// Session check + first load. This runs last, after init() and every event
+// listener above are already defined, so there's no race where a fast
+// (cached) getSession() resolution could call init() before it exists.
+(async () => {
+  try {
+    const { data: { session } } = await window.sb.auth.getSession();
+    if (!session) { window.location.href = 'auth.html'; return; }
+    init(session.user);
+  } catch (err) {
+    console.error('Wallet init error:', err);
+    document.getElementById('walletBalance').textContent = '⚠️ Error';
+    document.getElementById('txList').innerHTML = `<p style="color:var(--danger);font-size:13px;">Couldn't load your session: ${CP.esc(err.message)}. Try reloading.</p>`;
+  }
+})();
+
+
+</script>
+<script>
+// Service worker: required for the Android install prompt and for the
+// Play Store TWA build. Registered after load so it never delays first paint.
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js').catch(err => console.warn('SW registration failed:', err));
+  });
+}
+</script>
+<script src="incoming-call.js?v=1"></script>
+</body>
+</html>

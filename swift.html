@@ -1,0 +1,2498 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Camplugie — Swift</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Clash+Display:wght@500;600;700&family=Satoshi:wght@400;500;700;900&display=swap');
+
+/* ===== Design tokens (matches Camplugie's existing dark theme) ===== */
+:root {
+  --brand: #A78BFA;
+  --brand-dark: #7C3AED;
+  --brand-soft: rgba(167, 139, 250, 0.14);
+  --accent: #FBBF24;
+  --accent-soft: rgba(251, 191, 36, 0.14);
+  --money: #34D399;
+  --danger: #FB7185;
+
+  --bg: #090714;
+  --bg-gradient: radial-gradient(circle at 20% -10%, rgba(124,58,237,0.34), transparent 36%), linear-gradient(180deg, #0E0A1D 0%, #090714 100%);
+  --surface: #12101D;
+  --surface2: #1A1729;
+  --surface3: #242039;
+  --border: rgba(255,255,255,0.10);
+
+  --text: #F8F6FF;
+  --text2: #C9C3DE;
+  --text3: #8D86AA;
+
+  --nav-h: 58px;
+  --bottom-h: 68px;
+  --radius: 18px;
+  --radius-sm: 12px;
+  --shadow: 0 14px 38px rgba(0,0,0,0.28);
+  --shadow-lg: 0 24px 80px rgba(0,0,0,0.48);
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html, body { margin: 0; padding: 0; }
+body {
+  background: var(--bg-gradient), var(--bg);
+  color: var(--text);
+  font-family: 'Satoshi', -apple-system, BlinkMacSystemFont, sans-serif;
+  min-height: 100vh;
+}
+h1, h2, h3, h4, .display {
+  font-family: 'Clash Display', 'Satoshi', sans-serif;
+  margin: 0;
+}
+a { color: inherit; text-decoration: none; }
+button { font-family: inherit; }
+img { max-width: 100%; display: block; }
+
+.app-shell {
+  max-width: 480px;
+  margin: 0 auto;
+  min-height: 100vh;
+  position: relative;
+  padding-bottom: calc(var(--bottom-h) + var(--safe-bottom) + 10px);
+}
+
+/* ===== Header ===== */
+.cp-header {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: calc(var(--safe-top) + 14px) 16px 12px;
+  background: rgba(9, 7, 20, 0.88);
+  backdrop-filter: blur(14px);
+  border-bottom: 1px solid var(--border);
+}
+.cp-header-id { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.cp-logo {
+  width: 38px; height: 38px; border-radius: 12px; flex-shrink: 0;
+  overflow: hidden;
+  box-shadow: 0 4px 14px rgba(124,58,237,0.35);
+}
+.cp-logo img { width: 100%; height: 100%; object-fit: cover; }
+.cp-header-text { min-width: 0; }
+.cp-header-text .brand-name { font-size: 17px; font-weight: 700; letter-spacing: -0.01em; }
+.cp-header-text .brand-sub {
+  font-size: 11.5px; color: var(--text3); font-weight: 500;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.cp-header-actions { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+.icon-btn {
+  position: relative;
+  width: 38px; height: 38px; border-radius: 12px;
+  border: 1px solid var(--border);
+  background: var(--surface2);
+  color: var(--text);
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+}
+.icon-btn svg { width: 18px; height: 18px; }
+.icon-badge {
+  position: absolute; top: -4px; right: -4px;
+  min-width: 16px; height: 16px; padding: 0 3px;
+  border-radius: 999px;
+  background: var(--danger);
+  color: #fff;
+  font-size: 10px; font-weight: 800;
+  display: flex; align-items: center; justify-content: center;
+  border: 2px solid var(--bg);
+}
+
+/* ===== Search ===== */
+.cp-search-wrap { padding: 14px 16px 4px; }
+.cp-search {
+  display: flex; align-items: center; gap: 10px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 0 16px;
+  height: 44px;
+}
+.cp-search svg { width: 17px; height: 17px; color: var(--text3); flex-shrink: 0; }
+.cp-search input {
+  flex: 1; border: none; background: none; outline: none;
+  font: inherit; font-size: 14.5px; color: var(--text);
+  min-width: 0;
+}
+.cp-search input::placeholder { color: var(--text3); }
+
+/* ===== Category chips ===== */
+.cp-chiprow {
+  display: flex; gap: 8px;
+  overflow-x: auto; scrollbar-width: none;
+  padding: 12px 16px 4px;
+}
+.cp-chiprow::-webkit-scrollbar { display: none; }
+.cp-chip {
+  flex-shrink: 0;
+  display: flex; align-items: center; gap: 6px;
+  border: 1px solid var(--border);
+  background: var(--surface2);
+  color: var(--text2);
+  border-radius: 999px;
+  padding: 9px 16px;
+  font-size: 13.5px; font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background .15s, color .15s, border-color .15s;
+}
+.cp-chip.active { background: var(--accent); color: #1A1200; border-color: var(--accent); }
+
+/* ===== Promo banner ===== */
+.cp-promo {
+  margin: 14px 16px 0;
+  border-radius: var(--radius);
+  padding: 22px 20px;
+  background: linear-gradient(135deg, var(--brand-dark), var(--brand) 120%);
+  position: relative;
+  overflow: hidden;
+  box-shadow: var(--shadow);
+}
+.cp-promo::after {
+  content: '🎓';
+  position: absolute;
+  right: -6px; bottom: -18px;
+  font-size: 92px;
+  opacity: 0.16;
+  transform: rotate(-8deg);
+}
+.cp-promo h2 {
+  font-size: 21px; font-weight: 700; line-height: 1.25;
+  color: #fff; max-width: 78%; position: relative; z-index: 1;
+}
+.cp-promo p {
+  margin: 6px 0 16px; font-size: 13px; color: rgba(255,255,255,0.82);
+  position: relative; z-index: 1;
+}
+.cp-promo-btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: #12101D; color: var(--accent);
+  border: none; border-radius: 10px;
+  padding: 10px 16px;
+  font-size: 13.5px; font-weight: 700;
+  cursor: pointer;
+  position: relative; z-index: 1;
+}
+
+/* ===== Yard teaser ===== */
+.cp-yard-teaser {
+  margin: 14px 16px 0;
+  display: flex; align-items: center; gap: 12px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 13px 14px;
+  cursor: pointer;
+}
+.cp-yard-avatars { display: flex; flex-shrink: 0; }
+.cp-yard-avatars span {
+  width: 30px; height: 30px; border-radius: 50%;
+  background: linear-gradient(135deg, var(--brand), var(--brand-dark));
+  border: 2px solid var(--surface);
+  margin-left: -10px;
+}
+.cp-yard-avatars span:first-child { margin-left: 0; }
+.cp-yard-teaser-text { flex: 1; min-width: 0; }
+.cp-yard-teaser-text .title { font-size: 13.5px; font-weight: 700; }
+.cp-yard-teaser-text .sub { font-size: 11.5px; color: var(--text3); margin-top: 1px; }
+.cp-yard-teaser .chev { color: var(--text3); flex-shrink: 0; }
+.cp-yard-teaser .chev svg { width: 18px; height: 18px; }
+
+/* ===== Section header ===== */
+.cp-section-head {
+  display: flex; align-items: baseline; justify-content: space-between;
+  padding: 22px 16px 10px;
+}
+.cp-section-head h3 { font-size: 16px; font-weight: 700; }
+.cp-section-head a { font-size: 12.5px; font-weight: 700; color: var(--accent); }
+
+/* ===== Featured sellers ===== */
+.cp-sellers-row {
+  display: flex; gap: 16px;
+  overflow-x: auto; scrollbar-width: none;
+  padding: 4px 16px 6px;
+}
+.cp-sellers-row::-webkit-scrollbar { display: none; }
+.cp-seller {
+  flex-shrink: 0; display: flex; flex-direction: column; align-items: center; gap: 6px;
+  width: 64px; text-align: center;
+}
+.cp-seller-av {
+  width: 56px; height: 56px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 22px;
+  border: 2px solid var(--brand);
+}
+.cp-seller span { font-size: 11px; color: var(--text2); font-weight: 600; line-height: 1.2; }
+
+/* ===== Store grid / product cards ===== */
+.cp-store-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  padding: 6px 16px 8px;
+}
+.store-card {
+  text-align: left;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  border-radius: 16px;
+  overflow: hidden;
+  cursor: pointer;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  transition: transform .12s ease;
+}
+.store-card:active { transform: scale(0.97); }
+.store-card-media {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 44px;
+  overflow: hidden;
+}
+.store-like {
+  position: absolute; top: 8px; right: 8px;
+  width: 30px; height: 30px; border-radius: 50%;
+  background: rgba(9,7,20,.55);
+  color: #fff;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+}
+.store-like svg { width: 15px; height: 15px; }
+.store-card-body { padding: 10px 11px 12px; }
+.store-price { font-weight: 800; font-size: 16px; color: var(--text); }
+.store-title {
+  font-size: 12.5px; color: var(--text2); margin: 3px 0 9px; line-height: 1.35;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+}
+.store-seller { display: flex; align-items: center; gap: 6px; }
+.store-av {
+  width: 18px; height: 18px; border-radius: 50%; flex-shrink: 0;
+  background: linear-gradient(135deg, var(--brand), var(--brand-dark));
+}
+.store-seller-name { font-size: 11px; color: var(--text3); font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* ===== Bottom nav ===== */
+.cp-bottom-nav {
+  position: fixed;
+  left: 50%; transform: translateX(-50%);
+  bottom: 0;
+  width: 100%; max-width: 480px;
+  height: calc(var(--bottom-h) + var(--safe-bottom));
+  padding-bottom: var(--safe-bottom);
+  background: rgba(18, 16, 29, 0.92);
+  backdrop-filter: blur(16px);
+  border-top: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-around;
+  z-index: 30;
+}
+.cp-nav-item {
+  display: flex; flex-direction: column; align-items: center; gap: 3px;
+  background: none; border: none; color: var(--text3);
+  font-size: 10.5px; font-weight: 600;
+  cursor: pointer; padding: 6px 10px;
+}
+.cp-nav-item svg { width: 22px; height: 22px; }
+.cp-nav-item.active { color: var(--accent); }
+.cp-nav-fab {
+  width: 46px; height: 46px; border-radius: 14px;
+  background: var(--accent);
+  color: #1A1200;
+  display: flex; align-items: center; justify-content: center;
+  margin-top: -18px;
+  box-shadow: 0 8px 20px rgba(251,191,36,0.4);
+  border: 4px solid var(--bg);
+  cursor: pointer;
+}
+.cp-nav-fab svg { width: 22px; height: 22px; }
+
+@media (min-width: 481px) {
+  .cp-bottom-nav { border-radius: 20px 20px 0 0; }
+}
+
+/* ===== Shared page header (non-home pages) ===== */
+.cp-page-header {
+  position: sticky; top: 0; z-index: 20;
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 12px;
+  padding: calc(var(--safe-top) + 14px) 16px 12px;
+  background: rgba(9, 7, 20, 0.88);
+  backdrop-filter: blur(14px);
+  border-bottom: 1px solid var(--border);
+}
+.cp-page-header h1 { font-size: 18px; font-weight: 700; }
+.cp-page-header .brand-sub { font-size: 11.5px; color: var(--text3); font-weight: 500; margin-top: 1px; }
+
+/* ===== Post / feed card (Yard) ===== */
+.post-card {
+  margin: 12px 16px 0;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 14px;
+}
+.post-card.pinned { background: linear-gradient(135deg, var(--brand-dark), var(--brand) 130%); border: none; }
+.post-card.pinned .post-meta, .post-card.pinned .post-body { color: rgba(255,255,255,0.9); }
+.post-card.pinned .post-name { color: #fff; }
+.post-eyebrow {
+  display: flex; align-items: center; gap: 6px;
+  font-size: 11px; font-weight: 800; letter-spacing: .04em; text-transform: uppercase;
+  color: rgba(255,255,255,0.85);
+  margin-bottom: 10px;
+}
+.post-author { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+.avatar {
+  width: 40px; height: 40px; border-radius: 50%; flex-shrink: 0;
+  background: linear-gradient(135deg, var(--brand), var(--brand-dark));
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 700; font-size: 13px; color: #fff; overflow: hidden;
+}
+.avatar img { width: 100%; height: 100%; object-fit: cover; }
+.post-name { font-weight: 700; font-size: 14px; }
+.post-meta { font-size: 12px; color: var(--text3); margin-top: 1px; }
+.post-body { font-size: 14px; line-height: 1.5; color: var(--text2); }
+.post-actions { display: flex; align-items: center; gap: 18px; margin-top: 12px; }
+.post-action { display: flex; align-items: center; gap: 5px; font-size: 12.5px; font-weight: 700; color: var(--text3); background: none; border: none; cursor: pointer; }
+.post-action svg { width: 16px; height: 16px; }
+.post-action.active { color: var(--accent); }
+.post-action.liked { color: #EC4899; }
+
+.post-media { margin: 10px 0; border-radius: 12px; overflow: hidden; }
+.post-media img, .post-media video { width: 100%; max-height: 380px; object-fit: cover; display: block; }
+.post-media.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 3px; }
+.post-media.grid-2 img, .post-media.grid-2 video { max-height: 200px; }
+.post-media.grid-3 { display: grid; grid-template-columns: 1fr 1fr; gap: 3px; }
+.post-media.grid-3 > *:first-child { grid-row: span 2; }
+.post-media.grid-3 img, .post-media.grid-3 video { max-height: 180px; height: 100%; }
+
+/* Compose overlay */
+.compose-overlay { position: fixed; inset: 0; z-index: 100; background: var(--bg); display: flex; flex-direction: column; }
+.compose-header { display: flex; align-items: center; justify-content: space-between; padding: calc(var(--safe-top) + 14px) 16px 12px; border-bottom: 1px solid var(--border); }
+.compose-header button.cancel { background: none; border: none; color: var(--text2); font-size: 14px; font-weight: 600; }
+.compose-header button.post-submit { background: var(--accent); color: #1A1200; border: none; border-radius: 999px; padding: 9px 18px; font-size: 13.5px; font-weight: 800; cursor: pointer; }
+.compose-header button.post-submit:disabled { opacity: .5; }
+.compose-body { flex: 1; overflow-y: auto; padding: 16px; }
+.compose-body textarea { width: 100%; border: none; background: none; outline: none; resize: none; color: var(--text); font: inherit; font-size: 16px; min-height: 100px; }
+.compose-media-row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+.compose-media-thumb { position: relative; width: 84px; height: 84px; border-radius: 12px; overflow: hidden; background: var(--surface2); }
+.compose-media-thumb img, .compose-media-thumb video { width: 100%; height: 100%; object-fit: cover; }
+.compose-media-thumb .remove-media-btn { position: absolute; top: 3px; right: 3px; width: 20px; height: 20px; border-radius: 50%; background: rgba(9,7,20,.75); color: #fff; border: none; font-size: 12px; cursor: pointer; }
+.compose-footer { display: flex; gap: 16px; padding: 14px 16px calc(14px + var(--safe-bottom)); border-top: 1px solid var(--border); }
+.compose-footer button { background: none; border: none; color: var(--brand); display: flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 700; cursor: pointer; }
+.compose-footer svg { width: 20px; height: 20px; }
+
+/* Comments overlay */
+.comments-overlay { position: fixed; inset: 0; z-index: 100; background: rgba(9,7,20,.85); display: flex; align-items: flex-end; }
+.comments-sheet { background: var(--surface); border-radius: 20px 20px 0 0; width: 100%; max-width: 480px; margin: 0 auto; max-height: 80vh; display: flex; flex-direction: column; }
+.comments-sheet-header { display: flex; align-items: center; justify-content: space-between; padding: 16px; border-bottom: 1px solid var(--border); }
+.comments-sheet-header button { background: none; border: none; color: var(--text3); font-size: 20px; cursor: pointer; }
+.comments-list { flex: 1; overflow-y: auto; padding: 8px 16px; }
+.comment-row { display: flex; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--border); }
+.comment-row .avatar { width: 32px; height: 32px; font-size: 11px; flex-shrink: 0; }
+.comment-row-text { flex: 1; }
+.comment-row-text b { font-size: 12.5px; display: block; }
+.comment-row-text span.time { font-size: 10.5px; color: var(--text3); }
+.comment-row-text p { font-size: 13px; color: var(--text2); margin: 3px 0 0; }
+.comments-input-row { display: flex; gap: 8px; padding: 12px 16px calc(12px + var(--safe-bottom)); border-top: 1px solid var(--border); }
+.comments-input-row input { flex: 1; background: var(--surface2); border: 1px solid var(--border); border-radius: 999px; padding: 11px 15px; font: inherit; font-size: 13.5px; color: var(--text); outline: none; }
+.comments-input-row button { width: 40px; height: 40px; border-radius: 50%; background: var(--brand); color: #fff; border: none; display: flex; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0; }
+.comments-input-row button svg { width: 16px; height: 16px; }
+
+.cp-fab {
+  position: fixed; right: 20px; bottom: calc(var(--bottom-h) + var(--safe-bottom) + 16px);
+  width: 52px; height: 52px; border-radius: 16px;
+  background: var(--accent); color: #1A1200;
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 10px 24px rgba(251,191,36,0.4);
+  border: none; cursor: pointer; z-index: 25;
+  left: 50%; margin-left: 178px;
+}
+.cp-fab svg { width: 24px; height: 24px; }
+
+/* ===== Chat list (Chat page) ===== */
+.chat-search-wrap { padding: 12px 16px 6px; }
+.chat-list { padding: 4px 0 12px; }
+.chat-row {
+  display: flex; align-items: center; gap: 12px;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+  cursor: pointer;
+}
+.chat-row .avatar { width: 50px; height: 50px; font-size: 15px; position: relative; }
+.chat-row-text { flex: 1; min-width: 0; }
+.chat-row-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.chat-row-top .name { font-weight: 700; font-size: 14.5px; }
+.chat-row-top .time { font-size: 11px; color: var(--text3); flex-shrink: 0; }
+.chat-row-bottom { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 3px; }
+.chat-row-bottom .preview {
+  font-size: 13px; color: var(--text3);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.chat-unread {
+  min-width: 19px; height: 19px; padding: 0 5px; border-radius: 999px;
+  background: var(--accent); color: #1A1200;
+  font-size: 10.5px; font-weight: 800;
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.chat-listing-tag {
+  display: inline-flex; align-items: center; gap: 4px;
+  font-size: 10.5px; font-weight: 700; color: var(--brand);
+  background: var(--brand-soft); border-radius: 6px; padding: 2px 6px; margin-top: 4px;
+}
+
+/* ===== Profile ===== */
+.profile-cover {
+  height: 110px;
+  background: linear-gradient(135deg, var(--brand-dark), var(--brand) 130%);
+  position: relative;
+}
+.profile-head { padding: 0 16px; margin-top: -38px; }
+.profile-avatar {
+  width: 84px; height: 84px; border-radius: 50%;
+  border: 4px solid var(--bg);
+  background: linear-gradient(135deg, var(--brand), var(--brand-dark));
+  display: flex; align-items: center; justify-content: center;
+  font-size: 26px; font-weight: 800; color: #fff; overflow: hidden;
+}
+.profile-name-row { display: flex; align-items: center; gap: 6px; margin-top: 10px; }
+.profile-name-row h2 { font-size: 19px; }
+.verified-badge { width: 16px; height: 16px; background: #2563EB; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 9px; flex-shrink: 0; }
+.profile-handle { font-size: 13px; color: var(--text3); margin-top: 2px; }
+.profile-bio { font-size: 13.5px; color: var(--text2); margin-top: 8px; line-height: 1.5; }
+.profile-stats { display: flex; gap: 22px; margin-top: 14px; padding: 0 16px; }
+.profile-stat { }
+.profile-stat b { font-size: 16px; font-weight: 800; display: block; }
+.profile-stat span { font-size: 11.5px; color: var(--text3); }
+.profile-actions { display: flex; gap: 10px; padding: 16px 16px 4px; }
+.btn {
+  font: inherit; font-size: 13.5px; font-weight: 700; border-radius: 12px;
+  padding: 11px 14px; cursor: pointer; border: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+}
+.btn-primary { background: var(--brand); color: #fff; border: none; flex: 1; }
+.btn-ghost { background: var(--surface2); color: var(--text); }
+.profile-menu { padding: 18px 16px 8px; display: flex; flex-direction: column; gap: 8px; }
+.profile-menu-item {
+  display: flex; align-items: center; gap: 12px;
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm);
+  padding: 13px 14px; font-size: 14px; font-weight: 600; cursor: pointer;
+}
+.profile-menu-item svg { width: 18px; height: 18px; color: var(--text3); flex-shrink: 0; }
+.profile-menu-item .chev { margin-left: auto; width: 16px; height: 16px; color: var(--text3); }
+
+/* ===== Create listing (Sell) ===== */
+.form-wrap { padding: 16px; }
+.type-toggle { display: flex; gap: 8px; margin-bottom: 18px; }
+.type-toggle .btn { flex: 1; background: var(--surface2); color: var(--text2); border: 1px solid var(--border); }
+.type-toggle .btn.active { background: var(--brand); color: #fff; border-color: var(--brand); }
+.form-group { margin-bottom: 16px; }
+.form-label { display: block; font-size: 12.5px; font-weight: 700; color: var(--text2); margin-bottom: 7px; }
+.form-input, .form-textarea, .form-select {
+  width: 100%; background: var(--surface2); border: 1px solid var(--border); border-radius: var(--radius-sm);
+  padding: 12px 14px; font: inherit; font-size: 14px; color: var(--text); outline: none;
+}
+.form-textarea { resize: vertical; min-height: 90px; }
+.upload-box {
+  border: 1.5px dashed var(--border); border-radius: var(--radius-sm);
+  padding: 26px 14px; text-align: center; color: var(--text3); font-size: 13px; font-weight: 600;
+  cursor: pointer;
+}
+.upload-box svg { width: 26px; height: 26px; margin: 0 auto 8px; }
+.upload-box.has-photos { padding: 14px; }
+.photo-preview-row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+.photo-thumb { position: relative; width: 72px; height: 72px; border-radius: 10px; overflow: hidden; background: var(--surface2); }
+.photo-thumb img { width: 100%; height: 100%; object-fit: cover; }
+.photo-thumb .remove-photo-btn {
+  position: absolute; top: 3px; right: 3px; width: 18px; height: 18px; border-radius: 50%;
+  background: rgba(9,7,20,.75); color: #fff; border: none; font-size: 12px; line-height: 1; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+}
+.photo-thumb .upload-progress {
+  position: absolute; inset: 0; background: rgba(9,7,20,.6); color: #fff; font-size: 10.5px; font-weight: 800;
+  display: flex; align-items: center; justify-content: center;
+}
+.form-submit { width: 100%; background: var(--accent); color: #1A1200; border: none; border-radius: var(--radius-sm); padding: 15px; font-size: 15px; font-weight: 800; cursor: pointer; margin-top: 6px; }
+
+/* ===== Public profile view ===== */
+.pv-message-btn { position: fixed; left: 50%; transform: translateX(-50%); bottom: 20px; width: calc(100% - 32px); max-width: 448px; z-index: 20; }
+
+/* ===== Auth ===== */
+.auth-shell { max-width: 480px; margin: 0 auto; min-height: 100vh; padding: calc(var(--safe-top) + 32px) 24px 32px; display: flex; flex-direction: column; }
+.auth-logo { width: 56px; height: 56px; border-radius: 16px; overflow: hidden; margin-bottom: 18px; box-shadow: 0 8px 22px rgba(124,58,237,0.4); }
+.auth-logo img { width: 100%; height: 100%; object-fit: cover; }
+.auth-shell h1 { font-size: 25px; font-weight: 700; }
+.auth-shell .auth-sub { font-size: 14px; color: var(--text3); margin-top: 6px; }
+.auth-tabs { display: flex; background: var(--surface2); border: 1px solid var(--border); border-radius: 12px; padding: 4px; margin: 24px 0 22px; }
+.auth-tab { flex: 1; border: none; background: none; color: var(--text3); font: inherit; font-size: 13.5px; font-weight: 700; padding: 10px; border-radius: 9px; cursor: pointer; }
+.auth-tab.active { background: var(--brand); color: #fff; }
+.auth-view { display: none; flex-direction: column; gap: 16px; }
+.auth-view.active { display: flex; }
+.auth-foot { margin-top: 22px; text-align: center; font-size: 13px; color: var(--text3); }
+.auth-foot a { color: var(--accent); font-weight: 700; }
+.password-field { position: relative; }
+.password-field .form-input { padding-right: 42px; }
+.password-toggle { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); background: none; border: none; color: var(--text3); cursor: pointer; padding: 4px; }
+.password-toggle svg { width: 17px; height: 17px; }
+
+/* University picker */
+.uni-picker { position: relative; }
+.uni-picker-input {
+  display: flex; align-items: center; gap: 10px;
+  width: 100%; background: var(--surface2); border: 1px solid var(--border); border-radius: var(--radius-sm);
+  padding: 12px 14px; cursor: pointer;
+}
+.uni-picker-input input { flex: 1; border: none; background: none; outline: none; font: inherit; font-size: 14px; color: var(--text); }
+.uni-picker-input svg { width: 16px; height: 16px; color: var(--text3); flex-shrink: 0; }
+.uni-list {
+  position: absolute; top: calc(100% + 6px); left: 0; right: 0; z-index: 30;
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm);
+  max-height: 220px; overflow-y: auto; box-shadow: var(--shadow-lg);
+  display: none;
+}
+.uni-list.open { display: block; }
+.uni-option { padding: 12px 14px; font-size: 13.5px; font-weight: 600; cursor: pointer; border-bottom: 1px solid var(--border); }
+.uni-option:last-child { border-bottom: none; }
+.uni-option:hover { background: var(--surface2); }
+.uni-locked {
+  display: flex; align-items: center; gap: 10px;
+  background: var(--brand-soft); border: 1px solid var(--brand); border-radius: var(--radius-sm);
+  padding: 12px 14px;
+}
+.uni-locked svg { width: 16px; height: 16px; color: var(--brand); flex-shrink: 0; }
+.uni-locked .name { font-size: 14px; font-weight: 700; flex: 1; }
+.uni-locked .note { font-size: 11px; color: var(--text3); }
+.field-hint { font-size: 11.5px; color: var(--text3); margin-top: 6px; line-height: 1.4; }
+
+/* ===== Notifications (Chats + Activity) ===== */
+.notif-tabs { display: flex; gap: 6px; padding: 10px 16px 4px; }
+.notif-tab {
+  flex: 1; text-align: center; border: none; background: var(--surface2); color: var(--text2);
+  font: inherit; font-size: 13px; font-weight: 700; padding: 10px; border-radius: 10px; cursor: pointer;
+  border: 1px solid var(--border); position: relative;
+}
+.notif-tab.active { background: var(--brand); color: #fff; border-color: var(--brand); }
+.notif-tab .dot { position: absolute; top: 6px; right: 10px; width: 7px; height: 7px; border-radius: 50%; background: var(--danger); }
+.notif-panel { display: none; }
+.notif-panel.active { display: block; }
+
+.activity-row {
+  display: flex; align-items: flex-start; gap: 12px;
+  padding: 12px 16px; border-bottom: 1px solid var(--border);
+}
+.activity-icon {
+  width: 36px; height: 36px; border-radius: 50%; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center; font-size: 16px;
+  background: var(--surface2);
+}
+.activity-icon.money { background: rgba(52,211,153,0.16); }
+.activity-icon.social { background: var(--brand-soft); }
+.activity-text { flex: 1; font-size: 13.5px; color: var(--text2); line-height: 1.4; }
+.activity-text b { color: var(--text); }
+.activity-time { font-size: 11.5px; color: var(--text3); margin-top: 3px; }
+.activity-row.unread { background: var(--brand-soft); }
+
+/* ===== Landing page ===== */
+.landing {
+  max-width: 480px; margin: 0 auto; min-height: 100vh;
+  background: radial-gradient(circle at 30% 0%, rgba(255,255,255,0.10), transparent 45%), linear-gradient(160deg, #6D28D9 0%, #7C3AED 42%, #9333EA 100%);
+  padding: calc(var(--safe-top) + 16px) 20px 40px;
+  position: relative; overflow: hidden;
+}
+.landing::before {
+  content: '🎓'; position: absolute; top: 8%; left: -6%; font-size: 130px; opacity: 0.06; transform: rotate(-12deg);
+}
+.landing::after {
+  content: '🎓'; position: absolute; bottom: 30%; right: -8%; font-size: 150px; opacity: 0.05; transform: rotate(10deg);
+}
+.landing-nav { display: flex; align-items: center; justify-content: space-between; gap: 8px; position: relative; z-index: 1; }
+.landing-pill {
+  display: flex; align-items: center; gap: 6px;
+  background: rgba(255,255,255,0.14); color: #fff;
+  border-radius: 999px; padding: 9px 14px; font-size: 12.5px; font-weight: 700;
+  white-space: nowrap;
+}
+.landing-login { color: #fff; font-size: 14px; font-weight: 700; padding: 9px 6px; }
+.landing-google-sm {
+  display: flex; align-items: center; gap: 8px;
+  background: #fff; color: var(--brand-dark);
+  border-radius: 999px; padding: 9px 16px; font-size: 12.5px; font-weight: 700;
+  white-space: nowrap; border: none; cursor: pointer;
+}
+.landing-google-sm img, .landing-google-lg img { width: 16px; height: 16px; }
+
+.landing-hero { text-align: center; margin-top: 28px; position: relative; z-index: 1; }
+.landing-hero img { width: 168px; margin: 0 auto; }
+
+.landing-headline {
+  font-size: 27px; font-weight: 800; color: #fff; text-align: center;
+  line-height: 1.25; margin-top: 36px; position: relative; z-index: 1;
+}
+.landing-sub {
+  font-size: 14.5px; color: rgba(255,255,255,0.82); text-align: center; line-height: 1.6;
+  margin-top: 14px; position: relative; z-index: 1;
+}
+.landing-google-lg {
+  display: flex; align-items: center; justify-content: center; gap: 10px;
+  width: 100%; background: #fff; color: var(--brand-dark);
+  border: none; border-radius: 999px; padding: 16px; margin-top: 24px;
+  font-size: 15px; font-weight: 800; cursor: pointer; position: relative; z-index: 1;
+  box-shadow: 0 10px 26px rgba(0,0,0,0.2);
+}
+
+.landing-stats {
+  display: flex; margin-top: 28px; background: rgba(255,255,255,0.10);
+  border-radius: 18px; padding: 20px 10px; position: relative; z-index: 1;
+}
+.landing-stat { flex: 1; text-align: center; }
+.landing-stat b { display: block; font-size: 21px; font-weight: 800; color: #fff; }
+.landing-stat span { font-size: 12px; color: rgba(255,255,255,0.75); }
+
+.landing-section-title {
+  font-size: 20px; font-weight: 800; color: #fff; text-align: center;
+  margin-top: 40px; position: relative; z-index: 1;
+}
+.landing-feature {
+  display: flex; align-items: center; gap: 14px;
+  background: rgba(255,255,255,0.08); border-radius: 16px;
+  padding: 15px 16px; margin-top: 12px; position: relative; z-index: 1;
+}
+.landing-feature-icon {
+  width: 40px; height: 40px; border-radius: 12px; flex-shrink: 0;
+  background: rgba(255,255,255,0.14);
+  display: flex; align-items: center; justify-content: center; font-size: 18px;
+}
+.landing-feature-text b { display: block; color: #fff; font-size: 14.5px; font-weight: 700; }
+.landing-feature-text span { color: rgba(255,255,255,0.7); font-size: 12.5px; }
+
+.landing-foot { text-align: center; margin-top: 34px; position: relative; z-index: 1; }
+.landing-foot a { color: #fff; font-weight: 700; font-size: 13.5px; }
+
+/* ===== Settings ===== */
+.settings-section { padding: 18px 16px 4px; }
+.settings-section-title { font-size: 12px; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; color: var(--text3); margin-bottom: 10px; }
+.settings-group { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm); overflow: hidden; }
+.settings-row {
+  display: flex; align-items: center; gap: 12px;
+  padding: 14px; border-bottom: 1px solid var(--border);
+}
+.settings-row:last-child { border-bottom: none; }
+.settings-row-text { flex: 1; min-width: 0; }
+.settings-row-text b { display: block; font-size: 14px; font-weight: 700; }
+.settings-row-text span { font-size: 12px; color: var(--text3); }
+.settings-row .chev { width: 16px; height: 16px; color: var(--text3); flex-shrink: 0; }
+.settings-row.link { cursor: pointer; }
+.settings-row.danger b { color: var(--danger); }
+
+.switch { position: relative; width: 44px; height: 26px; flex-shrink: 0; }
+.switch input { opacity: 0; width: 0; height: 0; }
+.switch-track {
+  position: absolute; inset: 0; background: var(--surface3); border-radius: 999px; cursor: pointer;
+  transition: background .15s;
+}
+.switch-track::before {
+  content: ''; position: absolute; left: 3px; top: 3px; width: 20px; height: 20px;
+  background: #fff; border-radius: 50%; transition: transform .15s;
+}
+.switch input:checked + .switch-track { background: var(--brand); }
+.switch input:checked + .switch-track::before { transform: translateX(18px); }
+
+/* ===== Market (full browse page) ===== */
+.market-tabs {
+  display: flex; gap: 6px; padding: 12px 16px 4px;
+  overflow-x: auto; scrollbar-width: none;
+}
+.market-tabs::-webkit-scrollbar { display: none; }
+.market-tab {
+  flex-shrink: 0; border: 1px solid var(--border); background: var(--surface2); color: var(--text2);
+  font: inherit; font-size: 13px; font-weight: 700; padding: 9px 16px; border-radius: 999px; cursor: pointer;
+}
+.market-tab.active { background: var(--brand); color: #fff; border-color: var(--brand); }
+.market-sort-row { display: flex; align-items: center; justify-content: space-between; padding: 10px 16px 2px; }
+.market-sort-row select { background: var(--surface2); border: 1px solid var(--border); color: var(--text2); border-radius: 10px; padding: 8px 10px; font: inherit; font-size: 12.5px; }
+.market-count { font-size: 12px; color: var(--text3); }
+
+/* ===== Swift ===== */
+.swift-banner {
+  margin: 14px 16px 0; padding: 13px 14px; border-radius: var(--radius-sm);
+  background: rgba(251,191,36,0.12); border: 1px solid var(--accent); color: var(--accent);
+  font-size: 12.5px; font-weight: 700; display: flex; align-items: center; gap: 8px;
+}
+.swift-card {
+  margin: 14px 16px 0; background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 16px;
+}
+.swift-card h3 { font-size: 15px; font-weight: 700; margin-bottom: 4px; }
+.swift-card p { font-size: 13px; color: var(--text2); margin: 0 0 12px; line-height: 1.5; }
+.swift-status-pill {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: var(--brand-soft); color: var(--brand); font-size: 12px; font-weight: 700;
+  border-radius: 999px; padding: 5px 12px; margin-bottom: 10px;
+}
+.swift-pin-row { display: flex; gap: 10px; margin-top: 10px; }
+.swift-pin { flex: 1; background: var(--surface2); border-radius: 10px; padding: 10px; text-align: center; }
+.swift-pin b { display: block; font-size: 18px; letter-spacing: .1em; }
+.swift-pin span { font-size: 10.5px; color: var(--text3); }
+.transport-row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; }
+.transport-pill {
+  border: 1px solid var(--border); background: var(--surface2); color: var(--text2);
+  border-radius: 999px; padding: 9px 14px; font-size: 13px; font-weight: 700; cursor: pointer;
+}
+.transport-pill.active { background: var(--brand-soft); border-color: var(--brand); color: var(--brand); }
+.swift-toggle-row { display: flex; align-items: center; justify-content: space-between; }
+.swift-earnings-row { display: flex; gap: 12px; margin-top: 14px; }
+.swift-earnings-row div { flex: 1; background: var(--surface2); border-radius: 12px; padding: 12px; text-align: center; }
+.swift-earnings-row b { display: block; font-size: 17px; font-weight: 800; }
+.swift-earnings-row span { font-size: 11px; color: var(--text3); }
+.order-req-card {
+  background: var(--surface2); border-radius: 12px; padding: 12px; margin-top: 10px;
+}
+.order-req-top { display: flex; justify-content: space-between; font-size: 13px; font-weight: 700; }
+.order-req-sub { font-size: 12px; color: var(--text3); margin-top: 3px; }
+.order-req-actions { display: flex; gap: 8px; margin-top: 10px; }
+.order-req-actions .btn { flex: 1; padding: 9px; font-size: 12.5px; }
+.star-row { display: flex; gap: 6px; margin: 10px 0; }
+.star-btn { background: none; border: none; font-size: 26px; cursor: pointer; opacity: .35; padding: 0; }
+.star-btn.active { opacity: 1; }
+.pin-entry-row { display: flex; gap: 8px; margin-top: 10px; }
+.pin-entry-row input { flex: 1; background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; padding: 11px; font: inherit; font-size: 16px; letter-spacing: .2em; text-align: center; color: var(--text); }
+.pin-entry-row button { flex-shrink: 0; }
+
+/* ===== Listing detail ===== */
+.listing-media {
+  width: 100%; aspect-ratio: 1/1; display: flex; align-items: center; justify-content: center;
+  font-size: 90px; position: relative;
+}
+.listing-body { padding: 18px 16px; }
+.listing-price { font-size: 26px; font-weight: 800; }
+.listing-title { font-size: 17px; font-weight: 700; margin-top: 6px; }
+.listing-badges { display: flex; gap: 6px; margin-top: 8px; }
+.listing-badge { font-size: 11px; font-weight: 700; background: var(--surface2); border: 1px solid var(--border); border-radius: 999px; padding: 4px 10px; color: var(--text2); }
+.listing-desc { font-size: 13.5px; color: var(--text2); line-height: 1.6; margin-top: 14px; }
+.listing-seller-row {
+  display: flex; align-items: center; gap: 10px; margin-top: 18px; padding: 12px;
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm);
+}
+.listing-seller-row .info { flex: 1; }
+.listing-seller-row b { font-size: 13.5px; display: block; }
+.listing-seller-row span { font-size: 11.5px; color: var(--text3); }
+.listing-actions { display: flex; gap: 10px; margin-top: 18px; }
+.listing-actions .btn { flex: 1; padding: 13px; font-size: 14px; }
+
+/* ===== Swift map + dispute ===== */
+.swift-map { width: 100%; height: 180px; border-radius: var(--radius-sm); overflow: hidden; margin-top: 12px; background: var(--surface2); position: relative; cursor: pointer; }
+/* OSM's raw tiles are light — invert just the tile layer (not markers/popups) so maps match our dark theme */
+.swift-map .leaflet-tile-pane, .dmap-canvas .leaflet-tile-pane, .loc-picker-map .leaflet-tile-pane {
+  filter: invert(1) hue-rotate(180deg) brightness(0.95) contrast(0.9) saturate(0.7);
+}
+.leaflet-control-attribution {
+  background: rgba(9,7,20,.65) !important; color: var(--text3) !important;
+  font-size: 8.5px !important; padding: 1px 6px !important; line-height: 1.4 !important; border-radius: 4px 0 0 0 !important;
+}
+.leaflet-control-attribution a { color: var(--text3) !important; }
+.swift-map-hint {
+  position: absolute; right: 8px; bottom: 8px; z-index: 5; pointer-events: none;
+  background: rgba(9,7,20,.78); color: #fff; font-size: 10.5px; font-weight: 800;
+  padding: 6px 11px; border-radius: 999px; display: flex; align-items: center; gap: 4px;
+}
+
+/* ===== Full-screen delivery map (Uber-style) ===== */
+.dmap-overlay { position: fixed; inset: 0; z-index: 260; background: var(--bg); }
+.dmap-canvas { position: absolute; inset: 0; }
+.dmap-topbar {
+  position: absolute; top: calc(var(--safe-top) + 12px); left: 12px; right: 12px; z-index: 10;
+  display: flex; align-items: center; gap: 10px;
+}
+.dmap-back-btn {
+  width: 42px; height: 42px; border-radius: 50%; background: var(--surface); border: 1px solid var(--border);
+  color: var(--text); display: flex; align-items: center; justify-content: center; cursor: pointer;
+  box-shadow: 0 2px 12px rgba(0,0,0,.35); flex-shrink: 0;
+}
+.dmap-back-btn svg { width: 18px; height: 18px; }
+.dmap-status-chip {
+  background: var(--surface); border: 1px solid var(--border); border-radius: 999px; padding: 10px 16px;
+  font-size: 12.5px; font-weight: 700; box-shadow: 0 2px 12px rgba(0,0,0,.35);
+}
+.dmap-locate-btn {
+  position: absolute; top: calc(var(--safe-top) + 64px); right: 12px; z-index: 10;
+  width: 42px; height: 42px; border-radius: 50%; background: var(--surface); border: 1px solid var(--border);
+  color: var(--accent); display: flex; align-items: center; justify-content: center; cursor: pointer;
+  box-shadow: 0 2px 12px rgba(0,0,0,.35);
+}
+.dmap-locate-btn svg { width: 19px; height: 19px; }
+.dmap-sheet {
+  position: absolute; left: 0; right: 0; bottom: 0; z-index: 10; background: var(--surface);
+  border-radius: 20px 20px 0 0; padding: 10px 16px calc(16px + var(--safe-bottom));
+  box-shadow: 0 -8px 26px rgba(0,0,0,.4); overflow-y: auto;
+  height: 58vh; max-height: 80vh; touch-action: none;
+}
+.dmap-sheet.dmap-sheet-snapping { transition: height .28s cubic-bezier(.2,.9,.3,1); }
+.dmap-sheet-handle { width: 36px; height: 4px; background: var(--border); border-radius: 999px; margin: 0 auto 12px; cursor: grab; touch-action: none; }
+.dmap-eta-chip {
+  display: flex; align-items: center; gap: 8px; background: var(--surface2); border: 1px solid var(--border);
+  border-radius: 12px; padding: 10px 12px; margin-bottom: 10px; font-size: 12.5px; font-weight: 700;
+}
+.dmap-eta-chip b { color: var(--accent); font-size: 14px; }
+.dmap-eta-chip span { color: var(--text3); font-weight: 500; }
+.dmap-stop { display: flex; align-items: flex-start; gap: 10px; padding: 10px 2px; border-bottom: 1px solid var(--border); cursor: pointer; }
+.dmap-stop:last-of-type { border-bottom: none; }
+.dmap-stop-dot {
+  width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+  font-size: 12px; flex-shrink: 0; margin-top: 1px;
+}
+.dmap-stop-dot.pickup { background: rgba(251,191,36,0.18); color: var(--accent); }
+.dmap-stop-dot.dropoff { background: rgba(52,211,153,0.18); color: var(--money); }
+.dmap-stop-text { flex: 1; min-width: 0; }
+.dmap-stop-text b { font-size: 13.5px; display: block; }
+.dmap-stop-text span { font-size: 11.5px; color: var(--text3); }
+.dmap-stop.active { background: var(--surface2); border-radius: 10px; }
+.dmap-stop.active .dmap-stop-text b { color: var(--accent); }
+.dmap-stop-nav-btn {
+  flex-shrink: 0; align-self: center; background: var(--surface2); border: 1px solid var(--border); color: var(--text2);
+  border-radius: 10px; padding: 8px 11px; font-size: 11px; font-weight: 700; cursor: pointer; white-space: nowrap;
+}
+.dmap-stop.active .dmap-stop-nav-btn { background: var(--accent); border-color: var(--accent); color: #1A1200; }
+.dmap-pin-row { display: flex; gap: 8px; margin-top: 12px; }
+.dmap-pin-row input {
+  flex: 1; background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; padding: 11px;
+  font: inherit; font-size: 16px; letter-spacing: .2em; text-align: center; color: var(--text);
+}
+.swift-report-btn {
+  margin-top: 12px; width: 100%; background: none; border: 1px solid var(--danger); color: var(--danger);
+  border-radius: var(--radius-sm); padding: 11px; font: inherit; font-size: 12.5px; font-weight: 700; cursor: pointer;
+}
+.locate-btn {
+  background: var(--surface2); border: 1px solid var(--border); color: var(--text2);
+  border-radius: 10px; padding: 11px 12px; font-size: 12px; font-weight: 700; cursor: pointer; white-space: nowrap;
+}
+
+/* ===== Location picker (Leaflet) ===== */
+.loc-picker-map { width: 100%; height: 160px; border-radius: var(--radius-sm); overflow: hidden; margin-top: 8px; background: var(--surface2); cursor: crosshair; }
+.loc-picker-hint { font-size: 11px; color: var(--text3); margin-top: 5px; }
+.loc-picker-status { font-size: 11.5px; font-weight: 700; margin-top: 5px; }
+.loc-picker-status.set { color: var(--money); }
+.loc-picker-status.unset { color: var(--text3); }
+.fee-breakdown { background: var(--surface2); border-radius: var(--radius-sm); padding: 12px 14px; margin-top: 6px; }
+.fee-breakdown-row { display: flex; justify-content: space-between; font-size: 12.5px; color: var(--text2); padding: 3px 0; }
+.fee-breakdown-row.total { border-top: 1px solid var(--border); margin-top: 6px; padding-top: 8px; font-weight: 800; color: var(--text); font-size: 14px; }
+.fee-badge { display: inline-flex; align-items: center; gap: 4px; background: var(--accent-soft); color: var(--accent); border-radius: 999px; padding: 3px 10px; font-size: 11px; font-weight: 700; margin-left: 6px; }
+
+/* ===== Admin ===== */
+.admin-denied { text-align: center; padding: 60px 24px; color: var(--text3); }
+.admin-stats-row { display: flex; gap: 10px; padding: 14px 16px 4px; overflow-x: auto; scrollbar-width: none; }
+.admin-stats-row::-webkit-scrollbar { display: none; }
+.admin-stat-card { flex-shrink: 0; min-width: 108px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 13px; }
+.admin-stat-card b { display: block; font-size: 20px; font-weight: 800; }
+.admin-stat-card span { font-size: 11px; color: var(--text3); }
+.admin-tabs { display: flex; gap: 6px; padding: 14px 16px 4px; overflow-x: auto; scrollbar-width: none; }
+.admin-tabs::-webkit-scrollbar { display: none; }
+.admin-tab { flex-shrink: 0; border: 1px solid var(--border); background: var(--surface2); color: var(--text2); font: inherit; font-size: 12.5px; font-weight: 700; padding: 9px 14px; border-radius: 999px; cursor: pointer; position: relative; }
+.admin-tab.active { background: var(--brand); color: #fff; border-color: var(--brand); }
+.admin-tab .count { position: absolute; top: -6px; right: -6px; background: var(--danger); color: #fff; font-size: 10px; font-weight: 800; min-width: 16px; height: 16px; border-radius: 999px; display: flex; align-items: center; justify-content: center; }
+.admin-panel { display: none; padding: 12px 16px 4px; }
+.admin-panel.active { display: block; }
+.admin-item { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 13px 14px; margin-bottom: 10px; }
+.admin-item-top { display: flex; justify-content: space-between; gap: 8px; font-size: 13.5px; font-weight: 700; }
+.admin-item-sub { font-size: 12px; color: var(--text3); margin-top: 3px; }
+.admin-item-body { font-size: 13px; color: var(--text2); margin-top: 8px; line-height: 1.5; }
+.admin-item-actions { display: flex; gap: 8px; margin-top: 10px; }
+.admin-item-actions .btn { flex: 1; padding: 9px; font-size: 12.5px; }
+.admin-item-actions.wrap { flex-wrap: wrap; }
+.admin-pill-btn {
+  border: 1px solid var(--border); background: var(--surface2); color: var(--text2);
+  border-radius: 999px; padding: 7px 12px; font-size: 11.5px; font-weight: 700; cursor: pointer;
+}
+.admin-pill-btn.on { background: var(--brand-soft); color: var(--brand); border-color: var(--brand); }
+.admin-pill-btn.danger { color: var(--danger); }
+.admin-pill-btn.danger.on { background: rgba(251,113,133,0.14); border-color: var(--danger); }
+.admin-search-wrap { padding: 12px 16px 4px; }
+.admin-badges { display: flex; gap: 4px; flex-wrap: wrap; margin-top: 4px; }
+.admin-badge-tag { font-size: 9.5px; font-weight: 800; border-radius: 6px; padding: 2px 6px; text-transform: uppercase; letter-spacing: .02em; }
+.admin-badge-tag.admin { background: rgba(167,139,250,0.18); color: var(--brand); }
+.admin-badge-tag.ambassador { background: rgba(251,191,36,0.18); color: var(--accent); }
+.admin-badge-tag.verified { background: rgba(52,211,153,0.18); color: var(--money); }
+.admin-badge-tag.banned { background: rgba(251,113,133,0.18); color: var(--danger); }
+.admin-empty { text-align: center; padding: 30px 10px; color: var(--text3); font-size: 13px; }
+
+/* ===== Groups & Calls ===== */
+.groups-search-wrap { padding: 12px 16px 4px; display: flex; gap: 8px; }
+.group-row { display: flex; align-items: center; gap: 12px; padding: 12px 16px; border-bottom: 1px solid var(--border); cursor: pointer; }
+.group-avatar { width: 46px; height: 46px; border-radius: 12px; flex-shrink: 0; background: linear-gradient(135deg, var(--brand), var(--brand-dark)); display: flex; align-items: center; justify-content: center; font-size: 18px; }
+.group-row-text { flex: 1; min-width: 0; }
+.group-row-text b { font-size: 13.5px; display: block; }
+.group-row-text span { font-size: 12px; color: var(--text3); }
+.group-join-btn { background: var(--brand); color: #fff; border: none; border-radius: 999px; padding: 7px 14px; font-size: 11.5px; font-weight: 700; cursor: pointer; flex-shrink: 0; }
+.call-row { display: flex; align-items: center; gap: 12px; padding: 12px 16px; border-bottom: 1px solid var(--border); }
+.call-icon { width: 38px; height: 38px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 16px; background: var(--surface2); flex-shrink: 0; }
+.call-row-text { flex: 1; min-width: 0; }
+.call-row-text b { font-size: 13.5px; display: block; }
+.call-row-text span { font-size: 12px; color: var(--text3); }
+.call-row-text span.missed { color: var(--danger); }
+.call-time { font-size: 11px; color: var(--text3); }
+.call-notice { margin: 12px 16px; background: var(--brand-soft); color: var(--brand); border-radius: var(--radius-sm); padding: 12px 14px; font-size: 12px; font-weight: 600; line-height: 1.5; }
+
+/* ===== Feedback ===== */
+.fb-star-picker { display: flex; gap: 8px; margin: 6px 0 16px; }
+.fb-star-picker button { background: none; border: none; font-size: 30px; opacity: .3; cursor: pointer; padding: 0; }
+.fb-star-picker button.active { opacity: 1; }
+.fb-toggle-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+.fb-toggle-row .settings-row-text b { font-size: 13.5px; }
+.fb-toggle-row .settings-row-text span { font-size: 11.5px; color: var(--text3); }
+.fb-filter-row { display: flex; gap: 6px; padding: 14px 16px 4px; overflow-x: auto; scrollbar-width: none; }
+.fb-filter-row::-webkit-scrollbar { display: none; }
+.fb-filter-chip { flex-shrink: 0; border: 1px solid var(--border); background: var(--surface2); color: var(--text2); font: inherit; font-size: 12.5px; font-weight: 700; padding: 8px 14px; border-radius: 999px; cursor: pointer; }
+.fb-filter-chip.active { background: var(--brand); color: #fff; border-color: var(--brand); }
+.fb-card { margin: 10px 16px 0; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 14px; }
+.fb-card-top { display: flex; justify-content: space-between; gap: 8px; align-items: flex-start; }
+.fb-card-top .cat { font-size: 11px; font-weight: 700; color: var(--text3); }
+.fb-status { font-size: 10px; font-weight: 800; border-radius: 999px; padding: 3px 8px; text-transform: capitalize; }
+.fb-status.pending { background: rgba(251,191,36,0.14); color: var(--accent); }
+.fb-status.reviewed { background: rgba(37,99,235,0.14); color: #60A5FA; }
+.fb-status.resolved { background: rgba(52,211,153,0.14); color: var(--money); }
+.fb-card h4 { font-size: 14.5px; font-weight: 700; margin-top: 6px; }
+.fb-card p { font-size: 13px; color: var(--text2); margin: 6px 0 0; line-height: 1.5; }
+.fb-card-foot { display: flex; align-items: center; justify-content: space-between; margin-top: 10px; }
+.fb-upvote-btn { display: flex; align-items: center; gap: 5px; background: var(--surface2); border: 1px solid var(--border); color: var(--text2); border-radius: 999px; padding: 6px 12px; font-size: 12px; font-weight: 700; cursor: pointer; }
+.fb-upvote-btn.active { background: var(--brand-soft); color: var(--brand); border-color: var(--brand); }
+.fb-stars-sm { color: var(--accent); font-size: 12px; }
+
+/* ===== Ambassador ===== */
+.amb-hero {
+  margin: 14px 16px 0; border-radius: var(--radius); padding: 22px 20px;
+  background: linear-gradient(135deg, var(--brand-dark), var(--brand) 130%);
+  position: relative; overflow: hidden;
+}
+.amb-hero::after { content: '🎓'; position: absolute; right: -10px; bottom: -20px; font-size: 100px; opacity: .14; }
+.amb-tier { display: inline-flex; align-items: center; gap: 6px; background: rgba(255,255,255,.16); color: #fff; border-radius: 999px; padding: 5px 12px; font-size: 12px; font-weight: 800; position: relative; z-index: 1; }
+.amb-code-row { display: flex; align-items: center; gap: 10px; margin-top: 14px; position: relative; z-index: 1; }
+.amb-code { font-size: 20px; font-weight: 800; color: #fff; letter-spacing: .05em; }
+.amb-copy-btn { background: #12101D; color: var(--accent); border: none; border-radius: 8px; padding: 8px 12px; font-size: 12px; font-weight: 700; cursor: pointer; }
+.amb-share-row { display: flex; gap: 8px; margin-top: 14px; position: relative; z-index: 1; }
+.amb-share-row button { flex: 1; background: rgba(255,255,255,.14); color: #fff; border: none; border-radius: 10px; padding: 10px; font-size: 12.5px; font-weight: 700; cursor: pointer; }
+.amb-stats-row { display: flex; gap: 10px; padding: 14px 16px 4px; }
+.amb-stats-row div { flex: 1; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 13px; text-align: center; }
+.amb-stats-row b { display: block; font-size: 18px; font-weight: 800; }
+.amb-stats-row span { font-size: 11px; color: var(--text3); }
+.amb-tabs { display: flex; gap: 6px; padding: 14px 16px 4px; }
+.amb-tab { flex: 1; border: 1px solid var(--border); background: var(--surface2); color: var(--text2); font: inherit; font-size: 12.5px; font-weight: 700; padding: 10px; border-radius: 10px; cursor: pointer; text-align: center; }
+.amb-tab.active { background: var(--brand); color: #fff; border-color: var(--brand); }
+.amb-panel { display: none; padding: 12px 16px 4px; }
+.amb-panel.active { display: block; }
+.amb-status-badge { font-size: 10.5px; font-weight: 800; border-radius: 999px; padding: 3px 9px; }
+.amb-status-badge.pending { background: rgba(251,191,36,0.14); color: var(--accent); }
+.amb-status-badge.verified { background: rgba(52,211,153,0.14); color: var(--money); }
+.amb-status-badge.paid { background: rgba(52,211,153,0.14); color: var(--money); }
+
+/* ===== Groups ===== */
+.group-row .avatar { width: 46px; height: 46px; border-radius: 14px; font-size: 15px; }
+.group-row-text { flex: 1; min-width: 0; }
+.group-row-text b { font-size: 14px; display: block; }
+.group-row-text span { font-size: 12px; color: var(--text3); }
+.group-discover-card { margin: 10px 16px 0; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 13px; display: flex; align-items: center; gap: 12px; }
+.group-discover-card .avatar { width: 42px; height: 42px; border-radius: 12px; font-size: 14px; flex-shrink: 0; }
+.group-discover-card .info { flex: 1; min-width: 0; }
+.group-discover-card .info b { font-size: 13.5px; display: block; }
+.group-discover-card .info span { font-size: 11.5px; color: var(--text3); }
+.group-discover-card button { flex-shrink: 0; background: var(--brand); color: #fff; border: none; border-radius: 999px; padding: 8px 14px; font-size: 12px; font-weight: 700; cursor: pointer; }
+.groups-tabs { display: flex; gap: 6px; padding: 12px 16px 4px; }
+.groups-tabs button { flex: 1; border: 1px solid var(--border); background: var(--surface2); color: var(--text2); font: inherit; font-size: 12.5px; font-weight: 700; padding: 10px; border-radius: 10px; cursor: pointer; }
+.groups-tabs button.active { background: var(--brand); color: #fff; border-color: var(--brand); }
+.announcement-bubble { background: var(--accent-soft); border: 1px solid var(--accent); border-radius: 12px; padding: 10px 13px; font-size: 13px; margin: 0 auto 6px; max-width: 88%; text-align: center; }
+.msg-sender-name { font-size: 10.5px; font-weight: 700; color: var(--brand); margin-bottom: 2px; }
+
+/* ===== Calls ===== */
+.call-row .avatar { width: 44px; height: 44px; }
+.call-row-text { flex: 1; min-width: 0; }
+.call-row-text b { font-size: 13.5px; display: flex; align-items: center; gap: 5px; }
+.call-row-text span { font-size: 11.5px; color: var(--text3); }
+.call-row-text .missed { color: var(--danger); }
+
+/* ===== Verify email ===== */
+.verify-icon { width: 64px; height: 64px; border-radius: 50%; background: var(--brand-soft); display: flex; align-items: center; justify-content: center; font-size: 28px; margin: 0 auto 18px; }
+.verify-resend-btn { background: none; border: 1px solid var(--border); color: var(--text2); border-radius: 999px; padding: 10px 20px; font-size: 13px; font-weight: 700; cursor: pointer; }
+.verify-resend-btn:disabled { opacity: .5; cursor: default; }
+.call-icon-btn { width: 38px; height: 38px; border-radius: 50%; background: var(--surface2); border: 1px solid var(--border); color: var(--money); display: flex; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0; }
+.call-icon-btn svg { width: 17px; height: 17px; }
+.call-overlay {
+  position: fixed; inset: 0; z-index: 200; background: linear-gradient(180deg, var(--brand-dark), #0E0A1D 70%);
+  display: flex; flex-direction: column; align-items: center; justify-content: center; color: #fff; text-align: center; padding: 24px;
+}
+.call-overlay .avatar { width: 96px; height: 96px; font-size: 32px; margin-bottom: 18px; }
+.call-overlay h2 { font-size: 20px; }
+.call-overlay p { color: rgba(255,255,255,0.7); font-size: 13px; margin-top: 6px; }
+.call-overlay-actions { display: flex; gap: 20px; margin-top: 40px; }
+.call-overlay-actions button { width: 58px; height: 58px; border-radius: 50%; border: none; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+.call-overlay-actions button svg { width: 24px; height: 24px; color: #fff; }
+.call-end-btn { background: var(--danger); }
+.call-mute-btn { background: rgba(255,255,255,0.16); }
+.call-mute-btn.active { background: #fff; }
+.call-mute-btn.active svg { color: var(--brand-dark); }
+
+/* ===== Chat thread ===== */
+.thread-header-info { display: flex; align-items: center; gap: 10px; flex: 1; min-width: 0; }
+.thread-header-info .avatar { width: 34px; height: 34px; font-size: 12px; }
+.thread-header-info b { font-size: 14.5px; display: block; }
+.thread-header-info span { font-size: 11px; color: var(--text3); }
+.thread-listing-chip {
+  display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: 10px 16px 0;
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm);
+  padding: 9px 12px; font-size: 12.5px; font-weight: 600; color: var(--text2);
+}
+.thread-listing-chip .info { text-decoration: none; color: inherit; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.thread-sold-tag { font-size: 10.5px; font-weight: 800; color: var(--money); background: rgba(52,211,153,0.14); border-radius: 999px; padding: 3px 9px; flex-shrink: 0; }
+.mark-sold-btn { background: var(--money); color: #06281B; border: none; border-radius: 8px; padding: 6px 11px; font-size: 11.5px; font-weight: 800; cursor: pointer; flex-shrink: 0; }
+.request-delivery-row { margin: 8px 16px 0; }
+.request-delivery-row a, .request-delivery-row .disabled-hint {
+  display: block; text-align: center; border-radius: var(--radius-sm); padding: 11px; font-size: 12.5px; font-weight: 700; text-decoration: none;
+}
+.request-delivery-row a { background: var(--brand); color: #fff; }
+.request-delivery-row .disabled-hint { background: var(--surface); border: 1px dashed var(--border); color: var(--text3); font-weight: 600; }
+
+.thread-messages { padding: 14px 16px 8px; display: flex; flex-direction: column; gap: 3px; min-height: 55vh; background: radial-gradient(circle at 50% 0%, rgba(167,139,250,0.05), transparent 60%); }
+.thread-date-sep { text-align: center; margin: 14px 0 8px; }
+.thread-date-sep span { background: var(--surface2); color: var(--text3); font-size: 11px; font-weight: 700; padding: 4px 12px; border-radius: 999px; }
+.thread-system-msg { text-align: center; margin: 8px 0; }
+.thread-system-msg span { background: var(--brand-soft); color: var(--brand); font-size: 11.5px; font-weight: 700; padding: 6px 14px; border-radius: 999px; display: inline-block; }
+.msg-bubble { max-width: 76%; padding: 8px 12px; border-radius: 14px; font-size: 13.5px; line-height: 1.4; position: relative; }
+.msg-row { display: flex; margin-top: 3px; }
+.msg-row.mine { justify-content: flex-end; }
+.msg-row.mine .msg-bubble { background: var(--brand); color: #fff; border-bottom-right-radius: 3px; }
+.msg-row.theirs .msg-bubble { background: var(--surface2); color: var(--text); border-bottom-left-radius: 3px; }
+.msg-time { font-size: 9.5px; color: rgba(255,255,255,0.6); margin-top: 3px; text-align: right; }
+.msg-row.theirs .msg-time { color: var(--text3); }
+.thread-composer {
+  position: fixed; bottom: 0; left: 50%; transform: translateX(-50%);
+  width: 100%; max-width: 480px; display: flex; gap: 8px; align-items: center;
+  padding: 10px 12px calc(10px + var(--safe-bottom));
+  background: rgba(18,16,29,0.94); backdrop-filter: blur(14px); border-top: 1px solid var(--border);
+}
+.thread-composer input {
+  flex: 1; background: var(--surface2); border: 1px solid var(--border); border-radius: 999px;
+  padding: 12px 16px; font: inherit; font-size: 14px; color: var(--text); outline: none;
+}
+.thread-send-btn { width: 42px; height: 42px; border-radius: 50%; background: var(--brand); color: #fff; border: none; display: flex; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0; }
+.thread-send-btn svg { width: 18px; height: 18px; }
+
+/* ===== Cart ===== */
+.cart-row { display: flex; gap: 12px; padding: 13px 16px; border-bottom: 1px solid var(--border); align-items: center; }
+.cart-thumb { width: 56px; height: 56px; border-radius: 12px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 22px; }
+.cart-row-text { flex: 1; min-width: 0; }
+.cart-row-text b { font-size: 13.5px; display: block; }
+.cart-row-text span { font-size: 12px; color: var(--text3); }
+.cart-remove-btn { background: none; border: none; color: var(--danger); font-size: 12px; font-weight: 700; cursor: pointer; }
+.cart-summary { position: sticky; bottom: 0; background: var(--surface); border-top: 1px solid var(--border); padding: 16px; margin-top: 10px; }
+.cart-summary-row { display: flex; justify-content: space-between; font-size: 14px; margin-bottom: 12px; }
+.cart-summary-row b { font-size: 18px; }
+
+
+/* ===== Call screen (voice + video) ===== */
+.call-screen {
+  position: fixed; inset: 0; z-index: 200;
+  background: linear-gradient(180deg, var(--brand-dark), #0E0A1D 70%);
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  color: #fff; text-align: center; padding: 24px;
+}
+.call-screen.video-on { background: #000; }
+
+#remoteVideo, #localVideo { display: none; }
+.call-screen.video-on #remoteVideo {
+  display: block; position: absolute; inset: 0; width: 100%; height: 100%;
+  object-fit: cover; background: #000;
+}
+.call-screen.video-on #localVideo {
+  display: block; position: absolute; top: calc(16px + var(--safe-top)); right: 14px;
+  width: 104px; height: 142px; object-fit: cover; border-radius: 14px;
+  border: 2px solid rgba(255,255,255,.22); z-index: 3; background: #111; transform: scaleX(-1);
+}
+
+.call-info { position: relative; z-index: 2; transition: opacity .3s; }
+.call-screen.video-on .call-info {
+  position: absolute; top: calc(18px + var(--safe-top)); left: 16px; text-align: left;
+}
+.call-screen.video-on .call-info .avatar { display: none; }
+.call-screen.video-on .call-info h2 { font-size: 16px; text-shadow: 0 2px 10px rgba(0,0,0,.7); }
+.call-screen.video-on .call-info p { text-shadow: 0 2px 10px rgba(0,0,0,.7); }
+
+.call-info .avatar {
+  width: 104px; height: 104px; font-size: 34px; margin: 0 auto 18px;
+  border-radius: 50%; display: flex; align-items: center; justify-content: center;
+  background: rgba(255,255,255,.14); font-weight: 800;
+}
+.call-info .avatar.ringing { animation: ringpulse 1.6s ease-in-out infinite; }
+@keyframes ringpulse {
+  0%,100% { box-shadow: 0 0 0 0 rgba(255,255,255,.28); }
+  50% { box-shadow: 0 0 0 20px rgba(255,255,255,0); }
+}
+.call-info h2 { font-size: 22px; }
+.call-info p { color: rgba(255,255,255,0.75); font-size: 14px; margin-top: 6px; font-variant-numeric: tabular-nums; }
+.call-quality { margin-top: 10px; font-size: 11.5px; color: rgba(255,255,255,.6); }
+.call-quality.bad { color: var(--accent); }
+
+.call-controls, .call-answer {
+  position: absolute; bottom: calc(34px + var(--safe-bottom)); left: 0; right: 0;
+  display: flex; justify-content: center; gap: 14px; z-index: 4; flex-wrap: wrap;
+}
+.call-answer { gap: 60px; }
+.call-ctl {
+  width: 58px; border: none; background: none; color: #fff;
+  display: flex; flex-direction: column; align-items: center; gap: 6px; cursor: pointer;
+  font: inherit; font-size: 10.5px; font-weight: 600;
+}
+.call-ctl svg { width: 22px; height: 22px; }
+.call-ctl > svg {
+  box-sizing: content-box; padding: 16px; border-radius: 50%;
+  background: rgba(255,255,255,0.16); transition: background .15s, transform .12s;
+}
+.call-ctl:active > svg { transform: scale(.92); }
+.call-ctl.active > svg { background: #fff; color: var(--brand-dark); }
+.call-ctl.end > svg { background: var(--danger); }
+.call-ctl.accept > svg { background: var(--money); color: #06281B; }
+.call-ctl.off > svg { background: rgba(255,255,255,0.08); opacity: .55; }
+
+/* Incoming-call overlay shown on every other page */
+.incoming-call {
+  position: fixed; inset: 0; z-index: 500;
+  background: linear-gradient(180deg, var(--brand-dark), #0E0A1D 70%);
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  color: #fff; text-align: center; padding: 24px;
+}
+.incoming-call .avatar {
+  width: 104px; height: 104px; font-size: 34px; border-radius: 50%; margin-bottom: 18px;
+  background: rgba(255,255,255,.14); display: flex; align-items: center; justify-content: center;
+  font-weight: 800; animation: ringpulse 1.6s ease-in-out infinite;
+}
+.incoming-call h2 { font-size: 22px; }
+.incoming-call p { color: rgba(255,255,255,.75); font-size: 14px; margin-top: 6px; }
+.incoming-call .row { display: flex; gap: 60px; margin-top: 46px; }
+
+</style>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<link rel="manifest" href="/manifest.webmanifest">
+<meta name="theme-color" content="#7C3AED">
+<meta name="color-scheme" content="dark light">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Camplugie">
+<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+<link rel="icon" href="/icons/icon-192.png" type="image/png">
+</head>
+<body>
+
+<div class="app-shell">
+
+  <header class="cp-page-header">
+    <a class="icon-btn" href="home.html" aria-label="Back">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+    </a>
+    <h1>Swift</h1>
+    <span style="width:38px"></span>
+  </header>
+
+  <div id="closedBanner" style="display:none" class="swift-banner">
+    ⚠️ Swift delivery is currently unavailable on your campus.
+  </div>
+
+  <!-- Active order as a buyer -->
+  <div id="activeOrderCard" style="display:none"></div>
+
+  <!-- Runner section: application form, pending state, or active runner dashboard -->
+  <div id="runnerSection"></div>
+
+</div>
+
+<nav class="cp-bottom-nav">
+  <a class="cp-nav-item" href="home.html">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+    Home
+  </a>
+  <a class="cp-nav-item" href="yard.html">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
+    Yard
+  </a>
+  <a class="cp-nav-fab" href="create.html" aria-label="Sell">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+  </a>
+  <a class="cp-nav-item" href="notifications.html">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+    Notifications
+  </a>
+  <a class="cp-nav-item" href="profile.html">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+    Profile
+  </a>
+</nav>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="https://js.paystack.co/v1/inline.js"></script>
+<script src="config.js?v=2"></script>
+<script src="payments.js?v=2"></script>
+<script>
+// Shared Supabase client — loaded on every page after the Supabase UMD script.
+// Uses the same project as the React app (public anon key, safe to expose client-side; RLS enforces access).
+const SUPABASE_URL = 'https://zgzamthhfykhjaldosvb.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpnemFtdGhoZnlraGphbGRvc3ZiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg0Nzc2NjksImV4cCI6MjA5NDA1MzY2OX0.YpH9Zn2a2XVDZnZIlWd4d4CxhUbkURZ_H7Yegw9vih4';
+
+window.sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+// Shared select strings — mirrors src/lib/listings.js and src/lib/posts.js
+window.CP = window.CP || {};
+window.CP.LISTING_SELECT = '*, profiles:profiles!listings_seller_id_fkey(id, username, full_name, avatar_url, is_verified)';
+window.CP.POST_SELECT = '*, profiles!posts_author_id_fkey(id, username, full_name, avatar_url, is_hub, is_hub_service)';
+
+window.CP.fmtNaira = (n) => '₦' + Number(n || 0).toLocaleString();
+
+window.CP.timeAgo = (iso) => {
+  const s = Math.floor((Date.now() - new Date(iso).getTime()) / 1000);
+  if (s < 60) return 'now';
+  if (s < 3600) return Math.floor(s / 60) + 'm';
+  if (s < 86400) return Math.floor(s / 3600) + 'h';
+  if (s < 604800) return Math.floor(s / 86400) + 'd';
+  return new Date(iso).toLocaleDateString();
+};
+
+window.CP.initials = (name) => (name || 'U').slice(0, 2).toUpperCase();
+
+// Escapes anything user-controlled before it goes into HTML. Listing titles,
+// usernames, comments and dispute notes are all free text a student typed —
+// without this, "<img src=x onerror=...>" in a username runs in everyone's
+// browser, including the admin dashboard.
+window.CP.esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g,
+  c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+
+/**
+ * Opens (or creates) a direct conversation between the current user and
+ * otherUserId, checking both buyer/seller directions so two people never end
+ * up with duplicate threads. Pass listingId to tie it to a specific item.
+ * Returns the conversation id, then the caller should redirect to
+ * chat-thread.html?id=<id>.
+ */
+window.CP.openOrCreateConversation = async function (meId, otherUserId, listingId = null) {
+  if (!meId || !otherUserId || meId === otherUserId) return null;
+
+  let existingQuery = window.sb.from('conversations').select('id')
+    .or(`and(buyer_id.eq.${meId},seller_id.eq.${otherUserId}),and(buyer_id.eq.${otherUserId},seller_id.eq.${meId})`);
+  existingQuery = listingId ? existingQuery.eq('listing_id', listingId) : existingQuery.is('listing_id', null);
+
+  const { data: existing } = await existingQuery.maybeSingle();
+  if (existing) return existing.id;
+
+  const { data: created, error } = await window.sb.from('conversations')
+    .insert({ buyer_id: meId, seller_id: otherUserId, listing_id: listingId })
+    .select('id').single();
+
+  if (error) { console.error('Conversation create error:', error); return null; }
+  return created.id;
+};
+
+</script>
+<script>
+// Include on every protected page (Home, Yard, Notifications, Profile, Create).
+// Redirects to auth.html if there's no session, loads the user's profile
+// (university is locked in from signup), and fires 'cp-ready' once done.
+(async () => {
+  const { data: { session } } = await window.sb.auth.getSession();
+
+  if (!session) {
+    window.location.href = 'auth.html';
+    return;
+  }
+
+  window.CP_USER = session.user;
+
+  const { data: profile, error } = await window.sb
+    .from('profiles')
+    .select('*, universities(id, name)')
+    .eq('id', session.user.id)
+    .single();
+
+  if (error) console.error('Profile load error:', error);
+  window.CP_PROFILE = profile || null;
+
+  // Banned accounts get bounced everywhere except the banned-notice page itself.
+  const isBannedPage = window.location.pathname.endsWith('banned.html');
+  if (!isBannedPage && profile?.is_banned) {
+    window.location.href = 'banned.html';
+    return;
+  }
+
+  // Google sign-ins skip the signup form's university step — send them to
+  // onboarding until a school is locked in. (Skip this check on the
+  // onboarding page itself to avoid a redirect loop.)
+  const isOnboardingPage = window.location.pathname.endsWith('onboarding.html');
+  if (!isOnboardingPage && profile && !profile.university_id) {
+    window.location.href = 'onboarding.html';
+    return;
+  }
+
+  // Fill in university name wherever it's referenced in the header
+  const uniName = profile?.universities?.name || profile?.institution_name || 'Your Campus';
+  document.querySelectorAll('[data-uni-name]').forEach(el => { el.textContent = uniName; });
+
+  // Keep "last seen" fresh so chat headers can show online / last-seen.
+  window.sb.from('profiles').update({ last_seen_at: new Date().toISOString() })
+    .eq('id', session.user.id).then(() => {}, () => {});
+
+  document.dispatchEvent(new CustomEvent('cp-ready', { detail: { user: session.user, profile } }));
+})();
+
+// Sign out helper, wired up from Profile page
+window.CP_signOut = async () => {
+  await window.sb.auth.signOut();
+  window.location.href = 'auth.html';
+};
+
+// ---- Global incoming-call ring (every page that loads this guard) ----
+(async () => {
+  const { data: { session } } = await window.sb.auth.getSession();
+  if (!session || window.location.pathname.endsWith('call.html')) return;
+
+  let ringAudio = null;
+  function startRingtone() {
+    try {
+      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+      const beep = () => {
+        const o = ctx.createOscillator(), g = ctx.createGain();
+        o.frequency.value = 660; g.gain.value = 0.08;
+        o.connect(g); g.connect(ctx.destination);
+        o.start(); o.stop(ctx.currentTime + 0.7);
+      };
+      beep();
+      ringAudio = { ctx, loop: setInterval(beep, 1600) };
+    } catch (_) {}
+  }
+  function stopRingtone() {
+    if (!ringAudio) return;
+    clearInterval(ringAudio.loop);
+    try { ringAudio.ctx.close(); } catch (_) {}
+    ringAudio = null;
+  }
+
+  const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+  window.sb.channel(`ring-${session.user.id}`)
+    .on('broadcast', { event: 'incoming' }, ({ payload }) => {
+      if (document.getElementById('incomingCallOverlay')) return; // already ringing
+      const name = payload.callerName || 'Camplugie user';
+      const overlay = document.createElement('div');
+      overlay.id = 'incomingCallOverlay';
+      overlay.className = 'incoming-call';
+      overlay.innerHTML = `
+        <div class="avatar">${esc(name.slice(0, 2).toUpperCase())}</div>
+        <h2>${esc(name)}</h2>
+        <p>${payload.video ? 'Incoming video call…' : 'Incoming Camplugie call…'}</p>
+        <div class="row">
+          <button class="call-ctl end" id="declineCallBtn">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.68 13.31a16 16 0 0 0 3.41 2.6l1.27-1.27a2 2 0 0 1 2.11-.45 12.42 12.42 0 0 0 3.81.61 2 2 0 0 1 2 2V21a2 2 0 0 1-2 2h-1C7.61 23 1 16.39 1 8V7a2 2 0 0 1 2-2h3.5a2 2 0 0 1 2 2 12.42 12.42 0 0 0 .61 3.81 2 2 0 0 1-.45 2.11z"/></svg>
+            <span>Decline</span>
+          </button>
+          <button class="call-ctl accept" id="acceptCallBtn">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+            <span>Answer</span>
+          </button>
+        </div>`;
+      document.body.appendChild(overlay);
+      startRingtone();
+      if (navigator.vibrate) navigator.vibrate([400, 250, 400, 250, 400]);
+
+      const cleanup = () => { stopRingtone(); overlay.remove(); if (navigator.vibrate) navigator.vibrate(0); };
+
+      document.getElementById('acceptCallBtn').addEventListener('click', () => {
+        cleanup();
+        window.location.href = `call.html?peer=${payload.callerId}&name=${encodeURIComponent(name)}` +
+          `&role=callee&channel=${payload.callChannel}&mode=${payload.video ? 'video' : 'audio'}&auto=1`;
+      });
+
+      document.getElementById('declineCallBtn').addEventListener('click', async () => {
+        const ch = window.sb.channel(payload.callChannel);
+        await ch.subscribe();
+        ch.send({ type: 'broadcast', event: 'signal', payload: { kind: 'declined', from: session.user.id } });
+        setTimeout(() => window.sb.removeChannel(ch), 500);
+        cleanup();
+      });
+
+      setTimeout(() => { if (document.body.contains(overlay)) cleanup(); }, 35000);
+    })
+    .subscribe();
+})();
+</script>
+<script>
+const ACTIVE_STATUSES = ['pending', 'requested', 'searching', 'accepted', 'picked_up', 'delivered'];
+const TRANSPORTS = [['foot', '🚶 On foot'], ['bicycle', '🚲 Bicycle'], ['bike', '🛵 Bike'], ['car', '🚗 Car']];
+const STATUS_LABEL = {
+  pending: 'Waiting to be assigned a runner', searching: 'Looking for a nearby runner',
+  requested: 'A runner has been assigned', accepted: 'Runner is on the way to pick up',
+  picked_up: 'Runner has your item — on the way', delivered: 'Delivered — rate your runner',
+};
+
+let selectedTransport = 'foot';
+let myUniversityId = null;
+let myUserId = null;
+
+function pinRow(order) {
+  return `
+    <div class="swift-pin-row">
+      <div class="swift-pin"><b>${order.pickup_pin || '----'}</b><span>Pickup PIN</span></div>
+      <div class="swift-pin"><b>${order.delivery_pin || '----'}</b><span>Delivery PIN</span></div>
+    </div>
+  `;
+}
+
+async function loadCampusOpen(universityId) {
+  const { data } = await window.sb.from('swift_settings').select('is_open').eq('university_id', universityId).maybeSingle();
+  const isOpen = data ? Boolean(data.is_open) : true;
+  document.getElementById('closedBanner').style.display = isOpen ? 'none' : 'flex';
+  return isOpen;
+}
+
+let currentStars = 0;
+
+function starRow(inputIdPrefix) {
+  return `
+    <div class="star-row" id="${inputIdPrefix}Stars">
+      ${[1, 2, 3, 4, 5].map(n => `<button type="button" class="star-btn" data-star="${n}">★</button>`).join('')}
+    </div>
+  `;
+}
+
+function bindStarRow(containerId, onChange) {
+  const row = document.getElementById(containerId);
+  row.addEventListener('click', (e) => {
+    const btn = e.target.closest('.star-btn');
+    if (!btn) return;
+    const n = Number(btn.dataset.star);
+    row.querySelectorAll('.star-btn').forEach(b => b.classList.toggle('active', Number(b.dataset.star) <= n));
+    onChange(n);
+  });
+}
+
+let activeMap = null;
+let mapPoll = null;
+
+function destroyMap() {
+  if (mapPoll) { clearInterval(mapPoll); mapPoll = null; }
+  if (activeMap) { activeMap.remove(); activeMap = null; }
+}
+
+// Draws a small Leaflet map thumbnail with a dropoff pin and (optionally) a live runner pin,
+// polling swift_runners.current_lat/current_lng every 8s while the card is visible.
+// Tapping the thumbnail opens the full-screen Uber-style map (see openDeliveryMap below).
+function renderMap(containerId, order, pollRunnerId, expandOpts) {
+  destroyMap();
+  const el = document.getElementById(containerId);
+  if (!el) return;
+  const dropoff = (order.dropoff_lat && order.dropoff_lng) ? [order.dropoff_lat, order.dropoff_lng] : null;
+  const pickup = (order.pickup_lat && order.pickup_lng) ? [order.pickup_lat, order.pickup_lng] : null;
+  const center = dropoff || pickup || [7.5189, 4.5286]; // falls back to a campus-ish default
+
+  activeMap = L.map(containerId, { zoomControl: false, attributionControl: false, dragging: false, scrollWheelZoom: false, tap: false }).setView(center, 15);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, subdomains: 'abc', attribution: '&copy; OpenStreetMap' }).addTo(activeMap);
+  L.control.attribution({ prefix: false, position: 'bottomright' }).addTo(activeMap);
+
+  let runnerMarker = null;
+  if (dropoff) L.marker(dropoff, { icon: dmapIcon('🏁', '#34D399') }).addTo(activeMap).bindPopup('Drop-off');
+  if (pickup) L.marker(pickup, { icon: dmapIcon('🏪', '#FBBF24') }).addTo(activeMap).bindPopup('Pickup');
+
+  async function pollRunner() {
+    if (!pollRunnerId) return;
+    const { data } = await window.sb.from('swift_runners').select('current_lat, current_lng').eq('id', pollRunnerId).maybeSingle();
+    if (!data?.current_lat) return;
+    const pos = [data.current_lat, data.current_lng];
+    if (runnerMarker) { runnerMarker.setLatLng(pos); } else { runnerMarker = L.circleMarker(pos, { radius: 8, color: '#FBBF24', fillColor: '#FBBF24', fillOpacity: 1 }).addTo(activeMap).bindPopup('Runner'); }
+  }
+  if (pollRunnerId) { pollRunner(); mapPoll = setInterval(pollRunner, 8000); }
+
+  // Make the small preview map behave like a button that opens the full map.
+  if (expandOpts) {
+    const hint = document.createElement('div');
+    hint.className = 'swift-map-hint';
+    hint.innerHTML = '⛶ Open live map';
+    el.appendChild(hint);
+    el.addEventListener('click', () => openDeliveryMap(order, expandOpts));
+  }
+}
+
+/* ===== Full-screen Uber-style delivery map ===== */
+
+function haversineKm(a, b) {
+  if (!a || !b) return null;
+  const R = 6371, dLat = (b[0] - a[0]) * Math.PI / 180, dLng = (b[1] - a[1]) * Math.PI / 180;
+  const s = Math.sin(dLat / 2) ** 2 + Math.cos(a[0] * Math.PI / 180) * Math.cos(b[0] * Math.PI / 180) * Math.sin(dLng / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(s), Math.sqrt(1 - s));
+}
+
+function mapsDirectionsUrl(lat, lng) {
+  return `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}&travelmode=driving`;
+}
+
+function dmapIcon(emoji, color) {
+  return L.divIcon({
+    className: '',
+    html: `<div style="width:32px;height:32px;border-radius:50% 50% 50% 0;background:${color};transform:rotate(45deg);display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(0,0,0,.45);border:2px solid #fff;"><span style="transform:rotate(-45deg);font-size:14px;">${emoji}</span></div>`,
+    iconSize: [32, 32], iconAnchor: [16, 32], popupAnchor: [0, -30],
+  });
+}
+
+let dmapMap = null;
+let dmapPoll = null;
+
+function closeDeliveryMap() {
+  if (dmapPoll) { window.sb.removeChannel(dmapPoll); dmapPoll = null; }
+  if (dmapMap) { dmapMap.remove(); dmapMap = null; }
+  const overlay = document.getElementById('dmapOverlay');
+  if (overlay) overlay.remove();
+}
+
+// Real road-following route + ETA, via OSRM's public demo router (free, no
+// API key). This is a shared demo server meant for testing/low-volume use —
+// fine for now, but if Swift grows past a few hundred deliveries a day,
+// swap this for a paid router (Mapbox Directions, OpenRouteService, etc.)
+// or self-host OSRM, since the public one rate-limits and gives no uptime
+// guarantee. pickup/dropoff are [lat, lng]; OSRM wants lng,lat.
+async function fetchRoute(from, to) {
+  const url = `https://router.project-osrm.org/route/v1/driving/${from[1]},${from[0]};${to[1]},${to[0]}?overview=full&geometries=geojson`;
+  const res = await fetch(url);
+  if (!res.ok) throw new Error('routing request failed');
+  const data = await res.json();
+  const route = data.routes?.[0];
+  if (!route) throw new Error('no route found');
+  return {
+    latlngs: route.geometry.coordinates.map(([lng, lat]) => [lat, lng]),
+    durationSec: route.duration,
+    distanceM: route.distance,
+  };
+}
+
+function fmtEta(durationSec, distanceM) {
+  const mins = Math.max(1, Math.round(durationSec / 60));
+  const km = distanceM / 1000;
+  return `${mins} min${mins === 1 ? '' : 's'} · ${km < 1 ? `${Math.round(distanceM)} m` : `${km.toFixed(1)} km`}`;
+}
+
+// Draws the actual road route on the map (falls back to a straight dashed
+// line if the routing request fails) and, if an ETA chip element is given,
+// fills it in. Returns the drawn layer so callers can remove/redraw it.
+async function drawRoute(map, from, to, etaEl) {
+  try {
+    const { latlngs, durationSec, distanceM } = await fetchRoute(from, to);
+    const line = L.polyline(latlngs, { color: '#A78BFA', weight: 4, opacity: .85 }).addTo(map);
+    if (etaEl) { etaEl.style.display = 'flex'; etaEl.innerHTML = `<b>🕐 ${fmtEta(durationSec, distanceM)}</b><span>away</span>`; }
+    return line;
+  } catch (err) {
+    console.error('Route fetch failed, falling back to straight line:', err);
+    const line = L.polyline([from, to], { color: '#8D86AA', weight: 2, dashArray: '6,8', opacity: .7 }).addTo(map);
+    if (etaEl) etaEl.style.display = 'none';
+    return line;
+  }
+}
+
+// Glides a marker to its new position instead of snapping — this is most of
+// what makes a live tracker feel like Uber/DoorDash instead of a refreshing
+// page. durationMs should be a bit less than the poll interval so each glide
+// finishes before the next update arrives.
+function animateMarkerTo(marker, newPos, durationMs) {
+  const start = marker.getLatLng();
+  const startTime = performance.now();
+  (function step(now) {
+    const t = Math.min(1, (now - startTime) / durationMs);
+    marker.setLatLng([
+      start.lat + (newPos[0] - start.lat) * t,
+      start.lng + (newPos[1] - start.lng) * t,
+    ]);
+    if (t < 1) requestAnimationFrame(step);
+  })(startTime);
+}
+
+// Makes the bottom sheet actually draggable — peek/half/full snap points,
+// like Uber/DoorDash/most delivery apps. Previously the little handle bar
+// was just decorative.
+function initSheetDrag(sheet) {
+  const handle = sheet.querySelector('.dmap-sheet-handle');
+  const PEEK = 110;
+  const HALF = Math.round(window.innerHeight * 0.40);
+  const FULL = Math.round(window.innerHeight * 0.58);
+  const MAX = Math.round(window.innerHeight * 0.80);
+  let startY = 0, startH = 0, dragging = false;
+
+  const onMove = (e) => {
+    if (!dragging) return;
+    const h = Math.min(MAX, Math.max(PEEK, startH + (startY - e.clientY)));
+    sheet.style.height = h + 'px';
+  };
+  const onUp = () => {
+    if (!dragging) return;
+    dragging = false;
+    document.removeEventListener('pointermove', onMove);
+    document.removeEventListener('pointerup', onUp);
+    const h = sheet.getBoundingClientRect().height;
+    const nearest = [PEEK, HALF, FULL].reduce((a, b) => Math.abs(b - h) < Math.abs(a - h) ? b : a);
+    sheet.classList.add('dmap-sheet-snapping');
+    sheet.style.height = nearest + 'px';
+    setTimeout(() => sheet.classList.remove('dmap-sheet-snapping'), 300);
+  };
+  handle.addEventListener('pointerdown', (e) => {
+    dragging = true;
+    startY = e.clientY;
+    startH = sheet.getBoundingClientRect().height;
+    sheet.classList.remove('dmap-sheet-snapping');
+    document.addEventListener('pointermove', onMove);
+    document.addEventListener('pointerup', onUp);
+  });
+}
+
+/**
+ * Opens a full-screen, Uber/delivery-app style map so a runner can see and
+ * jump between BOTH the seller (pickup) and buyer (dropoff) stops in one view —
+ * with one tap to launch turn-by-turn directions in Google Maps for either leg.
+ *
+ * order — the swift_orders row (needs pickup_lat/lng, dropoff_lat/lng, place names).
+ * opts.role         — 'runner' or 'buyer'.
+ * opts.activeLeg     — 'pickup' or 'dropoff', which stop is highlighted/centered first.
+ * opts.pollRunnerId  — swift_runners.id to live-poll and show a runner marker (buyer tracking).
+ * opts.onPinConfirm  — (leg, pin) => Promise, called when a PIN is submitted from the sheet.
+ */
+function openDeliveryMap(order, opts = {}) {
+  const { role = 'runner', activeLeg = 'pickup', pollRunnerId = null, onPinConfirm = null } = opts;
+  closeDeliveryMap();
+
+  const pickup = (order.pickup_lat && order.pickup_lng) ? [order.pickup_lat, order.pickup_lng] : null;
+  const dropoff = (order.dropoff_lat && order.dropoff_lng) ? [order.dropoff_lat, order.dropoff_lng] : null;
+
+  const overlay = document.createElement('div');
+  overlay.className = 'dmap-overlay';
+  overlay.id = 'dmapOverlay';
+  overlay.innerHTML = `
+    <div class="dmap-canvas" id="dmapCanvas"></div>
+    <div class="dmap-topbar">
+      <button class="dmap-back-btn" id="dmapBackBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg></button>
+      <div class="dmap-status-chip">${STATUS_LABEL[order.status] || 'On the way'}</div>
+    </div>
+    <button class="dmap-locate-btn" id="dmapLocateBtn" title="Center on me"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg></button>
+    <div class="dmap-sheet" id="dmapSheet">
+      <div class="dmap-sheet-handle"></div>
+      <div class="dmap-eta-chip" id="dmapEtaChip" style="display:none"></div>
+      ${pickup ? `
+      <div class="dmap-stop${activeLeg === 'pickup' ? ' active' : ''}" data-leg="pickup">
+        <div class="dmap-stop-dot pickup">🏪</div>
+        <div class="dmap-stop-text">
+          <b>${order.pickup_place || 'Seller — pickup'}</b>
+          <span>${role === 'runner' ? 'Collect the item from the seller here' : 'Where your item is picked up from'}</span>
+        </div>
+        <button class="dmap-stop-nav-btn" data-lat="${pickup[0]}" data-lng="${pickup[1]}">↗ Navigate</button>
+      </div>` : ''}
+      ${dropoff ? `
+      <div class="dmap-stop${activeLeg === 'dropoff' ? ' active' : ''}" data-leg="dropoff">
+        <div class="dmap-stop-dot dropoff">🏁</div>
+        <div class="dmap-stop-text">
+          <b>${order.dropoff_place || 'Buyer — drop-off'}</b>
+          <span>${role === 'runner' ? 'Hand the item to the buyer here' : 'Where it gets delivered to you'}</span>
+        </div>
+        <button class="dmap-stop-nav-btn" data-lat="${dropoff[0]}" data-lng="${dropoff[1]}">↗ Navigate</button>
+      </div>` : ''}
+      ${role === 'runner' && onPinConfirm ? `
+      <div class="dmap-pin-row">
+        <input type="text" id="dmapPinInput" placeholder="${activeLeg === 'pickup' ? 'Pickup' : 'Delivery'} PIN" maxlength="4" inputmode="numeric">
+        <button class="btn btn-primary" id="dmapPinConfirmBtn">Confirm</button>
+      </div>` : ''}
+    </div>
+  `;
+  document.body.appendChild(overlay);
+
+  document.getElementById('dmapBackBtn').addEventListener('click', closeDeliveryMap);
+  overlay.querySelectorAll('.dmap-stop-nav-btn').forEach(btn => btn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    window.open(mapsDirectionsUrl(btn.dataset.lat, btn.dataset.lng), '_blank');
+  }));
+
+  const startCenter = (activeLeg === 'dropoff' ? dropoff : pickup) || pickup || dropoff || [7.5189, 4.5286];
+  const map = L.map('dmapCanvas', { zoomControl: false, attributionControl: false }).setView(startCenter, 16);
+  dmapMap = map;
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, subdomains: 'abc', attribution: '&copy; OpenStreetMap' }).addTo(map);
+  L.control.attribution({ prefix: false, position: 'bottomright' }).addTo(map);
+
+  const bounds = [];
+  if (pickup) { L.marker(pickup, { icon: dmapIcon('🏪', '#FBBF24') }).addTo(map).bindPopup('Seller — pickup'); bounds.push(pickup); }
+  if (dropoff) { L.marker(dropoff, { icon: dmapIcon('🏁', '#34D399') }).addTo(map).bindPopup('Buyer — drop-off'); bounds.push(dropoff); }
+
+  const etaChip = document.getElementById('dmapEtaChip');
+  // Route from wherever we're tracking FROM: the live runner if we have one
+  // to follow, otherwise straight from pickup to dropoff.
+  let routeLine = null;
+  if (pickup && dropoff && !pollRunnerId) {
+    drawRoute(map, pickup, dropoff, etaChip).then(line => { routeLine = line; });
+  }
+
+  let runnerMarker = null;
+  let lastRoutedFrom = null; // avoid re-requesting a route for tiny position jitter
+
+  async function handleRunnerPos(pos) {
+    if (runnerMarker) animateMarkerTo(runnerMarker, pos, 2500);
+    else runnerMarker = L.marker(pos, { icon: dmapIcon('🛵', '#A78BFA') }).addTo(map).bindPopup('Runner');
+
+    // Route from the runner's live position to whichever stop is active —
+    // this is what makes the line "count down" as they get closer, instead
+    // of always showing the full pickup→dropoff route.
+    const target = activeLeg === 'dropoff' ? dropoff : pickup;
+    if (target) {
+      const movedEnough = !lastRoutedFrom || Math.hypot(pos[0] - lastRoutedFrom[0], pos[1] - lastRoutedFrom[1]) > 0.0008; // ~90m
+      if (movedEnough) {
+        lastRoutedFrom = pos;
+        if (routeLine) map.removeLayer(routeLine);
+        routeLine = await drawRoute(map, pos, target, etaChip);
+      }
+    }
+  }
+
+  if (pollRunnerId) {
+    // Initial placement, then live push updates via Realtime — the runner's
+    // own device writes current_lat/current_lng at most every 10s (see
+    // startLocationBroadcast below), and this picks each write up
+    // immediately instead of waiting on a poll interval.
+    window.sb.from('swift_runners').select('current_lat, current_lng').eq('id', pollRunnerId).maybeSingle()
+      .then(({ data }) => { if (data?.current_lat) handleRunnerPos([data.current_lat, data.current_lng]); });
+
+    dmapPoll = window.sb.channel(`runner-pos-${pollRunnerId}`)
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'swift_runners', filter: `id=eq.${pollRunnerId}` }, (payload) => {
+        const row = payload.new;
+        if (row?.current_lat) handleRunnerPos([row.current_lat, row.current_lng]);
+      })
+      .subscribe();
+  }
+
+  if (bounds.length > 1) map.fitBounds(bounds, { padding: [70, 70] });
+
+  initSheetDrag(document.getElementById('dmapSheet'));
+
+  document.getElementById('dmapLocateBtn').addEventListener('click', () => {
+    if (!navigator.geolocation) return;
+    navigator.geolocation.getCurrentPosition((pos) => map.setView([pos.coords.latitude, pos.coords.longitude], 16));
+  });
+
+  overlay.querySelectorAll('.dmap-stop').forEach(row => row.addEventListener('click', (e) => {
+    if (e.target.closest('.dmap-stop-nav-btn')) return;
+    const leg = row.dataset.leg;
+    const target = leg === 'pickup' ? pickup : dropoff;
+    if (target) map.setView(target, 16);
+    overlay.querySelectorAll('.dmap-stop').forEach(r => r.classList.toggle('active', r === row));
+  }));
+
+  if (role === 'runner' && onPinConfirm) {
+    document.getElementById('dmapPinConfirmBtn').addEventListener('click', async () => {
+      const entered = document.getElementById('dmapPinInput').value.trim();
+      if (!entered) return;
+      const ok = await onPinConfirm(entered);
+      if (ok) closeDeliveryMap();
+    });
+  }
+}
+
+function disputeButton(orderId, userId, againstId) {
+  return `<button class="swift-report-btn" data-order="${orderId}" data-against="${againstId || ''}">🚩 Report a problem</button>`;
+}
+
+document.addEventListener('click', async (e) => {
+  const btn = e.target.closest('.swift-report-btn');
+  if (!btn) return;
+  const reason = prompt('What went wrong? This goes to Camplugie support for review.');
+  if (!reason || !reason.trim()) return;
+  const { error } = await window.sb.from('swift_disputes').insert({
+    order_id: btn.dataset.order, opened_by: myUserId, against_id: btn.dataset.against || null,
+    reason: reason.trim(), status: 'open', created_at: new Date().toISOString(),
+  });
+  if (error) { console.error('Dispute error:', error); alert('Could not submit report — please try again.'); return; }
+  alert('Thanks — our team will review this.');
+});
+
+function genPin() {
+  return String(Math.floor(1000 + Math.random() * 9000));
+}
+
+let linkedListing = null;
+
+async function loadLinkedListing() {
+  const listingId = new URLSearchParams(window.location.search).get('listing');
+  if (!listingId) return null;
+  const { data } = await window.sb.from('listings').select('id, title, pickup_label, pickup_lat, pickup_lng, seller_id, status, sold_to').eq('id', listingId).maybeSingle();
+  return data || null;
+}
+
+function renderListingLockedCard(reason) {
+  return `
+    <div class="swift-card">
+      <div class="swift-status-pill" style="background:rgba(251,191,36,0.12);color:var(--accent)">🔒 Not ready yet</div>
+      <h3>${CP.esc(linkedListing?.title || 'This item')}</h3>
+      <p>${reason}</p>
+    </div>
+  `;
+}
+
+function haversineMeters(a, b) {
+  if (!a || !b || a.lat == null || b.lat == null) return null;
+  const R = 6371000, toRad = (x) => (x * Math.PI) / 180;
+  const dLat = toRad(b.lat - a.lat), dLng = toRad(b.lng - a.lng);
+  const h = Math.sin(dLat / 2) ** 2 + Math.cos(toRad(a.lat)) * Math.cos(toRad(b.lat)) * Math.sin(dLng / 2) ** 2;
+  return 2 * R * Math.asin(Math.sqrt(h));
+}
+function prettyDistance(m) {
+  if (m == null) return '';
+  if (m < 950) return `${Math.round(m / 10) * 10} m`;
+  return `${(m / 1000).toFixed(1)} km`;
+}
+
+const BASE_FEE = 1000;         // flat base, always applies
+const PER_KM_FEE = 150;        // added per km beyond the first free km
+const OFF_CAMPUS_SURCHARGE = 1000; // added if pickup or drop-off is outside the campus radius
+const CAMPUS_RADIUS_METERS = 2000; // "on campus" = within this radius of the university's pinned center
+
+// Computes the delivery fee from the two pins. Falls back to just the base
+// fee if we don't have both points yet, or if the university has no center
+// coordinates set (see the campus radius note below).
+function computeFee(pickup, dropoff, campusCenter) {
+  let fee = BASE_FEE;
+  const breakdown = [{ label: 'Base fee', amount: BASE_FEE }];
+
+  const distM = haversineMeters(pickup, dropoff);
+  if (distM != null) {
+    const extraKm = Math.max(0, distM / 1000 - 1);
+    const distanceFee = Math.ceil(extraKm) * PER_KM_FEE;
+    if (distanceFee > 0) { fee += distanceFee; breakdown.push({ label: `Distance (${prettyDistance(distM)})`, amount: distanceFee }); }
+  }
+
+  if (campusCenter) {
+    const pickupOutside = pickup && haversineMeters(pickup, campusCenter) > CAMPUS_RADIUS_METERS;
+    const dropoffOutside = dropoff && haversineMeters(dropoff, campusCenter) > CAMPUS_RADIUS_METERS;
+    if (pickupOutside || dropoffOutside) { fee += OFF_CAMPUS_SURCHARGE; breakdown.push({ label: 'Off-campus surcharge', amount: OFF_CAMPUS_SURCHARGE }); }
+  }
+
+  return { fee, breakdown, distM };
+}
+
+function renderRequestForm() {
+  return `
+    <div class="swift-card">
+      <h3>Request a Swift delivery</h3>
+      <p>${linkedListing ? `For: <b>${CP.esc(linkedListing.title)}</b> — a runner will pick it up from the seller and bring it to you.` : "Need something picked up and dropped off? Post a request and any nearby runner can accept it — you don't need to have bought anything through Camplugie."}</p>
+      <form id="requestOrderForm">
+        <div class="form-group">
+          <label class="form-label">Pickup location</label>
+          <input class="form-input" id="reqPickup" placeholder="e.g. Mama Put, behind Fajuyi Hall" value="${linkedListing?.pickup_label || ''}" required>
+          <div id="pickupMap" class="loc-picker-map"></div>
+          <div class="loc-picker-hint">Tap the map to drop a pin, or use your current location.</div>
+          <div style="display:flex;gap:8px;margin-top:6px">
+            <button type="button" class="locate-btn" id="pickupLocateBtn" style="flex:1">📍 Use my current location</button>
+          </div>
+          <div class="loc-picker-status unset" id="pickupPinStatus">No pin set yet</div>
+          <input type="hidden" id="reqPickupLat"><input type="hidden" id="reqPickupLng">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Drop-off location</label>
+          <input class="form-input" id="reqDropoff" placeholder="e.g. Angola Hall, Room 14" required>
+          <div id="dropoffMap" class="loc-picker-map"></div>
+          <div class="loc-picker-hint">Tap the map to drop a pin, or use your current location.</div>
+          <div style="display:flex;gap:8px;margin-top:6px">
+            <button type="button" class="locate-btn" id="dropoffLocateBtn" style="flex:1">📍 Use my current location</button>
+          </div>
+          <div class="loc-picker-status unset" id="dropoffPinStatus">No pin set yet</div>
+          <input type="hidden" id="reqDropoffLat"><input type="hidden" id="reqDropoffLng">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">What's this for?</label>
+          <textarea class="form-textarea" id="reqNote" placeholder="e.g. Pick up my food order and bring it to my room">${linkedListing ? `Deliver: ${CP.esc(linkedListing.title)}` : ''}</textarea>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Delivery fee <span id="feeAutoBadge" class="fee-badge" style="display:none">Auto-calculated</span></label>
+          <div class="fee-breakdown" id="feeBreakdown">
+            <div class="fee-breakdown-row"><span>Base fee</span><span>${window.CP.fmtNaira(BASE_FEE)}</span></div>
+            <div class="fee-breakdown-row total"><span>Total</span><span id="feeTotalDisplay">${window.CP.fmtNaira(BASE_FEE)}</span></div>
+          </div>
+          <div class="loc-picker-hint">Drop both pins above for an accurate distance-based price. Starts at ₦1,000 and increases with distance, plus a surcharge if either point is off campus.</div>
+        </div>
+
+        <button type="submit" class="form-submit">Post request</button>
+      </form>
+    </div>
+  `;
+}
+
+let pickupPin = null;
+let dropoffPin = null;
+let pickupMap, dropoffMap, pickupMarker, dropoffMarker;
+let campusCenter = null;
+
+function initPicker(mapId, statusId, onSet) {
+  const startCenter = campusCenter ? [campusCenter.lat, campusCenter.lng] : [7.5189, 4.5286];
+  const map = L.map(mapId, { zoomControl: false, attributionControl: false }).setView(startCenter, 15);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, subdomains: 'abc', attribution: '&copy; OpenStreetMap' }).addTo(map);
+  L.control.attribution({ prefix: false, position: 'bottomright' }).addTo(map);
+  let marker = null;
+  map.on('click', (e) => {
+    const pin = { lat: e.latlng.lat, lng: e.latlng.lng };
+    if (marker) marker.setLatLng(e.latlng); else marker = L.marker(e.latlng).addTo(map);
+    document.getElementById(statusId).textContent = `📍 Pin set — ${pin.lat.toFixed(5)}, ${pin.lng.toFixed(5)}`;
+    document.getElementById(statusId).className = 'loc-picker-status set';
+    onSet(pin, marker);
+  });
+  return { map, setPin: (pin) => {
+    const latlng = [pin.lat, pin.lng];
+    if (marker) marker.setLatLng(latlng); else marker = L.marker(latlng).addTo(map);
+    map.setView(latlng, 16);
+    document.getElementById(statusId).textContent = `📍 Pin set — ${pin.lat.toFixed(5)}, ${pin.lng.toFixed(5)}`;
+    document.getElementById(statusId).className = 'loc-picker-status set';
+  }};
+}
+
+function updateFeeDisplay() {
+  const { fee, breakdown, distM } = computeFee(pickupPin, dropoffPin, campusCenter);
+  document.getElementById('feeAutoBadge').style.display = (pickupPin && dropoffPin) ? 'inline-flex' : 'none';
+  document.getElementById('feeBreakdown').innerHTML = breakdown.map(b =>
+    `<div class="fee-breakdown-row"><span>${CP.esc(b.label)}</span><span>${window.CP.fmtNaira(b.amount)}</span></div>`
+  ).join('') + `<div class="fee-breakdown-row total"><span>Total</span><span>${window.CP.fmtNaira(fee)}</span></div>`;
+  return fee;
+}
+
+async function loadCampusCenter(universityId) {
+  const { data } = await window.sb.from('universities').select('latitude, longitude').eq('id', universityId).maybeSingle();
+  if (data?.latitude != null && data?.longitude != null) campusCenter = { lat: data.latitude, lng: data.longitude };
+}
+
+function bindRequestForm(userId, universityId) {
+  pickupPin = null; dropoffPin = null;
+
+  const pickupCtl = initPicker('pickupMap', 'pickupPinStatus', (pin) => { pickupPin = pin; document.getElementById('reqPickupLat').value = pin.lat; document.getElementById('reqPickupLng').value = pin.lng; updateFeeDisplay(); });
+  const dropoffCtl = initPicker('dropoffMap', 'dropoffPinStatus', (pin) => { dropoffPin = pin; document.getElementById('reqDropoffLat').value = pin.lat; document.getElementById('reqDropoffLng').value = pin.lng; updateFeeDisplay(); });
+
+  // If the pickup pin is already known from the linked listing, drop it immediately.
+  if (linkedListing?.pickup_lat != null && linkedListing?.pickup_lng != null) {
+    pickupPin = { lat: linkedListing.pickup_lat, lng: linkedListing.pickup_lng };
+    pickupCtl.setPin(pickupPin);
+    document.getElementById('reqPickupLat').value = pickupPin.lat;
+    document.getElementById('reqPickupLng').value = pickupPin.lng;
+  }
+
+  document.getElementById('pickupLocateBtn').addEventListener('click', () => {
+    if (!navigator.geolocation) { alert('Location not available on this device.'); return; }
+    navigator.geolocation.getCurrentPosition(
+      (pos) => { pickupPin = { lat: pos.coords.latitude, lng: pos.coords.longitude }; pickupCtl.setPin(pickupPin); document.getElementById('reqPickupLat').value = pickupPin.lat; document.getElementById('reqPickupLng').value = pickupPin.lng; updateFeeDisplay(); },
+      () => alert('Could not get your location — check permissions.')
+    );
+  });
+  document.getElementById('dropoffLocateBtn').addEventListener('click', () => {
+    if (!navigator.geolocation) { alert('Location not available on this device.'); return; }
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        dropoffPin = { lat: pos.coords.latitude, lng: pos.coords.longitude }; dropoffCtl.setPin(dropoffPin);
+        document.getElementById('reqDropoffLat').value = dropoffPin.lat; document.getElementById('reqDropoffLng').value = dropoffPin.lng;
+        if (!document.getElementById('reqDropoff').value) document.getElementById('reqDropoff').value = 'My current location';
+        updateFeeDisplay();
+      },
+      () => alert('Could not get your location — check permissions.')
+    );
+  });
+
+  updateFeeDisplay();
+
+  document.getElementById('requestOrderForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const pickup_place = document.getElementById('reqPickup').value.trim();
+    const dropoff_place = document.getElementById('reqDropoff').value.trim();
+    const note = document.getElementById('reqNote').value.trim();
+    const fee = updateFeeDisplay();
+    const pickup_lat = parseFloat(document.getElementById('reqPickupLat').value) || null;
+    const pickup_lng = parseFloat(document.getElementById('reqPickupLng').value) || null;
+    const dropoff_lat = parseFloat(document.getElementById('reqDropoffLat').value) || null;
+    const dropoff_lng = parseFloat(document.getElementById('reqDropoffLng').value) || null;
+
+    const btn = e.target.querySelector('.form-submit');
+    btn.disabled = true; btn.textContent = 'Posting…';
+
+    const { error } = await window.sb.from('swift_orders').insert({
+      university_id: universityId,
+      buyer_id: userId,
+      runner_id: null, // broadcast — open to any runner
+      status: 'searching',
+      errand_type: linkedListing ? 'listing_pickup' : 'errand',
+      listing_id: linkedListing?.id || null,
+      vendor_id: linkedListing?.seller_id || null,
+      fee,
+      pickup_place, dropoff_place,
+      pickup_lat, pickup_lng, dropoff_lat, dropoff_lng,
+      note: note || null,
+      pickup_pin: genPin(),
+      delivery_pin: genPin(),
+      created_at: new Date().toISOString(),
+    });
+
+    btn.disabled = false; btn.textContent = 'Post request';
+    if (error) { console.error('Order create error:', error); alert(`Could not post your request: ${error.message || 'please try again.'}`); return; }
+    loadActiveOrder(userId);
+  });
+}
+
+async function loadActiveOrder(userId) {
+  const card = document.getElementById('activeOrderCard');
+  const { data } = await window.sb
+    .from('swift_orders').select('*')
+    .eq('buyer_id', userId)
+    .in('status', ACTIVE_STATUSES)
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (!data) {
+    card.style.display = 'block';
+    card.className = 'swift-card';
+    if (linkedListing && linkedListing.status !== 'sold') {
+      card.innerHTML = renderListingLockedCard('The seller hasn\u2019t marked this as sold yet. Close the deal in chat first — once they mark it sold, you can request delivery here.');
+      return;
+    }
+    if (linkedListing && linkedListing.status === 'sold' && linkedListing.sold_to !== userId) {
+      card.innerHTML = renderListingLockedCard('This item was sold to someone else.');
+      return;
+    }
+    card.className = '';
+    card.innerHTML = renderRequestForm();
+    bindRequestForm(userId, myUniversityId);
+    return;
+  }
+  card.style.display = 'block';
+  card.className = 'swift-card';
+
+  if (data.status === 'delivered' && !data.buyer_rated) {
+    card.innerHTML = `
+      <div class="swift-status-pill">✅ Delivered</div>
+      <h3>Rate your runner</h3>
+      <p>How was your delivery?</p>
+      ${starRow('buyerRate')}
+      <textarea class="form-textarea" id="buyerRateComment" placeholder="Optional comment"></textarea>
+      <button class="form-submit" id="buyerRateSubmit" style="margin-top:10px">Submit rating &amp; finish</button>
+    `;
+    let stars = 0;
+    bindStarRow('buyerRateStars', (n) => { stars = n; });
+    document.getElementById('buyerRateSubmit').addEventListener('click', async () => {
+      if (!stars) { alert('Tap a star to rate.'); return; }
+      const comment = document.getElementById('buyerRateComment').value.trim();
+      await window.sb.from('swift_ratings').insert({
+        order_id: data.id, rater_id: userId, ratee_id: data.runner_id, role: 'runner',
+        stars, comment: comment || null, created_at: new Date().toISOString(),
+      });
+      await window.sb.from('swift_orders').update({ buyer_rated: true }).eq('id', data.id);
+      await window.sb.from('swift_orders').update({ status: 'completed', completed_at: new Date().toISOString() }).eq('id', data.id);
+      if (data.listing_id) {
+        await window.sb.from('listings').update({ is_available: false, status: 'sold', sold_to: userId, sold_at: new Date().toISOString() }).eq('id', data.listing_id);
+      }
+      loadActiveOrder(userId);
+    });
+    return;
+  }
+
+  // A runner has claimed the job — buyer must fund escrow before pickup can start.
+  if (data.status === 'accepted') {
+    let { data: escrow } = await window.sb.from('escrow_orders').select('*').eq('swift_order_id', data.id).maybeSingle();
+    if (!escrow) {
+      const amount_kobo = window.CPPay.nairaToKobo(data.fee || 0);
+      const { commission, payout } = { commission: Math.round(amount_kobo * 0.05), payout: amount_kobo - Math.round(amount_kobo * 0.05) };
+      const { data: created } = await window.sb.from('escrow_orders').insert({
+        kind: 'swift', swift_order_id: data.id, buyer_id: userId, seller_id: data.runner_id,
+        amount_kobo, commission_kobo: commission, payout_kobo: payout,
+        pickup_lat: data.pickup_lat, pickup_lng: data.pickup_lng,
+        dropoff_lat: data.dropoff_lat, dropoff_lng: data.dropoff_lng,
+        status: 'awaiting_payment',
+      }).select().single();
+      escrow = created;
+    }
+    if (escrow && escrow.status === 'awaiting_payment') {
+      card.innerHTML = `
+        <div class="swift-status-pill">🛵 Runner assigned</div>
+        <h3>Pay to confirm delivery</h3>
+        <p>${window.CP.fmtNaira(data.fee)} is held safely with us until you confirm delivery — your runner is only paid once the job is done.</p>
+        <button class="form-submit" id="swiftPayBtn">Pay ${window.CP.fmtNaira(data.fee)}</button>
+      `;
+      document.getElementById('swiftPayBtn').addEventListener('click', async () => {
+        const btn = document.getElementById('swiftPayBtn');
+        btn.disabled = true; btn.textContent = 'Opening payment…';
+        try {
+          const { data: { session } } = await window.sb.auth.getSession();
+          await window.CPPay.payEscrowOrder({ escrowOrderId: escrow.id, amountKobo: escrow.amount_kobo, email: session.user.email });
+          loadActiveOrder(userId);
+        } catch (e) {
+          alert(e.message || 'Payment failed'); btn.disabled = false; btn.textContent = `Pay ${window.CP.fmtNaira(data.fee)}`;
+        }
+      });
+      return;
+    }
+  }
+
+  card.innerHTML = `
+    <div class="swift-status-pill">🛵 ${STATUS_LABEL[data.status] || data.status}</div>
+    <h3>${data.pickup_place || data.dropoff_place || 'Your delivery'}</h3>
+    <p>${CP.esc(data.note || 'Track your delivery status here.')}</p>
+    ${pinRow(data)}
+    <div class="swift-map" id="buyerMap"></div>
+    <p style="margin-top:10px;font-size:11.5px;color:var(--text3)">Give the pickup PIN to whoever's handing off the item, and the delivery PIN to your runner once it arrives.</p>
+    ${disputeButton(data.id, userId, data.runner_id)}
+  `;
+  renderMap('buyerMap', data, data.runner_id, {
+    role: 'buyer',
+    activeLeg: data.status === 'picked_up' || data.status === 'delivered' ? 'dropoff' : 'pickup',
+    pollRunnerId: data.runner_id,
+  });
+}
+
+function renderApplicationForm() {
+  return `
+    <div class="swift-card">
+      <h3>Become a Swift Runner</h3>
+      <p>Deliver items around campus and earn on your own schedule. We'll review your application before you can go online.</p>
+      <div class="transport-row" id="transportRow">
+        ${TRANSPORTS.map(([key, label]) => `<button type="button" class="transport-pill${key === selectedTransport ? ' active' : ''}" data-key="${key}">${label}</button>`).join('')}
+      </div>
+      <form id="applyForm">
+        <div class="form-group">
+          <label class="form-label">Phone number</label>
+          <input class="form-input" id="applyPhone" type="tel" placeholder="080…" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Anything we should know? (optional)</label>
+          <textarea class="form-textarea" id="applyNote" placeholder="Availability, experience, etc."></textarea>
+        </div>
+        <button type="submit" class="form-submit">Submit application</button>
+      </form>
+    </div>
+  `;
+}
+
+function renderPendingCard(app) {
+  return `
+    <div class="swift-card">
+      <div class="swift-status-pill">⏳ Under review</div>
+      <h3>Application submitted</h3>
+      <p>We're reviewing your Swift Runner application (${TRANSPORTS.find(t => t[0] === app.transport_type)?.[1] || app.transport_type}). You'll be notified once it's approved.</p>
+    </div>
+  `;
+}
+
+function renderDeclinedCard(app) {
+  return `
+    <div class="swift-card">
+      <div class="swift-status-pill" style="background:rgba(251,113,133,0.12);color:var(--danger)">✕ Not approved</div>
+      <h3>Application declined</h3>
+      <p>${app.decline_reason || "Your application wasn't approved this time."}</p>
+      <button class="form-submit" id="reapplyBtn" style="margin-top:4px">Apply again</button>
+    </div>
+  `;
+}
+
+let locationWatchId = null;
+let lastLocationSent = 0;
+
+function startLocationBroadcast() {
+  if (locationWatchId != null || !navigator.geolocation) return;
+  locationWatchId = navigator.geolocation.watchPosition(
+    (pos) => {
+      const now = Date.now();
+      if (now - lastLocationSent < 10000) return; // throttle to once/10s
+      lastLocationSent = now;
+      window.sb.from('swift_runners').update({
+        current_lat: pos.coords.latitude, current_lng: pos.coords.longitude, updated_at: new Date().toISOString(),
+      }).eq('user_id', myUserId).then(({ error }) => { if (error) console.error('Location update error:', error); });
+    },
+    (err) => console.warn('Location watch error:', err),
+    { enableHighAccuracy: true, maximumAge: 5000 }
+  );
+}
+function stopLocationBroadcast() {
+  if (locationWatchId != null) { navigator.geolocation.clearWatch(locationWatchId); locationWatchId = null; }
+}
+
+async function renderRunnerDashboard(runner) {
+  const { data: earningsRows } = await window.sb.from('swift_orders').select('fee').eq('runner_id', runner.id).not('completed_at', 'is', null);
+  const totalEarned = (earningsRows || []).reduce((sum, o) => sum + (o.fee || 0), 0);
+
+  const section = document.getElementById('runnerSection');
+  section.innerHTML = `
+    <div class="swift-card">
+      <div class="swift-toggle-row">
+        <div>
+          <h3 style="margin-bottom:2px">You're a Swift Runner</h3>
+          <p style="margin:0">${runner.is_online ? 'You are online and visible to buyers.' : 'You are offline.'}</p>
+        </div>
+        <label class="switch"><input type="checkbox" id="onlineToggle" ${runner.is_online ? 'checked' : ''}><span class="switch-track"></span></label>
+      </div>
+      <div class="swift-earnings-row">
+        <div><b>${window.CP.fmtNaira(totalEarned)}</b><span>Total earned</span></div>
+        <div><b>${(runner.avg_rating || 0).toFixed(1)}★</b><span>${runner.rating_count || 0} ratings</span></div>
+      </div>
+    </div>
+    <div class="swift-card">
+      <div class="swift-toggle-row">
+        <div>
+          <h3 style="margin-bottom:2px">Also selling something?</h3>
+          <p style="margin:0">Runners can list products too — it's the same marketplace.</p>
+        </div>
+        <a class="btn btn-primary" href="create.html" style="flex:none;text-decoration:none;">+ List</a>
+      </div>
+    </div>
+    <div class="swift-card">
+      <h3>Incoming requests</h3>
+      <div id="incomingOrders"><p style="color:var(--text3);font-size:13px;">Loading…</p></div>
+    </div>
+    <div id="runnerActiveOrderCard"></div>
+  `;
+
+  document.getElementById('onlineToggle').addEventListener('change', async (e) => {
+    await window.sb.from('swift_runners').update({ is_online: e.target.checked, updated_at: new Date().toISOString() }).eq('user_id', myUserId);
+    if (e.target.checked) startLocationBroadcast(); else stopLocationBroadcast();
+  });
+  if (runner.is_online) startLocationBroadcast();
+
+  loadIncomingOrders(runner);
+  loadRunnerActiveOrder(runner);
+}
+
+// Shared by the inline PIN form and the full-screen map's PIN box, so both
+// paths behave identically. Returns true on success (caller can close the map).
+async function confirmPickup(data, runner, entered) {
+  if (String(entered) !== String(data.pickup_pin)) { alert('Wrong pickup PIN.'); return false; }
+  await window.sb.from('swift_orders').update({ status: 'picked_up', updated_at: new Date().toISOString() }).eq('id', data.id);
+  loadRunnerActiveOrder(runner);
+  return true;
+}
+
+async function confirmDelivery(data, runner, entered) {
+  if (String(entered) !== String(data.delivery_pin)) { alert('Wrong delivery PIN.'); return false; }
+  await window.sb.from('swift_orders').update({ status: 'delivered', updated_at: new Date().toISOString() }).eq('id', data.id);
+  // Correct PIN = proof of delivery -> auto-release escrow to the runner (minus 5% commission), no buyer tap needed.
+  const { data: escrow } = await window.sb.from('escrow_orders').select('*').eq('swift_order_id', data.id).maybeSingle();
+  if (escrow && escrow.status === 'paid_escrow') {
+    try { await window.CPPay.swiftAutoRelease(escrow.id); }
+    catch (err) { console.error('Auto-payout failed:', err); alert('Delivery confirmed, but payout failed — this order was flagged for manual payout.'); }
+  }
+  loadRunnerActiveOrder(runner);
+  return true;
+}
+
+async function loadRunnerActiveOrder(runner) {
+  const card = document.getElementById('runnerActiveOrderCard');
+  if (!card) return;
+  const { data } = await window.sb
+    .from('swift_orders').select('*')
+    .eq('runner_id', runner.id)
+    .in('status', ['accepted', 'picked_up', 'delivered'])
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (!data) { card.style.display = 'none'; card.innerHTML = ''; return; }
+  card.style.display = 'block';
+  card.className = 'swift-card';
+
+  if (data.status === 'accepted') {
+    const { data: escrow } = await window.sb.from('escrow_orders').select('status').eq('swift_order_id', data.id).maybeSingle();
+    if (!escrow || escrow.status === 'awaiting_payment') {
+      card.innerHTML = `
+        <div class="swift-status-pill">⏳ Waiting on buyer</div>
+        <h3>${data.pickup_place || 'Pickup location'}</h3>
+        <p>The buyer hasn't funded escrow yet — you'll be able to enter the pickup PIN as soon as they pay.</p>
+        ${disputeButton(data.id, myUserId, data.buyer_id)}
+      `;
+      return;
+    }
+    card.innerHTML = `
+      <div class="swift-status-pill">📍 Heading to pickup</div>
+      <h3>${data.pickup_place || 'Pickup location'}</h3>
+      <p>Ask for the pickup PIN and enter it here to confirm you've collected the item.</p>
+      <div class="pin-entry-row">
+        <input type="text" id="pickupPinInput" placeholder="4-digit PIN" maxlength="4" inputmode="numeric">
+        <button class="btn btn-primary" id="confirmPickupBtn">Confirm</button>
+      </div>
+      <div class="swift-map" id="runnerMap"></div>
+      ${disputeButton(data.id, myUserId, data.buyer_id)}
+    `;
+    renderMap('runnerMap', data, null, {
+      role: 'runner', activeLeg: 'pickup',
+      onPinConfirm: (pin) => confirmPickup(data, runner, pin),
+    });
+    document.getElementById('confirmPickupBtn').addEventListener('click', () => {
+      const entered = document.getElementById('pickupPinInput').value.trim();
+      confirmPickup(data, runner, entered);
+    });
+    return;
+  }
+
+  if (data.status === 'picked_up') {
+    card.innerHTML = `
+      <div class="swift-status-pill">📦 Out for delivery</div>
+      <h3>${data.dropoff_place || 'Drop-off location'}</h3>
+      <p>Enter the delivery PIN from the buyer once you've handed it over.</p>
+      <div class="pin-entry-row">
+        <input type="text" id="deliveryPinInput" placeholder="4-digit PIN" maxlength="4" inputmode="numeric">
+        <button class="btn btn-primary" id="confirmDeliveryBtn">Confirm</button>
+      </div>
+      <div class="swift-map" id="runnerMap"></div>
+      ${disputeButton(data.id, myUserId, data.buyer_id)}
+    `;
+    renderMap('runnerMap', data, null, {
+      role: 'runner', activeLeg: 'dropoff',
+      onPinConfirm: (pin) => confirmDelivery(data, runner, pin),
+    });
+    document.getElementById('confirmDeliveryBtn').addEventListener('click', () => {
+      const entered = document.getElementById('deliveryPinInput').value.trim();
+      confirmDelivery(data, runner, entered);
+    });
+    return;
+  }
+
+  if (data.status === 'delivered' && !data.runner_rated) {
+    card.innerHTML = `
+      <div class="swift-status-pill">✅ Delivered</div>
+      <h3>Rate the buyer</h3>
+      ${starRow('runnerRate')}
+      <textarea class="form-textarea" id="runnerRateComment" placeholder="Optional comment"></textarea>
+      <button class="form-submit" id="runnerRateSubmit" style="margin-top:10px">Submit rating</button>
+    `;
+    let stars = 0;
+    bindStarRow('runnerRateStars', (n) => { stars = n; });
+    document.getElementById('runnerRateSubmit').addEventListener('click', async () => {
+      if (!stars) { alert('Tap a star to rate.'); return; }
+      const comment = document.getElementById('runnerRateComment').value.trim();
+      await window.sb.from('swift_ratings').insert({
+        order_id: data.id, rater_id: myUserId, ratee_id: data.buyer_id, role: 'buyer',
+        stars, comment: comment || null, created_at: new Date().toISOString(),
+      });
+      await window.sb.from('swift_orders').update({ runner_rated: true }).eq('id', data.id);
+      loadRunnerActiveOrder(runner);
+    });
+    return;
+  }
+
+  card.style.display = 'none';
+}
+
+async function loadIncomingOrders(runner) {
+  const list = document.getElementById('incomingOrders');
+  const { data, error } = await window.sb
+    .from('swift_orders').select('*')
+    .eq('university_id', myUniversityId)
+    .in('status', ['searching', 'requested'])
+    .or(`runner_id.eq.${runner.id},runner_id.is.null`)
+    .order('created_at', { ascending: true })
+    .limit(10);
+
+  if (error) { console.error('Incoming orders error:', error); list.innerHTML = `<p style="color:var(--text3);font-size:13px;">Couldn't load requests.</p>`; return; }
+  if (!data || !data.length) { list.innerHTML = `<p style="color:var(--text3);font-size:13px;">No delivery requests right now — check back soon.</p>`; return; }
+
+  list.innerHTML = data.map(o => `
+    <div class="order-req-card" data-id="${o.id}">
+      <div class="order-req-top"><span>${o.pickup_place || 'Pickup on campus'}</span><span>${o.fee ? window.CP.fmtNaira(o.fee) : ''}</span></div>
+      <div class="order-req-sub">${CP.esc(o.note || o.errand_type || 'Delivery request')} · ${window.CP.timeAgo(o.created_at)}</div>
+      <div class="order-req-actions">
+        <button class="btn btn-primary accept-order-btn">Accept</button>
+        <button class="btn btn-ghost decline-order-btn">Decline</button>
+      </div>
+    </div>
+  `).join('');
+
+  list.querySelectorAll('.accept-order-btn').forEach(btn => btn.addEventListener('click', async (e) => {
+    const orderId = e.target.closest('.order-req-card').dataset.id;
+    const { error } = await window.sb.from('swift_orders').update({ runner_id: runner.id, status: 'accepted', updated_at: new Date().toISOString() }).eq('id', orderId);
+    if (error) { alert("Couldn't accept — it may have been taken."); return; }
+    loadIncomingOrders(runner);
+    loadRunnerActiveOrder(runner);
+  }));
+  list.querySelectorAll('.decline-order-btn').forEach(btn => btn.addEventListener('click', (e) => {
+    e.target.closest('.order-req-card').remove();
+  }));
+}
+
+async function initRunnerSection() {
+  const section = document.getElementById('runnerSection');
+
+  const { data: runner } = await window.sb.from('swift_runners').select('*').eq('user_id', myUserId).maybeSingle();
+  if (runner && runner.status !== 'banned') { renderRunnerDashboard(runner); return; }
+
+  const { data: app } = await window.sb.from('swift_runner_applications').select('*').eq('user_id', myUserId).order('created_at', { ascending: false }).limit(1).maybeSingle();
+
+  if (app && app.status === 'pending') { section.innerHTML = renderPendingCard(app); return; }
+  if (app && app.status === 'declined') {
+    section.innerHTML = renderDeclinedCard(app);
+    document.getElementById('reapplyBtn').addEventListener('click', () => { section.innerHTML = renderApplicationForm(); bindApplyForm(); });
+    return;
+  }
+
+  section.innerHTML = renderApplicationForm();
+  bindApplyForm();
+}
+
+function bindApplyForm() {
+  document.getElementById('transportRow').addEventListener('click', (e) => {
+    const btn = e.target.closest('.transport-pill');
+    if (!btn) return;
+    selectedTransport = btn.dataset.key;
+    document.querySelectorAll('.transport-pill').forEach(p => p.classList.toggle('active', p.dataset.key === selectedTransport));
+  });
+
+  document.getElementById('applyForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const phone = document.getElementById('applyPhone').value.trim();
+    const note = document.getElementById('applyNote').value.trim();
+    if (!phone) return;
+
+    const btn = e.target.querySelector('.form-submit');
+    btn.disabled = true; btn.textContent = 'Submitting…';
+
+    const { error } = await window.sb.from('swift_runner_applications').insert({
+      user_id: myUserId, university_id: myUniversityId,
+      phone, transport_type: selectedTransport, note: note || null,
+      status: 'pending', created_at: new Date().toISOString(),
+    });
+
+    btn.disabled = false; btn.textContent = 'Submit application';
+    if (error) { console.error('Application error:', error); alert('Could not submit — please try again.'); return; }
+    initRunnerSection();
+  });
+}
+
+document.addEventListener('cp-ready', async (e) => {
+  myUserId = e.detail.user.id;
+  myUniversityId = e.detail.profile?.university_id;
+  if (!myUniversityId) return;
+
+  linkedListing = await loadLinkedListing();
+  await loadCampusCenter(myUniversityId);
+  await loadCampusOpen(myUniversityId);
+  await loadActiveOrder(myUserId);
+  await initRunnerSection();
+});
+
+</script>
+<script>
+// Service worker: required for the Android install prompt and for the
+// Play Store TWA build. Registered after load so it never delays first paint.
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js').catch(err => console.warn('SW registration failed:', err));
+  });
+}
+</script>
+</body>
+</html>

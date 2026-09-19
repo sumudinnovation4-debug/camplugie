@@ -1,0 +1,35 @@
+{
+  "name": "Camplugie — Campus Marketplace",
+  "short_name": "Camplugie",
+  "description": "Buy, sell and get things delivered on campus, with escrow-protected payments on every deal.",
+  "id": "/",
+  "start_url": "/home.html",
+  "scope": "/",
+  "display": "standalone",
+  "display_override": ["standalone", "minimal-ui"],
+  "orientation": "portrait",
+  "background_color": "#0E0A1D",
+  "theme_color": "#7C3AED",
+  "categories": ["shopping", "social", "business"],
+  "lang": "en",
+  "dir": "ltr",
+  "prefer_related_applications": false,
+  "icons": [
+    { "src": "icons/icon-48.png",  "sizes": "48x48",   "type": "image/png" },
+    { "src": "icons/icon-72.png",  "sizes": "72x72",   "type": "image/png" },
+    { "src": "icons/icon-96.png",  "sizes": "96x96",   "type": "image/png" },
+    { "src": "icons/icon-144.png", "sizes": "144x144", "type": "image/png" },
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icons/icon-256.png", "sizes": "256x256", "type": "image/png" },
+    { "src": "icons/icon-384.png", "sizes": "384x384", "type": "image/png" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "icons/maskable-192.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable" },
+    { "src": "icons/maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "shortcuts": [
+    { "name": "Sell something", "short_name": "Sell", "url": "/create.html", "icons": [{ "src": "icons/icon-96.png", "sizes": "96x96" }] },
+    { "name": "Chats",          "short_name": "Chats", "url": "/notifications.html", "icons": [{ "src": "icons/icon-96.png", "sizes": "96x96" }] },
+    { "name": "Marketplace",    "short_name": "Market", "url": "/market.html", "icons": [{ "src": "icons/icon-96.png", "sizes": "96x96" }] },
+    { "name": "Wallet",         "short_name": "Wallet", "url": "/wallet.html", "icons": [{ "src": "icons/icon-96.png", "sizes": "96x96" }] }
+  ]
+}

@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Camplugie — TURN test</title>
+<style>
+  body { margin:0; padding:24px; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+         background:#0E0A1D; color:#F8F6FF; }
+  .wrap { max-width:640px; margin:0 auto; }
+  h1 { font-size:20px; margin:0 0 6px; }
+  p.sub { color:#8D86AA; font-size:13px; margin:0 0 20px; }
+  button { background:#7C3AED; color:#fff; border:none; border-radius:10px;
+           padding:13px 20px; font-size:14px; font-weight:700; cursor:pointer; }
+  button:disabled { opacity:.5; cursor:default; }
+  .verdict { margin:20px 0; padding:16px; border-radius:12px; font-size:14px;
+             line-height:1.55; display:none; }
+  .verdict.show { display:block; }
+  .ok   { background:rgba(52,211,153,.13); border:1px solid #34D399; color:#34D399; }
+  .warn { background:rgba(251,191,36,.13); border:1px solid #FBBF24; color:#FBBF24; }
+  .bad  { background:rgba(251,113,133,.13); border:1px solid #FB7185; color:#FB7185; }
+  pre { background:#12101D; border:1px solid rgba(255,255,255,.1); border-radius:10px;
+        padding:13px; font-size:11.5px; line-height:1.6; overflow-x:auto; color:#C9C3DE;
+        max-height:320px; }
+  .tag { display:inline-block; border-radius:5px; padding:1px 6px; font-size:10px;
+         font-weight:800; margin-right:7px; }
+  .t-host  { background:rgba(141,134,170,.25); color:#C9C3DE; }
+  .t-srflx { background:rgba(96,165,250,.2);  color:#60A5FA; }
+  .t-relay { background:rgba(52,211,153,.2);  color:#34D399; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>TURN connectivity test</h1>
+  <p class="sub">Checks whether the TURN credentials in <code>config.js</code> actually work.
+    A <b>relay</b> candidate means calls will connect even on campus WiFi and mobile data.</p>
+
+  <button id="runBtn">Run test</button>
+
+  <div class="verdict" id="verdict"></div>
+  <pre id="log">Waiting…</pre>
+</div>
+
+<script src="config.js?v=3"></script>
+<script>
+const log = document.getElementById('log');
+const verdict = document.getElementById('verdict');
+const btn = document.getElementById('runBtn');
+let lines = [];
+
+function write(msg) { lines.push(msg); log.innerHTML = lines.join('\n'); }
+function show(cls, html) { verdict.className = 'verdict show ' + cls; verdict.innerHTML = html; }
+
+btn.addEventListener('click', async () => {
+  btn.disabled = true; btn.textContent = 'Testing…';
+  lines = []; verdict.className = 'verdict';
+  const found = { host: 0, srflx: 0, relay: 0 };
+
+  const ice = await window.CP_getIceServers();
+  write('<b>ICE servers in use:</b>');
+  ice.forEach(s => write('  ' + s.urls + (s.username ? '  (authenticated)' : '')));
+  write('');
+
+  const hasTurn = ice.some(s => String(s.urls).includes('turn'));
+  if (!hasTurn) {
+    show('bad', '<b>No TURN server configured.</b> Fill in <code>window.CP_TURN.credential</code> in config.js.');
+    btn.disabled = false; btn.textContent = 'Run test';
+    return;
+  }
+
+  const pc = new RTCPeerConnection({ iceServers: ice, iceCandidatePoolSize: 0 });
+  pc.createDataChannel('probe');
+
+  pc.onicecandidate = (e) => {
+    if (!e.candidate) return;
+    const c = e.candidate;
+    found[c.type] = (found[c.type] || 0) + 1;
+    write(`<span class="tag t-${c.type}">${c.type}</span>${c.protocol || ''} ${c.address || c.candidate.split(' ')[4]}`);
+  };
+
+  pc.onicegatheringstatechange = () => {
+    if (pc.iceGatheringState !== 'complete') return;
+    pc.close();
+    btn.disabled = false; btn.textContent = 'Run test again';
+
+    if (found.relay) {
+      show('ok', `<b>✅ TURN is working.</b> Got ${found.relay} relay candidate${found.relay === 1 ? '' : 's'}. ` +
+        `Calls should now connect for users behind campus WiFi, captive portals, and mobile data.`);
+    } else if (found.srflx) {
+      show('bad', `<b>❌ TURN is NOT working.</b> STUN replied (${found.srflx} srflx candidates) but the relay never did. ` +
+        `Usually means the password is wrong, expired, or your free quota is used up. Check the ExpressTurn dashboard.`);
+    } else {
+      show('warn', `<b>⚠️ Nothing but local candidates.</b> Neither STUN nor TURN replied — check your internet connection, ` +
+        `or a firewall is blocking UDP 3478 entirely on this network.`);
+    }
+  };
+
+  const offer = await pc.createOffer();
+  await pc.setLocalDescription(offer);
+  write('<b>Gathering candidates…</b>');
+
+  setTimeout(() => {
+    if (pc.iceGatheringState !== 'complete') {
+      pc.close(); btn.disabled = false; btn.textContent = 'Run test again';
+      if (!found.relay) show('bad', '<b>❌ Timed out with no relay candidate.</b> TURN credentials are likely wrong.');
+    }
+  }, 12000);
+});
+</script>
+</body>
+</html>

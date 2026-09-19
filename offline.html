@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#7C3AED">
+<title>Camplugie — Offline</title>
+<style>
+  body { margin:0; min-height:100dvh; display:flex; align-items:center; justify-content:center;
+         background:linear-gradient(180deg,#0E0A1D,#090714); color:#F8F6FF; text-align:center;
+         font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif; padding:28px; }
+  .icon { width:84px;height:84px;border-radius:50%;background:rgba(167,139,250,.14);
+          display:flex;align-items:center;justify-content:center;font-size:36px;margin:0 auto 20px; }
+  h1 { font-size:21px; margin:0 0 8px; }
+  p { color:#8D86AA; font-size:14px; line-height:1.6; margin:0 0 24px; max-width:320px; }
+  button { background:#7C3AED;color:#fff;border:none;border-radius:12px;
+           padding:14px 28px;font-size:15px;font-weight:700;cursor:pointer; }
+</style>
+</head>
+<body>
+  <div>
+    <div class="icon">📡</div>
+    <h1>You're offline</h1>
+    <p>Camplugie needs a connection to load listings, chats and payments. Check your data or WiFi and try again.</p>
+    <button onclick="location.reload()">Try again</button>
+  </div>
+  <script>
+    window.addEventListener('online', () => location.reload());
+  </script>
+</body>
+</html>

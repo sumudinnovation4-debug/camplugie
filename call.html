@@ -1,0 +1,1825 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Camplugie — Call</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Clash+Display:wght@500;600;700&family=Satoshi:wght@400;500;700;900&display=swap');
+
+/* ===== Design tokens (matches Camplugie's existing dark theme) ===== */
+:root {
+  --brand: #A78BFA;
+  --brand-dark: #7C3AED;
+  --brand-soft: rgba(167, 139, 250, 0.14);
+  --accent: #FBBF24;
+  --accent-soft: rgba(251, 191, 36, 0.14);
+  --money: #34D399;
+  --danger: #FB7185;
+
+  --bg: #090714;
+  --bg-gradient: radial-gradient(circle at 20% -10%, rgba(124,58,237,0.34), transparent 36%), linear-gradient(180deg, #0E0A1D 0%, #090714 100%);
+  --surface: #12101D;
+  --surface2: #1A1729;
+  --surface3: #242039;
+  --border: rgba(255,255,255,0.10);
+
+  --text: #F8F6FF;
+  --text2: #C9C3DE;
+  --text3: #8D86AA;
+
+  --nav-h: 58px;
+  --bottom-h: 68px;
+  --radius: 18px;
+  --radius-sm: 12px;
+  --shadow: 0 14px 38px rgba(0,0,0,0.28);
+  --shadow-lg: 0 24px 80px rgba(0,0,0,0.48);
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html, body { margin: 0; padding: 0; }
+body {
+  background: var(--bg-gradient), var(--bg);
+  color: var(--text);
+  font-family: 'Satoshi', -apple-system, BlinkMacSystemFont, sans-serif;
+  min-height: 100vh;
+}
+h1, h2, h3, h4, .display {
+  font-family: 'Clash Display', 'Satoshi', sans-serif;
+  margin: 0;
+}
+a { color: inherit; text-decoration: none; }
+button { font-family: inherit; }
+img { max-width: 100%; display: block; }
+
+.app-shell {
+  max-width: 480px;
+  margin: 0 auto;
+  min-height: 100vh;
+  position: relative;
+  padding-bottom: calc(var(--bottom-h) + var(--safe-bottom) + 10px);
+}
+
+/* ===== Header ===== */
+.cp-header {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: calc(var(--safe-top) + 14px) 16px 12px;
+  background: rgba(9, 7, 20, 0.88);
+  backdrop-filter: blur(14px);
+  border-bottom: 1px solid var(--border);
+}
+.cp-header-id { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.cp-logo {
+  width: 38px; height: 38px; border-radius: 12px; flex-shrink: 0;
+  overflow: hidden;
+  box-shadow: 0 4px 14px rgba(124,58,237,0.35);
+}
+.cp-logo img { width: 100%; height: 100%; object-fit: cover; }
+.cp-header-text { min-width: 0; }
+.cp-header-text .brand-name { font-size: 17px; font-weight: 700; letter-spacing: -0.01em; }
+.cp-header-text .brand-sub {
+  font-size: 11.5px; color: var(--text3); font-weight: 500;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.cp-header-actions { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+.icon-btn {
+  position: relative;
+  width: 38px; height: 38px; border-radius: 12px;
+  border: 1px solid var(--border);
+  background: var(--surface2);
+  color: var(--text);
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+}
+.icon-btn svg { width: 18px; height: 18px; }
+.icon-badge {
+  position: absolute; top: -4px; right: -4px;
+  min-width: 16px; height: 16px; padding: 0 3px;
+  border-radius: 999px;
+  background: var(--danger);
+  color: #fff;
+  font-size: 10px; font-weight: 800;
+  display: flex; align-items: center; justify-content: center;
+  border: 2px solid var(--bg);
+}
+
+/* ===== Search ===== */
+.cp-search-wrap { padding: 14px 16px 4px; }
+.cp-search {
+  display: flex; align-items: center; gap: 10px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 0 16px;
+  height: 44px;
+}
+.cp-search svg { width: 17px; height: 17px; color: var(--text3); flex-shrink: 0; }
+.cp-search input {
+  flex: 1; border: none; background: none; outline: none;
+  font: inherit; font-size: 14.5px; color: var(--text);
+  min-width: 0;
+}
+.cp-search input::placeholder { color: var(--text3); }
+
+/* ===== Category chips ===== */
+.cp-chiprow {
+  display: flex; gap: 8px;
+  overflow-x: auto; scrollbar-width: none;
+  padding: 12px 16px 4px;
+}
+.cp-chiprow::-webkit-scrollbar { display: none; }
+.cp-chip {
+  flex-shrink: 0;
+  display: flex; align-items: center; gap: 6px;
+  border: 1px solid var(--border);
+  background: var(--surface2);
+  color: var(--text2);
+  border-radius: 999px;
+  padding: 9px 16px;
+  font-size: 13.5px; font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background .15s, color .15s, border-color .15s;
+}
+.cp-chip.active { background: var(--accent); color: #1A1200; border-color: var(--accent); }
+
+/* ===== Promo banner ===== */
+.cp-promo {
+  margin: 14px 16px 0;
+  border-radius: var(--radius);
+  padding: 22px 20px;
+  background: linear-gradient(135deg, var(--brand-dark), var(--brand) 120%);
+  position: relative;
+  overflow: hidden;
+  box-shadow: var(--shadow);
+}
+.cp-promo::after {
+  content: '🎓';
+  position: absolute;
+  right: -6px; bottom: -18px;
+  font-size: 92px;
+  opacity: 0.16;
+  transform: rotate(-8deg);
+}
+.cp-promo h2 {
+  font-size: 21px; font-weight: 700; line-height: 1.25;
+  color: #fff; max-width: 78%; position: relative; z-index: 1;
+}
+.cp-promo p {
+  margin: 6px 0 16px; font-size: 13px; color: rgba(255,255,255,0.82);
+  position: relative; z-index: 1;
+}
+.cp-promo-btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: #12101D; color: var(--accent);
+  border: none; border-radius: 10px;
+  padding: 10px 16px;
+  font-size: 13.5px; font-weight: 700;
+  cursor: pointer;
+  position: relative; z-index: 1;
+}
+
+/* ===== Yard teaser ===== */
+.cp-yard-teaser {
+  margin: 14px 16px 0;
+  display: flex; align-items: center; gap: 12px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 13px 14px;
+  cursor: pointer;
+}
+.cp-yard-avatars { display: flex; flex-shrink: 0; }
+.cp-yard-avatars span {
+  width: 30px; height: 30px; border-radius: 50%;
+  background: linear-gradient(135deg, var(--brand), var(--brand-dark));
+  border: 2px solid var(--surface);
+  margin-left: -10px;
+}
+.cp-yard-avatars span:first-child { margin-left: 0; }
+.cp-yard-teaser-text { flex: 1; min-width: 0; }
+.cp-yard-teaser-text .title { font-size: 13.5px; font-weight: 700; }
+.cp-yard-teaser-text .sub { font-size: 11.5px; color: var(--text3); margin-top: 1px; }
+.cp-yard-teaser .chev { color: var(--text3); flex-shrink: 0; }
+.cp-yard-teaser .chev svg { width: 18px; height: 18px; }
+
+/* ===== Section header ===== */
+.cp-section-head {
+  display: flex; align-items: baseline; justify-content: space-between;
+  padding: 22px 16px 10px;
+}
+.cp-section-head h3 { font-size: 16px; font-weight: 700; }
+.cp-section-head a { font-size: 12.5px; font-weight: 700; color: var(--accent); }
+
+/* ===== Featured sellers ===== */
+.cp-sellers-row {
+  display: flex; gap: 16px;
+  overflow-x: auto; scrollbar-width: none;
+  padding: 4px 16px 6px;
+}
+.cp-sellers-row::-webkit-scrollbar { display: none; }
+.cp-seller {
+  flex-shrink: 0; display: flex; flex-direction: column; align-items: center; gap: 6px;
+  width: 64px; text-align: center;
+}
+.cp-seller-av {
+  width: 56px; height: 56px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 22px;
+  border: 2px solid var(--brand);
+}
+.cp-seller span { font-size: 11px; color: var(--text2); font-weight: 600; line-height: 1.2; }
+
+/* ===== Store grid / product cards ===== */
+.cp-store-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  padding: 6px 16px 8px;
+}
+.store-card {
+  text-align: left;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  border-radius: 16px;
+  overflow: hidden;
+  cursor: pointer;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  transition: transform .12s ease;
+}
+.store-card:active { transform: scale(0.97); }
+.store-card-media {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 44px;
+  overflow: hidden;
+}
+.store-like {
+  position: absolute; top: 8px; right: 8px;
+  width: 30px; height: 30px; border-radius: 50%;
+  background: rgba(9,7,20,.55);
+  color: #fff;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+}
+.store-like svg { width: 15px; height: 15px; }
+.store-card-body { padding: 10px 11px 12px; }
+.store-price { font-weight: 800; font-size: 16px; color: var(--text); }
+.store-title {
+  font-size: 12.5px; color: var(--text2); margin: 3px 0 9px; line-height: 1.35;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+}
+.store-seller { display: flex; align-items: center; gap: 6px; }
+.store-av {
+  width: 18px; height: 18px; border-radius: 50%; flex-shrink: 0;
+  background: linear-gradient(135deg, var(--brand), var(--brand-dark));
+}
+.store-seller-name { font-size: 11px; color: var(--text3); font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* ===== Bottom nav ===== */
+.cp-bottom-nav {
+  position: fixed;
+  left: 50%; transform: translateX(-50%);
+  bottom: 0;
+  width: 100%; max-width: 480px;
+  height: calc(var(--bottom-h) + var(--safe-bottom));
+  padding-bottom: var(--safe-bottom);
+  background: rgba(18, 16, 29, 0.92);
+  backdrop-filter: blur(16px);
+  border-top: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-around;
+  z-index: 30;
+}
+.cp-nav-item {
+  display: flex; flex-direction: column; align-items: center; gap: 3px;
+  background: none; border: none; color: var(--text3);
+  font-size: 10.5px; font-weight: 600;
+  cursor: pointer; padding: 6px 10px;
+}
+.cp-nav-item svg { width: 22px; height: 22px; }
+.cp-nav-item.active { color: var(--accent); }
+.cp-nav-fab {
+  width: 46px; height: 46px; border-radius: 14px;
+  background: var(--accent);
+  color: #1A1200;
+  display: flex; align-items: center; justify-content: center;
+  margin-top: -18px;
+  box-shadow: 0 8px 20px rgba(251,191,36,0.4);
+  border: 4px solid var(--bg);
+  cursor: pointer;
+}
+.cp-nav-fab svg { width: 22px; height: 22px; }
+
+@media (min-width: 481px) {
+  .cp-bottom-nav { border-radius: 20px 20px 0 0; }
+}
+
+/* ===== Shared page header (non-home pages) ===== */
+.cp-page-header {
+  position: sticky; top: 0; z-index: 20;
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 12px;
+  padding: calc(var(--safe-top) + 14px) 16px 12px;
+  background: rgba(9, 7, 20, 0.88);
+  backdrop-filter: blur(14px);
+  border-bottom: 1px solid var(--border);
+}
+.cp-page-header h1 { font-size: 18px; font-weight: 700; }
+.cp-page-header .brand-sub { font-size: 11.5px; color: var(--text3); font-weight: 500; margin-top: 1px; }
+
+/* ===== Post / feed card (Yard) ===== */
+.post-card {
+  margin: 12px 16px 0;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 14px;
+}
+.post-card.pinned { background: linear-gradient(135deg, var(--brand-dark), var(--brand) 130%); border: none; }
+.post-card.pinned .post-meta, .post-card.pinned .post-body { color: rgba(255,255,255,0.9); }
+.post-card.pinned .post-name { color: #fff; }
+.post-eyebrow {
+  display: flex; align-items: center; gap: 6px;
+  font-size: 11px; font-weight: 800; letter-spacing: .04em; text-transform: uppercase;
+  color: rgba(255,255,255,0.85);
+  margin-bottom: 10px;
+}
+.post-author { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+.avatar {
+  width: 40px; height: 40px; border-radius: 50%; flex-shrink: 0;
+  background: linear-gradient(135deg, var(--brand), var(--brand-dark));
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 700; font-size: 13px; color: #fff; overflow: hidden;
+}
+.avatar img { width: 100%; height: 100%; object-fit: cover; }
+.post-name { font-weight: 700; font-size: 14px; }
+.post-meta { font-size: 12px; color: var(--text3); margin-top: 1px; }
+.post-body { font-size: 14px; line-height: 1.5; color: var(--text2); }
+.post-actions { display: flex; align-items: center; gap: 18px; margin-top: 12px; }
+.post-action { display: flex; align-items: center; gap: 5px; font-size: 12.5px; font-weight: 700; color: var(--text3); background: none; border: none; cursor: pointer; }
+.post-action svg { width: 16px; height: 16px; }
+.post-action.active { color: var(--accent); }
+
+.cp-fab {
+  position: fixed; right: 20px; bottom: calc(var(--bottom-h) + var(--safe-bottom) + 16px);
+  width: 52px; height: 52px; border-radius: 16px;
+  background: var(--accent); color: #1A1200;
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 10px 24px rgba(251,191,36,0.4);
+  border: none; cursor: pointer; z-index: 25;
+  left: 50%; margin-left: 178px;
+}
+.cp-fab svg { width: 24px; height: 24px; }
+
+/* ===== Chat list (Chat page) ===== */
+.chat-search-wrap { padding: 12px 16px 6px; }
+.chat-list { padding: 4px 0 12px; }
+.chat-row {
+  display: flex; align-items: center; gap: 12px;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+  cursor: pointer;
+}
+.chat-row .avatar { width: 50px; height: 50px; font-size: 15px; position: relative; }
+.chat-row-text { flex: 1; min-width: 0; }
+.chat-row-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.chat-row-top .name { font-weight: 700; font-size: 14.5px; }
+.chat-row-top .time { font-size: 11px; color: var(--text3); flex-shrink: 0; }
+.chat-row-bottom { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 3px; }
+.chat-row-bottom .preview {
+  font-size: 13px; color: var(--text3);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.chat-unread {
+  min-width: 19px; height: 19px; padding: 0 5px; border-radius: 999px;
+  background: var(--accent); color: #1A1200;
+  font-size: 10.5px; font-weight: 800;
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.chat-listing-tag {
+  display: inline-flex; align-items: center; gap: 4px;
+  font-size: 10.5px; font-weight: 700; color: var(--brand);
+  background: var(--brand-soft); border-radius: 6px; padding: 2px 6px; margin-top: 4px;
+}
+
+/* ===== Profile ===== */
+.profile-cover {
+  height: 110px;
+  background: linear-gradient(135deg, var(--brand-dark), var(--brand) 130%);
+  position: relative;
+}
+.profile-head { padding: 0 16px; margin-top: -38px; }
+.profile-avatar {
+  width: 84px; height: 84px; border-radius: 50%;
+  border: 4px solid var(--bg);
+  background: linear-gradient(135deg, var(--brand), var(--brand-dark));
+  display: flex; align-items: center; justify-content: center;
+  font-size: 26px; font-weight: 800; color: #fff; overflow: hidden;
+}
+.profile-name-row { display: flex; align-items: center; gap: 6px; margin-top: 10px; }
+.profile-name-row h2 { font-size: 19px; }
+.verified-badge { width: 16px; height: 16px; background: #2563EB; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 9px; flex-shrink: 0; }
+.profile-handle { font-size: 13px; color: var(--text3); margin-top: 2px; }
+.profile-bio { font-size: 13.5px; color: var(--text2); margin-top: 8px; line-height: 1.5; }
+.profile-stats { display: flex; gap: 22px; margin-top: 14px; padding: 0 16px; }
+.profile-stat { }
+.profile-stat b { font-size: 16px; font-weight: 800; display: block; }
+.profile-stat span { font-size: 11.5px; color: var(--text3); }
+.profile-actions { display: flex; gap: 10px; padding: 16px 16px 4px; }
+.btn {
+  font: inherit; font-size: 13.5px; font-weight: 700; border-radius: 12px;
+  padding: 11px 14px; cursor: pointer; border: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+}
+.btn-primary { background: var(--brand); color: #fff; border: none; flex: 1; }
+.btn-ghost { background: var(--surface2); color: var(--text); }
+.profile-menu { padding: 18px 16px 8px; display: flex; flex-direction: column; gap: 8px; }
+.profile-menu-item {
+  display: flex; align-items: center; gap: 12px;
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm);
+  padding: 13px 14px; font-size: 14px; font-weight: 600; cursor: pointer;
+}
+.profile-menu-item svg { width: 18px; height: 18px; color: var(--text3); flex-shrink: 0; }
+.profile-menu-item .chev { margin-left: auto; width: 16px; height: 16px; color: var(--text3); }
+
+/* ===== Create listing (Sell) ===== */
+.form-wrap { padding: 16px; }
+.type-toggle { display: flex; gap: 8px; margin-bottom: 18px; }
+.type-toggle .btn { flex: 1; background: var(--surface2); color: var(--text2); border: 1px solid var(--border); }
+.type-toggle .btn.active { background: var(--brand); color: #fff; border-color: var(--brand); }
+.form-group { margin-bottom: 16px; }
+.form-label { display: block; font-size: 12.5px; font-weight: 700; color: var(--text2); margin-bottom: 7px; }
+.form-input, .form-textarea, .form-select {
+  width: 100%; background: var(--surface2); border: 1px solid var(--border); border-radius: var(--radius-sm);
+  padding: 12px 14px; font: inherit; font-size: 14px; color: var(--text); outline: none;
+}
+.form-textarea { resize: vertical; min-height: 90px; }
+.upload-box {
+  border: 1.5px dashed var(--border); border-radius: var(--radius-sm);
+  padding: 26px 14px; text-align: center; color: var(--text3); font-size: 13px; font-weight: 600;
+  cursor: pointer;
+}
+.upload-box svg { width: 26px; height: 26px; margin: 0 auto 8px; }
+.upload-box.has-photos { padding: 14px; }
+.photo-preview-row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+.photo-thumb { position: relative; width: 72px; height: 72px; border-radius: 10px; overflow: hidden; background: var(--surface2); }
+.photo-thumb img { width: 100%; height: 100%; object-fit: cover; }
+.photo-thumb .remove-photo-btn {
+  position: absolute; top: 3px; right: 3px; width: 18px; height: 18px; border-radius: 50%;
+  background: rgba(9,7,20,.75); color: #fff; border: none; font-size: 12px; line-height: 1; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+}
+.photo-thumb .upload-progress {
+  position: absolute; inset: 0; background: rgba(9,7,20,.6); color: #fff; font-size: 10.5px; font-weight: 800;
+  display: flex; align-items: center; justify-content: center;
+}
+.form-submit { width: 100%; background: var(--accent); color: #1A1200; border: none; border-radius: var(--radius-sm); padding: 15px; font-size: 15px; font-weight: 800; cursor: pointer; margin-top: 6px; }
+
+/* ===== Public profile view ===== */
+.pv-message-btn { position: fixed; left: 50%; transform: translateX(-50%); bottom: 20px; width: calc(100% - 32px); max-width: 448px; z-index: 20; }
+
+/* ===== Auth ===== */
+.auth-shell { max-width: 480px; margin: 0 auto; min-height: 100vh; padding: calc(var(--safe-top) + 32px) 24px 32px; display: flex; flex-direction: column; }
+.auth-logo { width: 56px; height: 56px; border-radius: 16px; overflow: hidden; margin-bottom: 18px; box-shadow: 0 8px 22px rgba(124,58,237,0.4); }
+.auth-logo img { width: 100%; height: 100%; object-fit: cover; }
+.auth-shell h1 { font-size: 25px; font-weight: 700; }
+.auth-shell .auth-sub { font-size: 14px; color: var(--text3); margin-top: 6px; }
+.auth-tabs { display: flex; background: var(--surface2); border: 1px solid var(--border); border-radius: 12px; padding: 4px; margin: 24px 0 22px; }
+.auth-tab { flex: 1; border: none; background: none; color: var(--text3); font: inherit; font-size: 13.5px; font-weight: 700; padding: 10px; border-radius: 9px; cursor: pointer; }
+.auth-tab.active { background: var(--brand); color: #fff; }
+.auth-view { display: none; flex-direction: column; gap: 16px; }
+.auth-view.active { display: flex; }
+.auth-foot { margin-top: 22px; text-align: center; font-size: 13px; color: var(--text3); }
+.auth-foot a { color: var(--accent); font-weight: 700; }
+.password-field { position: relative; }
+.password-field .form-input { padding-right: 42px; }
+.password-toggle { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); background: none; border: none; color: var(--text3); cursor: pointer; padding: 4px; }
+.password-toggle svg { width: 17px; height: 17px; }
+
+/* University picker */
+.uni-picker { position: relative; }
+.uni-picker-input {
+  display: flex; align-items: center; gap: 10px;
+  width: 100%; background: var(--surface2); border: 1px solid var(--border); border-radius: var(--radius-sm);
+  padding: 12px 14px; cursor: pointer;
+}
+.uni-picker-input input { flex: 1; border: none; background: none; outline: none; font: inherit; font-size: 14px; color: var(--text); }
+.uni-picker-input svg { width: 16px; height: 16px; color: var(--text3); flex-shrink: 0; }
+.uni-list {
+  position: absolute; top: calc(100% + 6px); left: 0; right: 0; z-index: 30;
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm);
+  max-height: 220px; overflow-y: auto; box-shadow: var(--shadow-lg);
+  display: none;
+}
+.uni-list.open { display: block; }
+.uni-option { padding: 12px 14px; font-size: 13.5px; font-weight: 600; cursor: pointer; border-bottom: 1px solid var(--border); }
+.uni-option:last-child { border-bottom: none; }
+.uni-option:hover { background: var(--surface2); }
+.uni-locked {
+  display: flex; align-items: center; gap: 10px;
+  background: var(--brand-soft); border: 1px solid var(--brand); border-radius: var(--radius-sm);
+  padding: 12px 14px;
+}
+.uni-locked svg { width: 16px; height: 16px; color: var(--brand); flex-shrink: 0; }
+.uni-locked .name { font-size: 14px; font-weight: 700; flex: 1; }
+.uni-locked .note { font-size: 11px; color: var(--text3); }
+.field-hint { font-size: 11.5px; color: var(--text3); margin-top: 6px; line-height: 1.4; }
+
+/* ===== Notifications (Chats + Activity) ===== */
+.notif-tabs { display: flex; gap: 6px; padding: 10px 16px 4px; }
+.notif-tab {
+  flex: 1; text-align: center; border: none; background: var(--surface2); color: var(--text2);
+  font: inherit; font-size: 13px; font-weight: 700; padding: 10px; border-radius: 10px; cursor: pointer;
+  border: 1px solid var(--border); position: relative;
+}
+.notif-tab.active { background: var(--brand); color: #fff; border-color: var(--brand); }
+.notif-tab .dot { position: absolute; top: 6px; right: 10px; width: 7px; height: 7px; border-radius: 50%; background: var(--danger); }
+.notif-panel { display: none; }
+.notif-panel.active { display: block; }
+
+.activity-row {
+  display: flex; align-items: flex-start; gap: 12px;
+  padding: 12px 16px; border-bottom: 1px solid var(--border);
+}
+.activity-icon {
+  width: 36px; height: 36px; border-radius: 50%; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center; font-size: 16px;
+  background: var(--surface2);
+}
+.activity-icon.money { background: rgba(52,211,153,0.16); }
+.activity-icon.social { background: var(--brand-soft); }
+.activity-text { flex: 1; font-size: 13.5px; color: var(--text2); line-height: 1.4; }
+.activity-text b { color: var(--text); }
+.activity-time { font-size: 11.5px; color: var(--text3); margin-top: 3px; }
+.activity-row.unread { background: var(--brand-soft); }
+
+/* ===== Landing page ===== */
+.landing {
+  max-width: 480px; margin: 0 auto; min-height: 100vh;
+  background: radial-gradient(circle at 30% 0%, rgba(255,255,255,0.10), transparent 45%), linear-gradient(160deg, #6D28D9 0%, #7C3AED 42%, #9333EA 100%);
+  padding: calc(var(--safe-top) + 16px) 20px 40px;
+  position: relative; overflow: hidden;
+}
+.landing::before {
+  content: '🎓'; position: absolute; top: 8%; left: -6%; font-size: 130px; opacity: 0.06; transform: rotate(-12deg);
+}
+.landing::after {
+  content: '🎓'; position: absolute; bottom: 30%; right: -8%; font-size: 150px; opacity: 0.05; transform: rotate(10deg);
+}
+.landing-nav { display: flex; align-items: center; justify-content: space-between; gap: 8px; position: relative; z-index: 1; }
+.landing-pill {
+  display: flex; align-items: center; gap: 6px;
+  background: rgba(255,255,255,0.14); color: #fff;
+  border-radius: 999px; padding: 9px 14px; font-size: 12.5px; font-weight: 700;
+  white-space: nowrap;
+}
+.landing-login { color: #fff; font-size: 14px; font-weight: 700; padding: 9px 6px; }
+.landing-google-sm {
+  display: flex; align-items: center; gap: 8px;
+  background: #fff; color: var(--brand-dark);
+  border-radius: 999px; padding: 9px 16px; font-size: 12.5px; font-weight: 700;
+  white-space: nowrap; border: none; cursor: pointer;
+}
+.landing-google-sm img, .landing-google-lg img { width: 16px; height: 16px; }
+
+.landing-hero { text-align: center; margin-top: 28px; position: relative; z-index: 1; }
+.landing-hero img { width: 168px; margin: 0 auto; }
+
+.landing-headline {
+  font-size: 27px; font-weight: 800; color: #fff; text-align: center;
+  line-height: 1.25; margin-top: 36px; position: relative; z-index: 1;
+}
+.landing-sub {
+  font-size: 14.5px; color: rgba(255,255,255,0.82); text-align: center; line-height: 1.6;
+  margin-top: 14px; position: relative; z-index: 1;
+}
+.landing-google-lg {
+  display: flex; align-items: center; justify-content: center; gap: 10px;
+  width: 100%; background: #fff; color: var(--brand-dark);
+  border: none; border-radius: 999px; padding: 16px; margin-top: 24px;
+  font-size: 15px; font-weight: 800; cursor: pointer; position: relative; z-index: 1;
+  box-shadow: 0 10px 26px rgba(0,0,0,0.2);
+}
+
+.landing-stats {
+  display: flex; margin-top: 28px; background: rgba(255,255,255,0.10);
+  border-radius: 18px; padding: 20px 10px; position: relative; z-index: 1;
+}
+.landing-stat { flex: 1; text-align: center; }
+.landing-stat b { display: block; font-size: 21px; font-weight: 800; color: #fff; }
+.landing-stat span { font-size: 12px; color: rgba(255,255,255,0.75); }
+
+.landing-section-title {
+  font-size: 20px; font-weight: 800; color: #fff; text-align: center;
+  margin-top: 40px; position: relative; z-index: 1;
+}
+.landing-feature {
+  display: flex; align-items: center; gap: 14px;
+  background: rgba(255,255,255,0.08); border-radius: 16px;
+  padding: 15px 16px; margin-top: 12px; position: relative; z-index: 1;
+}
+.landing-feature-icon {
+  width: 40px; height: 40px; border-radius: 12px; flex-shrink: 0;
+  background: rgba(255,255,255,0.14);
+  display: flex; align-items: center; justify-content: center; font-size: 18px;
+}
+.landing-feature-text b { display: block; color: #fff; font-size: 14.5px; font-weight: 700; }
+.landing-feature-text span { color: rgba(255,255,255,0.7); font-size: 12.5px; }
+
+.landing-foot { text-align: center; margin-top: 34px; position: relative; z-index: 1; }
+.landing-foot a { color: #fff; font-weight: 700; font-size: 13.5px; }
+
+/* ===== Settings ===== */
+.settings-section { padding: 18px 16px 4px; }
+.settings-section-title { font-size: 12px; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; color: var(--text3); margin-bottom: 10px; }
+.settings-group { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm); overflow: hidden; }
+.settings-row {
+  display: flex; align-items: center; gap: 12px;
+  padding: 14px; border-bottom: 1px solid var(--border);
+}
+.settings-row:last-child { border-bottom: none; }
+.settings-row-text { flex: 1; min-width: 0; }
+.settings-row-text b { display: block; font-size: 14px; font-weight: 700; }
+.settings-row-text span { font-size: 12px; color: var(--text3); }
+.settings-row .chev { width: 16px; height: 16px; color: var(--text3); flex-shrink: 0; }
+.settings-row.link { cursor: pointer; }
+.settings-row.danger b { color: var(--danger); }
+
+.switch { position: relative; width: 44px; height: 26px; flex-shrink: 0; }
+.switch input { opacity: 0; width: 0; height: 0; }
+.switch-track {
+  position: absolute; inset: 0; background: var(--surface3); border-radius: 999px; cursor: pointer;
+  transition: background .15s;
+}
+.switch-track::before {
+  content: ''; position: absolute; left: 3px; top: 3px; width: 20px; height: 20px;
+  background: #fff; border-radius: 50%; transition: transform .15s;
+}
+.switch input:checked + .switch-track { background: var(--brand); }
+.switch input:checked + .switch-track::before { transform: translateX(18px); }
+
+/* ===== Market (full browse page) ===== */
+.market-tabs {
+  display: flex; gap: 6px; padding: 12px 16px 4px;
+  overflow-x: auto; scrollbar-width: none;
+}
+.market-tabs::-webkit-scrollbar { display: none; }
+.market-tab {
+  flex-shrink: 0; border: 1px solid var(--border); background: var(--surface2); color: var(--text2);
+  font: inherit; font-size: 13px; font-weight: 700; padding: 9px 16px; border-radius: 999px; cursor: pointer;
+}
+.market-tab.active { background: var(--brand); color: #fff; border-color: var(--brand); }
+.market-sort-row { display: flex; align-items: center; justify-content: space-between; padding: 10px 16px 2px; }
+.market-sort-row select { background: var(--surface2); border: 1px solid var(--border); color: var(--text2); border-radius: 10px; padding: 8px 10px; font: inherit; font-size: 12.5px; }
+.market-count { font-size: 12px; color: var(--text3); }
+
+/* ===== Swift ===== */
+.swift-banner {
+  margin: 14px 16px 0; padding: 13px 14px; border-radius: var(--radius-sm);
+  background: rgba(251,191,36,0.12); border: 1px solid var(--accent); color: var(--accent);
+  font-size: 12.5px; font-weight: 700; display: flex; align-items: center; gap: 8px;
+}
+.swift-card {
+  margin: 14px 16px 0; background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 16px;
+}
+.swift-card h3 { font-size: 15px; font-weight: 700; margin-bottom: 4px; }
+.swift-card p { font-size: 13px; color: var(--text2); margin: 0 0 12px; line-height: 1.5; }
+.swift-status-pill {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: var(--brand-soft); color: var(--brand); font-size: 12px; font-weight: 700;
+  border-radius: 999px; padding: 5px 12px; margin-bottom: 10px;
+}
+.swift-pin-row { display: flex; gap: 10px; margin-top: 10px; }
+.swift-pin { flex: 1; background: var(--surface2); border-radius: 10px; padding: 10px; text-align: center; }
+.swift-pin b { display: block; font-size: 18px; letter-spacing: .1em; }
+.swift-pin span { font-size: 10.5px; color: var(--text3); }
+.transport-row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; }
+.transport-pill {
+  border: 1px solid var(--border); background: var(--surface2); color: var(--text2);
+  border-radius: 999px; padding: 9px 14px; font-size: 13px; font-weight: 700; cursor: pointer;
+}
+.transport-pill.active { background: var(--brand-soft); border-color: var(--brand); color: var(--brand); }
+.swift-toggle-row { display: flex; align-items: center; justify-content: space-between; }
+.swift-earnings-row { display: flex; gap: 12px; margin-top: 14px; }
+.swift-earnings-row div { flex: 1; background: var(--surface2); border-radius: 12px; padding: 12px; text-align: center; }
+.swift-earnings-row b { display: block; font-size: 17px; font-weight: 800; }
+.swift-earnings-row span { font-size: 11px; color: var(--text3); }
+.order-req-card {
+  background: var(--surface2); border-radius: 12px; padding: 12px; margin-top: 10px;
+}
+.order-req-top { display: flex; justify-content: space-between; font-size: 13px; font-weight: 700; }
+.order-req-sub { font-size: 12px; color: var(--text3); margin-top: 3px; }
+.order-req-actions { display: flex; gap: 8px; margin-top: 10px; }
+.order-req-actions .btn { flex: 1; padding: 9px; font-size: 12.5px; }
+.star-row { display: flex; gap: 6px; margin: 10px 0; }
+.star-btn { background: none; border: none; font-size: 26px; cursor: pointer; opacity: .35; padding: 0; }
+.star-btn.active { opacity: 1; }
+.pin-entry-row { display: flex; gap: 8px; margin-top: 10px; }
+.pin-entry-row input { flex: 1; background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; padding: 11px; font: inherit; font-size: 16px; letter-spacing: .2em; text-align: center; color: var(--text); }
+.pin-entry-row button { flex-shrink: 0; }
+
+/* ===== Listing detail ===== */
+.listing-media {
+  width: 100%; aspect-ratio: 1/1; display: flex; align-items: center; justify-content: center;
+  font-size: 90px; position: relative;
+}
+.listing-body { padding: 18px 16px; }
+.listing-price { font-size: 26px; font-weight: 800; }
+.listing-title { font-size: 17px; font-weight: 700; margin-top: 6px; }
+.listing-badges { display: flex; gap: 6px; margin-top: 8px; }
+.listing-badge { font-size: 11px; font-weight: 700; background: var(--surface2); border: 1px solid var(--border); border-radius: 999px; padding: 4px 10px; color: var(--text2); }
+.listing-desc { font-size: 13.5px; color: var(--text2); line-height: 1.6; margin-top: 14px; }
+.listing-seller-row {
+  display: flex; align-items: center; gap: 10px; margin-top: 18px; padding: 12px;
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm);
+}
+.listing-seller-row .info { flex: 1; }
+.listing-seller-row b { font-size: 13.5px; display: block; }
+.listing-seller-row span { font-size: 11.5px; color: var(--text3); }
+.listing-actions { display: flex; gap: 10px; margin-top: 18px; }
+.listing-actions .btn { flex: 1; padding: 13px; font-size: 14px; }
+
+/* ===== Swift map + dispute ===== */
+.swift-map { width: 100%; height: 180px; border-radius: var(--radius-sm); overflow: hidden; margin-top: 12px; background: var(--surface2); }
+.swift-report-btn {
+  margin-top: 12px; width: 100%; background: none; border: 1px solid var(--danger); color: var(--danger);
+  border-radius: var(--radius-sm); padding: 11px; font: inherit; font-size: 12.5px; font-weight: 700; cursor: pointer;
+}
+.locate-btn {
+  background: var(--surface2); border: 1px solid var(--border); color: var(--text2);
+  border-radius: 10px; padding: 11px 12px; font-size: 12px; font-weight: 700; cursor: pointer; white-space: nowrap;
+}
+
+/* ===== Admin ===== */
+.admin-denied { text-align: center; padding: 60px 24px; color: var(--text3); }
+.admin-stats-row { display: flex; gap: 10px; padding: 14px 16px 4px; overflow-x: auto; scrollbar-width: none; }
+.admin-stats-row::-webkit-scrollbar { display: none; }
+.admin-stat-card { flex-shrink: 0; min-width: 108px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 13px; }
+.admin-stat-card b { display: block; font-size: 20px; font-weight: 800; }
+.admin-stat-card span { font-size: 11px; color: var(--text3); }
+.admin-tabs { display: flex; gap: 6px; padding: 14px 16px 4px; overflow-x: auto; scrollbar-width: none; }
+.admin-tabs::-webkit-scrollbar { display: none; }
+.admin-tab { flex-shrink: 0; border: 1px solid var(--border); background: var(--surface2); color: var(--text2); font: inherit; font-size: 12.5px; font-weight: 700; padding: 9px 14px; border-radius: 999px; cursor: pointer; position: relative; }
+.admin-tab.active { background: var(--brand); color: #fff; border-color: var(--brand); }
+.admin-tab .count { position: absolute; top: -6px; right: -6px; background: var(--danger); color: #fff; font-size: 10px; font-weight: 800; min-width: 16px; height: 16px; border-radius: 999px; display: flex; align-items: center; justify-content: center; }
+.admin-panel { display: none; padding: 12px 16px 4px; }
+.admin-panel.active { display: block; }
+.admin-item { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 13px 14px; margin-bottom: 10px; }
+.admin-item-top { display: flex; justify-content: space-between; gap: 8px; font-size: 13.5px; font-weight: 700; }
+.admin-item-sub { font-size: 12px; color: var(--text3); margin-top: 3px; }
+.admin-item-body { font-size: 13px; color: var(--text2); margin-top: 8px; line-height: 1.5; }
+.admin-item-actions { display: flex; gap: 8px; margin-top: 10px; }
+.admin-item-actions .btn { flex: 1; padding: 9px; font-size: 12.5px; }
+.admin-item-actions.wrap { flex-wrap: wrap; }
+.admin-pill-btn {
+  border: 1px solid var(--border); background: var(--surface2); color: var(--text2);
+  border-radius: 999px; padding: 7px 12px; font-size: 11.5px; font-weight: 700; cursor: pointer;
+}
+.admin-pill-btn.on { background: var(--brand-soft); color: var(--brand); border-color: var(--brand); }
+.admin-pill-btn.danger { color: var(--danger); }
+.admin-pill-btn.danger.on { background: rgba(251,113,133,0.14); border-color: var(--danger); }
+.admin-search-wrap { padding: 12px 16px 4px; }
+.admin-badges { display: flex; gap: 4px; flex-wrap: wrap; margin-top: 4px; }
+.admin-badge-tag { font-size: 9.5px; font-weight: 800; border-radius: 6px; padding: 2px 6px; text-transform: uppercase; letter-spacing: .02em; }
+.admin-badge-tag.admin { background: rgba(167,139,250,0.18); color: var(--brand); }
+.admin-badge-tag.ambassador { background: rgba(251,191,36,0.18); color: var(--accent); }
+.admin-badge-tag.verified { background: rgba(52,211,153,0.18); color: var(--money); }
+.admin-badge-tag.banned { background: rgba(251,113,133,0.18); color: var(--danger); }
+.admin-empty { text-align: center; padding: 30px 10px; color: var(--text3); font-size: 13px; }
+
+/* ===== Groups & Calls ===== */
+.groups-search-wrap { padding: 12px 16px 4px; display: flex; gap: 8px; }
+.group-row { display: flex; align-items: center; gap: 12px; padding: 12px 16px; border-bottom: 1px solid var(--border); cursor: pointer; }
+.group-avatar { width: 46px; height: 46px; border-radius: 12px; flex-shrink: 0; background: linear-gradient(135deg, var(--brand), var(--brand-dark)); display: flex; align-items: center; justify-content: center; font-size: 18px; }
+.group-row-text { flex: 1; min-width: 0; }
+.group-row-text b { font-size: 13.5px; display: block; }
+.group-row-text span { font-size: 12px; color: var(--text3); }
+.group-join-btn { background: var(--brand); color: #fff; border: none; border-radius: 999px; padding: 7px 14px; font-size: 11.5px; font-weight: 700; cursor: pointer; flex-shrink: 0; }
+.call-row { display: flex; align-items: center; gap: 12px; padding: 12px 16px; border-bottom: 1px solid var(--border); }
+.call-icon { width: 38px; height: 38px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 16px; background: var(--surface2); flex-shrink: 0; }
+.call-row-text { flex: 1; min-width: 0; }
+.call-row-text b { font-size: 13.5px; display: block; }
+.call-row-text span { font-size: 12px; color: var(--text3); }
+.call-row-text span.missed { color: var(--danger); }
+.call-time { font-size: 11px; color: var(--text3); }
+.call-notice { margin: 12px 16px; background: var(--brand-soft); color: var(--brand); border-radius: var(--radius-sm); padding: 12px 14px; font-size: 12px; font-weight: 600; line-height: 1.5; }
+
+/* ===== Feedback ===== */
+.fb-star-picker { display: flex; gap: 8px; margin: 6px 0 16px; }
+.fb-star-picker button { background: none; border: none; font-size: 30px; opacity: .3; cursor: pointer; padding: 0; }
+.fb-star-picker button.active { opacity: 1; }
+.fb-toggle-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+.fb-toggle-row .settings-row-text b { font-size: 13.5px; }
+.fb-toggle-row .settings-row-text span { font-size: 11.5px; color: var(--text3); }
+.fb-filter-row { display: flex; gap: 6px; padding: 14px 16px 4px; overflow-x: auto; scrollbar-width: none; }
+.fb-filter-row::-webkit-scrollbar { display: none; }
+.fb-filter-chip { flex-shrink: 0; border: 1px solid var(--border); background: var(--surface2); color: var(--text2); font: inherit; font-size: 12.5px; font-weight: 700; padding: 8px 14px; border-radius: 999px; cursor: pointer; }
+.fb-filter-chip.active { background: var(--brand); color: #fff; border-color: var(--brand); }
+.fb-card { margin: 10px 16px 0; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 14px; }
+.fb-card-top { display: flex; justify-content: space-between; gap: 8px; align-items: flex-start; }
+.fb-card-top .cat { font-size: 11px; font-weight: 700; color: var(--text3); }
+.fb-status { font-size: 10px; font-weight: 800; border-radius: 999px; padding: 3px 8px; text-transform: capitalize; }
+.fb-status.pending { background: rgba(251,191,36,0.14); color: var(--accent); }
+.fb-status.reviewed { background: rgba(37,99,235,0.14); color: #60A5FA; }
+.fb-status.resolved { background: rgba(52,211,153,0.14); color: var(--money); }
+.fb-card h4 { font-size: 14.5px; font-weight: 700; margin-top: 6px; }
+.fb-card p { font-size: 13px; color: var(--text2); margin: 6px 0 0; line-height: 1.5; }
+.fb-card-foot { display: flex; align-items: center; justify-content: space-between; margin-top: 10px; }
+.fb-upvote-btn { display: flex; align-items: center; gap: 5px; background: var(--surface2); border: 1px solid var(--border); color: var(--text2); border-radius: 999px; padding: 6px 12px; font-size: 12px; font-weight: 700; cursor: pointer; }
+.fb-upvote-btn.active { background: var(--brand-soft); color: var(--brand); border-color: var(--brand); }
+.fb-stars-sm { color: var(--accent); font-size: 12px; }
+
+/* ===== Ambassador ===== */
+.amb-hero {
+  margin: 14px 16px 0; border-radius: var(--radius); padding: 22px 20px;
+  background: linear-gradient(135deg, var(--brand-dark), var(--brand) 130%);
+  position: relative; overflow: hidden;
+}
+.amb-hero::after { content: '🎓'; position: absolute; right: -10px; bottom: -20px; font-size: 100px; opacity: .14; }
+.amb-tier { display: inline-flex; align-items: center; gap: 6px; background: rgba(255,255,255,.16); color: #fff; border-radius: 999px; padding: 5px 12px; font-size: 12px; font-weight: 800; position: relative; z-index: 1; }
+.amb-code-row { display: flex; align-items: center; gap: 10px; margin-top: 14px; position: relative; z-index: 1; }
+.amb-code { font-size: 20px; font-weight: 800; color: #fff; letter-spacing: .05em; }
+.amb-copy-btn { background: #12101D; color: var(--accent); border: none; border-radius: 8px; padding: 8px 12px; font-size: 12px; font-weight: 700; cursor: pointer; }
+.amb-share-row { display: flex; gap: 8px; margin-top: 14px; position: relative; z-index: 1; }
+.amb-share-row button { flex: 1; background: rgba(255,255,255,.14); color: #fff; border: none; border-radius: 10px; padding: 10px; font-size: 12.5px; font-weight: 700; cursor: pointer; }
+.amb-stats-row { display: flex; gap: 10px; padding: 14px 16px 4px; }
+.amb-stats-row div { flex: 1; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 13px; text-align: center; }
+.amb-stats-row b { display: block; font-size: 18px; font-weight: 800; }
+.amb-stats-row span { font-size: 11px; color: var(--text3); }
+.amb-tabs { display: flex; gap: 6px; padding: 14px 16px 4px; }
+.amb-tab { flex: 1; border: 1px solid var(--border); background: var(--surface2); color: var(--text2); font: inherit; font-size: 12.5px; font-weight: 700; padding: 10px; border-radius: 10px; cursor: pointer; text-align: center; }
+.amb-tab.active { background: var(--brand); color: #fff; border-color: var(--brand); }
+.amb-panel { display: none; padding: 12px 16px 4px; }
+.amb-panel.active { display: block; }
+.amb-status-badge { font-size: 10.5px; font-weight: 800; border-radius: 999px; padding: 3px 9px; }
+.amb-status-badge.pending { background: rgba(251,191,36,0.14); color: var(--accent); }
+.amb-status-badge.verified { background: rgba(52,211,153,0.14); color: var(--money); }
+.amb-status-badge.paid { background: rgba(52,211,153,0.14); color: var(--money); }
+
+/* ===== Groups ===== */
+.group-row .avatar { width: 46px; height: 46px; border-radius: 14px; font-size: 15px; }
+.group-row-text { flex: 1; min-width: 0; }
+.group-row-text b { font-size: 14px; display: block; }
+.group-row-text span { font-size: 12px; color: var(--text3); }
+.group-discover-card { margin: 10px 16px 0; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 13px; display: flex; align-items: center; gap: 12px; }
+.group-discover-card .avatar { width: 42px; height: 42px; border-radius: 12px; font-size: 14px; flex-shrink: 0; }
+.group-discover-card .info { flex: 1; min-width: 0; }
+.group-discover-card .info b { font-size: 13.5px; display: block; }
+.group-discover-card .info span { font-size: 11.5px; color: var(--text3); }
+.group-discover-card button { flex-shrink: 0; background: var(--brand); color: #fff; border: none; border-radius: 999px; padding: 8px 14px; font-size: 12px; font-weight: 700; cursor: pointer; }
+.groups-tabs { display: flex; gap: 6px; padding: 12px 16px 4px; }
+.groups-tabs button { flex: 1; border: 1px solid var(--border); background: var(--surface2); color: var(--text2); font: inherit; font-size: 12.5px; font-weight: 700; padding: 10px; border-radius: 10px; cursor: pointer; }
+.groups-tabs button.active { background: var(--brand); color: #fff; border-color: var(--brand); }
+.announcement-bubble { background: var(--accent-soft); border: 1px solid var(--accent); border-radius: 12px; padding: 10px 13px; font-size: 13px; margin: 0 auto 6px; max-width: 88%; text-align: center; }
+.msg-sender-name { font-size: 10.5px; font-weight: 700; color: var(--brand); margin-bottom: 2px; }
+
+/* ===== Calls ===== */
+.call-row .avatar { width: 44px; height: 44px; }
+.call-row-text { flex: 1; min-width: 0; }
+.call-row-text b { font-size: 13.5px; display: flex; align-items: center; gap: 5px; }
+.call-row-text span { font-size: 11.5px; color: var(--text3); }
+.call-row-text .missed { color: var(--danger); }
+
+/* ===== Verify email ===== */
+.verify-icon { width: 64px; height: 64px; border-radius: 50%; background: var(--brand-soft); display: flex; align-items: center; justify-content: center; font-size: 28px; margin: 0 auto 18px; }
+.verify-resend-btn { background: none; border: 1px solid var(--border); color: var(--text2); border-radius: 999px; padding: 10px 20px; font-size: 13px; font-weight: 700; cursor: pointer; }
+.verify-resend-btn:disabled { opacity: .5; cursor: default; }
+.call-icon-btn { width: 38px; height: 38px; border-radius: 50%; background: var(--surface2); border: 1px solid var(--border); color: var(--money); display: flex; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0; }
+.call-icon-btn svg { width: 17px; height: 17px; }
+.call-overlay {
+  position: fixed; inset: 0; z-index: 200; background: linear-gradient(180deg, var(--brand-dark), #0E0A1D 70%);
+  display: flex; flex-direction: column; align-items: center; justify-content: center; color: #fff; text-align: center; padding: 24px;
+}
+.call-overlay .avatar { width: 96px; height: 96px; font-size: 32px; margin-bottom: 18px; }
+.call-overlay h2 { font-size: 20px; }
+.call-overlay p { color: rgba(255,255,255,0.7); font-size: 13px; margin-top: 6px; }
+.call-overlay-actions { display: flex; gap: 20px; margin-top: 40px; }
+.call-overlay-actions button { width: 58px; height: 58px; border-radius: 50%; border: none; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+.call-overlay-actions button svg { width: 24px; height: 24px; color: #fff; }
+.call-end-btn { background: var(--danger); }
+.call-mute-btn { background: rgba(255,255,255,0.16); }
+.call-mute-btn.active { background: #fff; }
+.call-mute-btn.active svg { color: var(--brand-dark); }
+
+/* ===== Chat thread ===== */
+.thread-header-info { display: flex; align-items: center; gap: 10px; flex: 1; min-width: 0; }
+.thread-header-info .avatar { width: 34px; height: 34px; font-size: 12px; }
+.thread-header-info b { font-size: 14.5px; display: block; }
+.thread-header-info span { font-size: 11px; color: var(--text3); }
+.thread-listing-chip {
+  display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: 10px 16px 0;
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm);
+  padding: 9px 12px; font-size: 12.5px; font-weight: 600; color: var(--text2);
+}
+.thread-listing-chip .info { text-decoration: none; color: inherit; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.thread-sold-tag { font-size: 10.5px; font-weight: 800; color: var(--money); background: rgba(52,211,153,0.14); border-radius: 999px; padding: 3px 9px; flex-shrink: 0; }
+.mark-sold-btn { background: var(--money); color: #06281B; border: none; border-radius: 8px; padding: 6px 11px; font-size: 11.5px; font-weight: 800; cursor: pointer; flex-shrink: 0; }
+.request-delivery-row { margin: 8px 16px 0; }
+.request-delivery-row a, .request-delivery-row .disabled-hint {
+  display: block; text-align: center; border-radius: var(--radius-sm); padding: 11px; font-size: 12.5px; font-weight: 700; text-decoration: none;
+}
+.request-delivery-row a { background: var(--brand); color: #fff; }
+.request-delivery-row .disabled-hint { background: var(--surface); border: 1px dashed var(--border); color: var(--text3); font-weight: 600; }
+
+.thread-messages { padding: 14px 16px 8px; display: flex; flex-direction: column; gap: 3px; min-height: 55vh; background: radial-gradient(circle at 50% 0%, rgba(167,139,250,0.05), transparent 60%); }
+.thread-date-sep { text-align: center; margin: 14px 0 8px; }
+.thread-date-sep span { background: var(--surface2); color: var(--text3); font-size: 11px; font-weight: 700; padding: 4px 12px; border-radius: 999px; }
+.thread-system-msg { text-align: center; margin: 8px 0; }
+.thread-system-msg span { background: var(--brand-soft); color: var(--brand); font-size: 11.5px; font-weight: 700; padding: 6px 14px; border-radius: 999px; display: inline-block; }
+.msg-bubble { max-width: 76%; padding: 8px 12px; border-radius: 14px; font-size: 13.5px; line-height: 1.4; position: relative; }
+.msg-row { display: flex; margin-top: 3px; }
+.msg-row.mine { justify-content: flex-end; }
+.msg-row.mine .msg-bubble { background: var(--brand); color: #fff; border-bottom-right-radius: 3px; }
+.msg-row.theirs .msg-bubble { background: var(--surface2); color: var(--text); border-bottom-left-radius: 3px; }
+.msg-time { font-size: 9.5px; color: rgba(255,255,255,0.6); margin-top: 3px; text-align: right; }
+.msg-row.theirs .msg-time { color: var(--text3); }
+.thread-composer {
+  position: fixed; bottom: 0; left: 50%; transform: translateX(-50%);
+  width: 100%; max-width: 480px; display: flex; gap: 8px; align-items: center;
+  padding: 10px 12px calc(10px + var(--safe-bottom));
+  background: rgba(18,16,29,0.94); backdrop-filter: blur(14px); border-top: 1px solid var(--border);
+}
+.thread-composer input {
+  flex: 1; background: var(--surface2); border: 1px solid var(--border); border-radius: 999px;
+  padding: 12px 16px; font: inherit; font-size: 14px; color: var(--text); outline: none;
+}
+.thread-send-btn { width: 42px; height: 42px; border-radius: 50%; background: var(--brand); color: #fff; border: none; display: flex; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0; }
+.thread-send-btn svg { width: 18px; height: 18px; }
+
+/* ===== Cart ===== */
+.cart-row { display: flex; gap: 12px; padding: 13px 16px; border-bottom: 1px solid var(--border); align-items: center; }
+.cart-thumb { width: 56px; height: 56px; border-radius: 12px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 22px; }
+.cart-row-text { flex: 1; min-width: 0; }
+.cart-row-text b { font-size: 13.5px; display: block; }
+.cart-row-text span { font-size: 12px; color: var(--text3); }
+.cart-remove-btn { background: none; border: none; color: var(--danger); font-size: 12px; font-weight: 700; cursor: pointer; }
+.cart-summary { position: sticky; bottom: 0; background: var(--surface); border-top: 1px solid var(--border); padding: 16px; margin-top: 10px; }
+.cart-summary-row { display: flex; justify-content: space-between; font-size: 14px; margin-bottom: 12px; }
+.cart-summary-row b { font-size: 18px; }
+
+
+/* ===== Call screen (voice + video) ===== */
+body { overflow: hidden; }
+.call-screen {
+  position: fixed; inset: 0; z-index: 200;
+  background: linear-gradient(180deg, var(--brand-dark), #0E0A1D 70%);
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  color: #fff; text-align: center; padding: 24px;
+}
+.call-screen.video-on { background: #000; }
+
+#remoteVideo, #localVideo { display: none; }
+.call-screen.video-on #remoteVideo {
+  display: block; position: absolute; inset: 0; width: 100%; height: 100%;
+  object-fit: cover; background: #000;
+}
+.call-screen.video-on #localVideo {
+  display: block; position: absolute; top: calc(16px + var(--safe-top)); right: 14px;
+  width: 104px; height: 142px; object-fit: cover; border-radius: 14px;
+  border: 2px solid rgba(255,255,255,.22); z-index: 3; background: #111; transform: scaleX(-1);
+}
+
+.call-info { position: relative; z-index: 2; transition: opacity .3s; }
+.call-screen.video-on .call-info {
+  position: absolute; top: calc(18px + var(--safe-top)); left: 16px; text-align: left;
+}
+.call-screen.video-on .call-info .avatar { display: none; }
+.call-screen.video-on .call-info h2 { font-size: 16px; text-shadow: 0 2px 10px rgba(0,0,0,.7); }
+.call-screen.video-on .call-info p { text-shadow: 0 2px 10px rgba(0,0,0,.7); }
+
+.call-info .avatar {
+  width: 104px; height: 104px; font-size: 34px; margin: 0 auto 18px;
+  border-radius: 50%; display: flex; align-items: center; justify-content: center;
+  background: rgba(255,255,255,.14); font-weight: 800;
+}
+.call-info .avatar.ringing { animation: ringpulse 1.6s ease-in-out infinite; }
+@keyframes ringpulse {
+  0%,100% { box-shadow: 0 0 0 0 rgba(255,255,255,.28); }
+  50% { box-shadow: 0 0 0 20px rgba(255,255,255,0); }
+}
+.call-info h2 { font-size: 22px; }
+.call-info p { color: rgba(255,255,255,0.75); font-size: 14px; margin-top: 6px; font-variant-numeric: tabular-nums; }
+.call-quality { margin-top: 10px; font-size: 11.5px; color: rgba(255,255,255,.6); }
+.call-quality.bad { color: var(--accent); }
+
+.call-controls, .call-answer {
+  position: absolute; bottom: calc(34px + var(--safe-bottom)); left: 0; right: 0;
+  display: flex; justify-content: center; gap: 14px; z-index: 4; flex-wrap: wrap;
+}
+.call-answer { gap: 60px; }
+.call-ctl {
+  width: 58px; border: none; background: none; color: #fff;
+  display: flex; flex-direction: column; align-items: center; gap: 6px; cursor: pointer;
+  font: inherit; font-size: 10.5px; font-weight: 600;
+}
+.call-ctl svg { width: 22px; height: 22px; }
+.call-ctl > svg {
+  box-sizing: content-box; padding: 16px; border-radius: 50%;
+  background: rgba(255,255,255,0.16); transition: background .15s, transform .12s;
+}
+.call-ctl:active > svg { transform: scale(.92); }
+.call-ctl.active > svg { background: #fff; color: var(--brand-dark); }
+.call-ctl.end > svg { background: var(--danger); }
+.call-ctl.accept > svg { background: var(--money); color: #06281B; }
+.call-ctl.off > svg { background: rgba(255,255,255,0.08); opacity: .55; }
+
+/* ---- Call screen fixes: incoming screen, small phones, landscape ---- */
+.call-screen.incoming { background: linear-gradient(180deg, var(--brand-dark), #0E0A1D 70%); }
+.call-screen.incoming #remoteVideo, .call-screen.incoming #localVideo { display: none !important; }
+.call-screen.incoming .call-info { position: relative; top: auto; left: auto; text-align: center; }
+.call-screen.incoming .call-info .avatar { display: flex; }
+.call-screen.incoming .call-info h2 { font-size: 22px; }
+.call-screen { height: 100dvh; }
+.call-controls, .call-answer { padding: 0 8px; }
+@media (max-width: 380px) {
+  .call-controls { gap: 6px; }
+  .call-ctl { width: 54px; font-size: 10px; }
+  .call-ctl > svg { padding: 14px; }
+  .call-screen.video-on #localVideo { width: 88px; height: 120px; right: 10px; }
+}
+@media (max-height: 460px) {
+  .call-info .avatar { width: 64px; height: 64px; font-size: 22px; margin-bottom: 8px; }
+  .call-screen.video-on #localVideo { width: 84px; height: 112px; }
+  .call-controls, .call-answer { bottom: calc(14px + var(--safe-bottom)); }
+}
+
+/* Incoming-call overlay shown on every other page */
+.incoming-call {
+  position: fixed; inset: 0; z-index: 500;
+  background: linear-gradient(180deg, var(--brand-dark), #0E0A1D 70%);
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  color: #fff; text-align: center; padding: 24px;
+}
+.incoming-call .avatar {
+  width: 104px; height: 104px; font-size: 34px; border-radius: 50%; margin-bottom: 18px;
+  background: rgba(255,255,255,.14); display: flex; align-items: center; justify-content: center;
+  font-weight: 800; animation: ringpulse 1.6s ease-in-out infinite;
+}
+.incoming-call h2 { font-size: 22px; }
+.incoming-call p { color: rgba(255,255,255,.75); font-size: 14px; margin-top: 6px; }
+.incoming-call .row { display: flex; gap: 60px; margin-top: 46px; }
+
+</style>
+<link rel="manifest" href="/manifest.webmanifest">
+<meta name="theme-color" content="#7C3AED">
+<meta name="color-scheme" content="dark light">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Camplugie">
+<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+<link rel="icon" href="/icons/icon-192.png" type="image/png">
+</head>
+<body>
+
+<div class="call-screen" id="callScreen">
+
+  <video id="remoteVideo" autoplay playsinline></video>
+  <video id="localVideo" autoplay playsinline muted></video>
+
+  <div class="call-info" id="callInfo">
+    <div class="avatar" id="callAvatar">··</div>
+    <h2 id="callName">Camplugie user</h2>
+    <p id="callStatus">Calling…</p>
+    <div class="call-quality" id="callQuality"></div>
+  </div>
+
+  <div class="call-controls">
+    <button class="call-ctl" id="muteBtn" aria-label="Mute">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/></svg>
+      <span>Mute</span>
+    </button>
+    <button class="call-ctl" id="camBtn" aria-label="Camera">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
+      <span>Video</span>
+    </button>
+    <button class="call-ctl" id="flipBtn" aria-label="Flip camera" style="display:none">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+      <span>Flip</span>
+    </button>
+    <button class="call-ctl" id="speakerBtn" aria-label="Speaker">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg>
+      <span>Speaker</span>
+    </button>
+    <button class="call-ctl end" id="endCallBtn" aria-label="End call">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.68 13.31a16 16 0 0 0 3.41 2.6l1.27-1.27a2 2 0 0 1 2.11-.45 12.42 12.42 0 0 0 3.81.61 2 2 0 0 1 2 2V21a2 2 0 0 1-2 2h-1C7.61 23 1 16.39 1 8V7a2 2 0 0 1 2-2h3.5a2 2 0 0 1 2 2 12.42 12.42 0 0 0 .61 3.81 2 2 0 0 1-.45 2.11z"/></svg>
+      <span>End</span>
+    </button>
+  </div>
+
+  <div class="call-answer" id="answerRow" style="display:none">
+    <button class="call-ctl end" id="declineBtn" aria-label="Decline">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.68 13.31a16 16 0 0 0 3.41 2.6l1.27-1.27a2 2 0 0 1 2.11-.45 12.42 12.42 0 0 0 3.81.61 2 2 0 0 1 2 2V21a2 2 0 0 1-2 2h-1C7.61 23 1 16.39 1 8V7a2 2 0 0 1 2-2h3.5a2 2 0 0 1 2 2 12.42 12.42 0 0 0 .61 3.81 2 2 0 0 1-.45 2.11z"/></svg>
+      <span>Decline</span>
+    </button>
+    <button class="call-ctl accept" id="answerBtn" aria-label="Answer">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+      <span>Answer</span>
+    </button>
+  </div>
+
+</div>
+
+<audio id="remoteAudio" autoplay playsinline></audio>
+
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="config.js?v=3"></script>
+<script>
+// Shared Supabase client — loaded on every page after the Supabase UMD script.
+// Uses the same project as the React app (public anon key, safe to expose client-side; RLS enforces access).
+const SUPABASE_URL = 'https://zgzamthhfykhjaldosvb.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpnemFtdGhoZnlraGphbGRvc3ZiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg0Nzc2NjksImV4cCI6MjA5NDA1MzY2OX0.YpH9Zn2a2XVDZnZIlWd4d4CxhUbkURZ_H7Yegw9vih4';
+
+window.sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+// Shared select strings — mirrors src/lib/listings.js and src/lib/posts.js
+window.CP = window.CP || {};
+window.CP.LISTING_SELECT = '*, profiles:profiles!listings_seller_id_fkey(id, username, full_name, avatar_url, is_verified)';
+window.CP.POST_SELECT = '*, profiles!posts_author_id_fkey(id, username, full_name, avatar_url, is_hub, is_hub_service)';
+
+window.CP.fmtNaira = (n) => '₦' + Number(n || 0).toLocaleString();
+
+window.CP.timeAgo = (iso) => {
+  const s = Math.floor((Date.now() - new Date(iso).getTime()) / 1000);
+  if (s < 60) return 'now';
+  if (s < 3600) return Math.floor(s / 60) + 'm';
+  if (s < 86400) return Math.floor(s / 3600) + 'h';
+  if (s < 604800) return Math.floor(s / 86400) + 'd';
+  return new Date(iso).toLocaleDateString();
+};
+
+window.CP.initials = (name) => (name || 'U').slice(0, 2).toUpperCase();
+
+/**
+ * Opens (or creates) a direct conversation between the current user and
+ * otherUserId, checking both buyer/seller directions so two people never end
+ * up with duplicate threads. Pass listingId to tie it to a specific item.
+ * Returns the conversation id, then the caller should redirect to
+ * chat-thread.html?id=<id>.
+ */
+window.CP.openOrCreateConversation = async function (meId, otherUserId, listingId = null) {
+  if (!meId || !otherUserId || meId === otherUserId) return null;
+
+  let existingQuery = window.sb.from('conversations').select('id')
+    .or(`and(buyer_id.eq.${meId},seller_id.eq.${otherUserId}),and(buyer_id.eq.${otherUserId},seller_id.eq.${meId})`);
+  existingQuery = listingId ? existingQuery.eq('listing_id', listingId) : existingQuery.is('listing_id', null);
+
+  const { data: existing } = await existingQuery.maybeSingle();
+  if (existing) return existing.id;
+
+  const { data: created, error } = await window.sb.from('conversations')
+    .insert({ buyer_id: meId, seller_id: otherUserId, listing_id: listingId })
+    .select('id').single();
+
+  if (error) { console.error('Conversation create error:', error); return null; }
+  return created.id;
+};
+
+</script>
+<script>
+// Include on every protected page (Home, Yard, Notifications, Profile, Create).
+// Redirects to auth.html if there's no session, loads the user's profile
+// (university is locked in from signup), and fires 'cp-ready' once done.
+(async () => {
+  const { data: { session } } = await window.sb.auth.getSession();
+
+  if (!session) {
+    window.location.href = 'auth.html';
+    return;
+  }
+
+  window.CP_USER = session.user;
+
+  const { data: profile, error } = await window.sb
+    .from('profiles')
+    .select('*, universities(id, name)')
+    .eq('id', session.user.id)
+    .single();
+
+  if (error) console.error('Profile load error:', error);
+  window.CP_PROFILE = profile || null;
+
+  // Banned accounts get bounced everywhere except the banned-notice page itself.
+  const isBannedPage = window.location.pathname.endsWith('banned.html');
+  if (!isBannedPage && profile?.is_banned) {
+    window.location.href = 'banned.html';
+    return;
+  }
+
+  // Google sign-ins skip the signup form's university step — send them to
+  // onboarding until a school is locked in. (Skip this check on the
+  // onboarding page itself to avoid a redirect loop.)
+  const isOnboardingPage = window.location.pathname.endsWith('onboarding.html');
+  if (!isOnboardingPage && profile && !profile.university_id) {
+    window.location.href = 'onboarding.html';
+    return;
+  }
+
+  // Fill in university name wherever it's referenced in the header
+  const uniName = profile?.universities?.name || profile?.institution_name || 'Your Campus';
+  document.querySelectorAll('[data-uni-name]').forEach(el => { el.textContent = uniName; });
+
+  // Keep "last seen" fresh so chat headers can show online / last-seen.
+  window.sb.from('profiles').update({ last_seen_at: new Date().toISOString() })
+    .eq('id', session.user.id).then(() => {}, () => {});
+
+  document.dispatchEvent(new CustomEvent('cp-ready', { detail: { user: session.user, profile } }));
+})();
+
+// Sign out helper, wired up from Profile page
+window.CP_signOut = async () => {
+  await window.sb.auth.signOut();
+  window.location.href = 'auth.html';
+};
+
+// ---- Global incoming-call ring (every page that loads this guard) ----
+(async () => {
+  const { data: { session } } = await window.sb.auth.getSession();
+  if (!session || window.location.pathname.endsWith('call.html')) return;
+
+  let ringAudio = null;
+  function startRingtone() {
+    try {
+      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+      const beep = () => {
+        const o = ctx.createOscillator(), g = ctx.createGain();
+        o.frequency.value = 660; g.gain.value = 0.08;
+        o.connect(g); g.connect(ctx.destination);
+        o.start(); o.stop(ctx.currentTime + 0.7);
+      };
+      beep();
+      ringAudio = { ctx, loop: setInterval(beep, 1600) };
+    } catch (_) {}
+  }
+  function stopRingtone() {
+    if (!ringAudio) return;
+    clearInterval(ringAudio.loop);
+    try { ringAudio.ctx.close(); } catch (_) {}
+    ringAudio = null;
+  }
+
+  const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+  window.sb.channel(`ring-${session.user.id}`)
+    .on('broadcast', { event: 'incoming' }, ({ payload }) => {
+      if (document.getElementById('incomingCallOverlay')) return; // already ringing
+      const name = payload.callerName || 'Camplugie user';
+      const overlay = document.createElement('div');
+      overlay.id = 'incomingCallOverlay';
+      overlay.className = 'incoming-call';
+      overlay.innerHTML = `
+        <div class="avatar">${esc(name.slice(0, 2).toUpperCase())}</div>
+        <h2>${esc(name)}</h2>
+        <p>${payload.video ? 'Incoming video call…' : 'Incoming Camplugie call…'}</p>
+        <div class="row">
+          <button class="call-ctl end" id="declineCallBtn">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.68 13.31a16 16 0 0 0 3.41 2.6l1.27-1.27a2 2 0 0 1 2.11-.45 12.42 12.42 0 0 0 3.81.61 2 2 0 0 1 2 2V21a2 2 0 0 1-2 2h-1C7.61 23 1 16.39 1 8V7a2 2 0 0 1 2-2h3.5a2 2 0 0 1 2 2 12.42 12.42 0 0 0 .61 3.81 2 2 0 0 1-.45 2.11z"/></svg>
+            <span>Decline</span>
+          </button>
+          <button class="call-ctl accept" id="acceptCallBtn">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+            <span>Answer</span>
+          </button>
+        </div>`;
+      document.body.appendChild(overlay);
+      startRingtone();
+      if (navigator.vibrate) navigator.vibrate([400, 250, 400, 250, 400]);
+
+      const cleanup = () => { stopRingtone(); overlay.remove(); if (navigator.vibrate) navigator.vibrate(0); };
+
+      document.getElementById('acceptCallBtn').addEventListener('click', () => {
+        cleanup();
+        window.location.href = `call.html?peer=${payload.callerId}&name=${encodeURIComponent(name)}` +
+          `&role=callee&channel=${payload.callChannel}&mode=${payload.video ? 'video' : 'audio'}&auto=1`;
+      });
+
+      document.getElementById('declineCallBtn').addEventListener('click', async () => {
+        const ch = window.sb.channel(payload.callChannel);
+        await ch.subscribe();
+        ch.send({ type: 'broadcast', event: 'signal', payload: { kind: 'declined', from: session.user.id } });
+        setTimeout(() => window.sb.removeChannel(ch), 500);
+        cleanup();
+      });
+
+      setTimeout(() => { if (document.body.contains(overlay)) cleanup(); }, 35000);
+    })
+    .subscribe();
+})();
+</script>
+<script>
+/* ============================================================
+   Camplugie calls — WebRTC over Supabase Realtime signalling.
+   No paid calling API. See config.js for the TURN setup that
+   makes this work on campus WiFi and mobile data.
+   ============================================================ */
+
+const params = new URLSearchParams(window.location.search);
+const peerId = params.get('peer');
+const peerName = decodeURIComponent(params.get('name') || 'Camplugie user');
+const role = params.get('role');                 // 'caller' | 'callee'
+const wantVideo = params.get('mode') === 'video';
+let channelName = params.get('channel');
+
+let myUserId = null;
+let pc = null;
+let localStream = null;
+let callChannel = null;
+let ringChannel = null;
+let ringTimeout = null;
+let startedAt = null;
+let answered = false;
+let ended = false;
+let videoOn = wantVideo;
+let statsTimer = null;
+let durationTimer = null;
+let makingOffer = false;
+let politeSide = role === 'callee';
+let pendingCandidates = [];
+
+const $ = (id) => document.getElementById(id);
+const screenEl = $('callScreen');
+
+$('callName').textContent = peerName;
+$('callAvatar').textContent = peerName.slice(0, 2).toUpperCase();
+$('callAvatar').classList.add('ringing');
+if (wantVideo) screenEl.classList.add('video-on');
+if (role === 'callee' && params.get('auto') !== '1') screenEl.classList.add('incoming'); // ringing: show avatar + Answer/Decline, not a black video screen
+$('camBtn').classList.toggle('off', !wantVideo);
+
+function setStatus(text) { $('callStatus').textContent = text; }
+
+/* ---------- ringback / ringtone (generated, no audio files needed) ---------- */
+const tone = (() => {
+  let ctx = null, osc = null, gain = null, loop = null;
+  return {
+    start(freq = 440, onMs = 900, offMs = 2200) {
+      try {
+        ctx = new (window.AudioContext || window.webkitAudioContext)();
+        const beep = () => {
+          osc = ctx.createOscillator(); gain = ctx.createGain();
+          osc.frequency.value = freq; gain.gain.value = 0.07;
+          osc.connect(gain); gain.connect(ctx.destination);
+          osc.start(); osc.stop(ctx.currentTime + onMs / 1000);
+        };
+        beep();
+        loop = setInterval(beep, onMs + offMs);
+      } catch (_) {}
+    },
+    stop() { clearInterval(loop); try { osc?.stop(); ctx?.close(); } catch (_) {} },
+  };
+})();
+
+/* ---------- call log ---------- */
+async function logCall(status) {
+  const durationSeconds = startedAt ? Math.round((Date.now() - startedAt) / 1000) : 0;
+  try {
+    await window.sb.from('call_logs').insert({
+      caller_id: role === 'caller' ? myUserId : peerId,
+      callee_id: role === 'caller' ? peerId : myUserId,
+      status, type: videoOn ? 'video' : 'voice',
+      duration_seconds: durationSeconds,
+      created_at: new Date().toISOString(),
+    });
+  } catch (err) { console.error('Call log error:', err); }
+}
+
+/* ---------- media ---------- */
+async function getMedia(video) {
+  const constraints = {
+    audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
+    video: video ? { width: { ideal: 640 }, height: { ideal: 480 }, facingMode: 'user' } : false,
+  };
+  try {
+    return await navigator.mediaDevices.getUserMedia(constraints);
+  } catch (err) {
+    if (video) { // camera missing or blocked — fall back to voice-only rather than failing the call
+      videoOn = false; screenEl.classList.remove('video-on'); $('camBtn').classList.add('off');
+      return await navigator.mediaDevices.getUserMedia({ audio: true });
+    }
+    throw err;
+  }
+}
+
+/* ---------- peer connection ---------- */
+async function setupPeerConnection() {
+  const iceServers = await window.CP_getIceServers();
+  const hasTurn = iceServers.some(s => String(s.urls).includes('turn'));
+  if (!hasTurn) console.warn('No TURN server configured — calls may fail on restrictive networks. See config.js.');
+
+  pc = new RTCPeerConnection({ iceServers, iceCandidatePoolSize: 4, bundlePolicy: 'max-bundle' });
+
+  pc.onicecandidate = (e) => {
+    if (e.candidate) signal({ kind: 'ice', candidate: e.candidate });
+  };
+
+  pc.ontrack = (e) => {
+    const [stream] = e.streams;
+    $('remoteAudio').srcObject = stream;
+    $('remoteVideo').srcObject = stream;
+    if (e.track.kind === 'video') { screenEl.classList.add('video-on'); }
+  };
+
+  pc.onconnectionstatechange = () => {
+    if (pc.connectionState === 'connected') {
+      if (!answered) onConnected();
+      setStatus(fmtDuration());
+    }
+    if (pc.connectionState === 'failed' && !ended) {
+      // One automatic ICE restart before giving up — handles a WiFi→data switch.
+      setStatus('Reconnecting…');
+      pc.restartIce?.();
+      setTimeout(() => { if (pc && pc.connectionState === 'failed' && !ended) endCall('failed'); }, 8000);
+    }
+    if (pc.connectionState === 'disconnected' && !ended) setStatus('Reconnecting…');
+    if (pc.connectionState === 'closed' && !ended) endCall(answered ? 'completed' : 'failed');
+  };
+
+  localStream = await getMedia(videoOn);
+  localStream.getTracks().forEach(t => pc.addTrack(t, localStream));
+  $('localVideo').srcObject = localStream;
+  refreshFlipBtn();
+}
+
+function signal(payload) {
+  callChannel?.send({ type: 'broadcast', event: 'signal', payload: Object.assign({ from: myUserId }, payload) });
+}
+
+function onConnected() {
+  answered = true;
+  startedAt = Date.now();
+  clearTimeout(ringTimeout);
+  tone.stop();
+  $('callAvatar').classList.remove('ringing');
+  $('answerRow').style.display = 'none';
+  $('callInfo').querySelector('p').textContent = '0:00';
+  durationTimer = setInterval(() => { if (!ended) setStatus(fmtDuration()); }, 1000);
+  watchQuality();
+}
+
+function fmtDuration() {
+  if (!startedAt) return 'Connected';
+  const s = Math.floor((Date.now() - startedAt) / 1000);
+  return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
+}
+
+/* ---------- connection quality readout ---------- */
+function watchQuality() {
+  let lastLost = 0, lastTotal = 0;
+  statsTimer = setInterval(async () => {
+    if (!pc || ended) return;
+    const stats = await pc.getStats();
+    stats.forEach(r => {
+      if (r.type === 'inbound-rtp' && r.kind === 'audio') {
+        const lost = r.packetsLost || 0, total = (r.packetsReceived || 0) + lost;
+        const dLost = lost - lastLost, dTotal = total - lastTotal;
+        lastLost = lost; lastTotal = total;
+        const pct = dTotal > 0 ? (dLost / dTotal) * 100 : 0;
+        const el = $('callQuality');
+        if (pct > 8) { el.textContent = '⚠️ Weak connection'; el.classList.add('bad'); }
+        else { el.textContent = ''; el.classList.remove('bad'); }
+      }
+    });
+  }, 3000);
+}
+
+/* ---------- signalling handlers ---------- */
+function attachSignalHandler() {
+  callChannel.on('broadcast', { event: 'signal' }, async ({ payload }) => {
+    if (!payload || payload.from === myUserId) return;
+    try {
+      if (payload.kind === 'offer') {
+        if (!pc) await setupPeerConnection();
+        const collision = makingOffer || pc.signalingState !== 'stable';
+        if (collision && !politeSide) return; // perfect negotiation: impolite side ignores
+        if (collision) await pc.setLocalDescription({ type: 'rollback' });
+        await pc.setRemoteDescription(new RTCSessionDescription(payload.sdp));
+        await flushCandidates();
+        const answer = await pc.createAnswer();
+        await pc.setLocalDescription(answer);
+        signal({ kind: 'answer', sdp: pc.localDescription });
+
+      } else if (payload.kind === 'answer') {
+        if (pc.signalingState === 'have-local-offer') {
+          await pc.setRemoteDescription(new RTCSessionDescription(payload.sdp));
+          await flushCandidates();
+        }
+
+      } else if (payload.kind === 'ice') {
+        if (pc && pc.remoteDescription) { try { await pc.addIceCandidate(payload.candidate); } catch (e) { console.warn(e); } }
+        else pendingCandidates.push(payload.candidate);
+
+      } else if (payload.kind === 'ringing') {
+        if (!answered) setStatus('Ringing…');
+
+      } else if (payload.kind === 'declined') {
+        tone.stop(); setStatus('Call declined');
+        logCall('declined'); finish(1400);
+
+      } else if (payload.kind === 'hangup') {
+        setStatus(answered ? 'Call ended' : 'Call ended');
+        endCall(answered ? 'completed' : 'missed', true);
+      }
+    } catch (err) { console.error('Signal error:', err); }
+  });
+}
+
+async function flushCandidates() {
+  for (const c of pendingCandidates) { try { await pc.addIceCandidate(c); } catch (e) { console.warn(e); } }
+  pendingCandidates = [];
+}
+
+/* ---------- caller ---------- */
+async function startAsCaller() {
+  channelName = channelName || `call-${crypto.randomUUID()}`;
+  callChannel = window.sb.channel(channelName, { config: { broadcast: { self: false } } });
+  attachSignalHandler();
+  await callChannel.subscribe();
+
+  await setupPeerConnection();
+
+  makingOffer = true;
+  const offer = await pc.createOffer({ offerToReceiveAudio: true, offerToReceiveVideo: true });
+  await pc.setLocalDescription(offer);
+  makingOffer = false;
+
+  // Ring the other person wherever they are in the app.
+  ringChannel = window.sb.channel(`ring-${peerId}`);
+  await ringChannel.subscribe();
+  const ringPayload = {
+    callerId: myUserId,
+    callerName: window.CP_PROFILE?.full_name || window.CP_PROFILE?.username || 'Someone',
+    callChannel: channelName,
+    video: videoOn,
+  };
+  ringChannel.send({ type: 'broadcast', event: 'incoming', payload: ringPayload });
+  // Re-ring a few times in case their page was mid-navigation.
+  let rings = 0;
+  const reRing = setInterval(() => {
+    if (answered || ended || rings++ > 5) { clearInterval(reRing); return; }
+    ringChannel.send({ type: 'broadcast', event: 'incoming', payload: ringPayload });
+  }, 3000);
+
+  // Resend the offer until they pick up (their page joins the channel late).
+  const resend = setInterval(() => {
+    if (answered || ended) { clearInterval(resend); return; }
+    signal({ kind: 'offer', sdp: pc.localDescription });
+  }, 1500);
+  signal({ kind: 'offer', sdp: pc.localDescription });
+
+  setStatus('Calling…');
+  tone.start(440, 900, 2200); // ringback
+  ringTimeout = setTimeout(() => {
+    if (!answered) { tone.stop(); setStatus('No answer'); logCall('missed'); finish(1400); }
+  }, 35000);
+}
+
+/* ---------- callee ---------- */
+async function startAsCallee() {
+  callChannel = window.sb.channel(channelName, { config: { broadcast: { self: false } } });
+  attachSignalHandler();
+  await callChannel.subscribe();
+  signal({ kind: 'ringing' });
+
+  // Show Answer/Decline unless the user already accepted from the overlay.
+  if (params.get('auto') === '1') {
+    await acceptCall();
+  } else {
+    $('answerRow').style.display = 'flex';
+    document.querySelector('.call-controls').style.display = 'none';
+    setStatus(wantVideo ? 'Incoming video call…' : 'Incoming call…');
+    tone.start(660, 700, 900);
+  }
+}
+
+async function acceptCall() {
+  tone.stop();
+  screenEl.classList.remove('incoming');
+  $('answerRow').style.display = 'none';
+  document.querySelector('.call-controls').style.display = 'flex';
+  setStatus('Connecting…');
+  if (!pc) await setupPeerConnection();
+  signal({ kind: 'ready' });
+}
+
+/* ---------- controls ---------- */
+$('answerBtn').addEventListener('click', () => acceptCall().catch(err => {
+  setStatus(err.name === 'NotAllowedError' ? 'Microphone permission denied' : 'Could not start call');
+}));
+
+$('declineBtn').addEventListener('click', () => {
+  signal({ kind: 'declined' });
+  logCall('declined');
+  finish(300);
+});
+
+$('endCallBtn').addEventListener('click', () => {
+  signal({ kind: 'hangup' });
+  endCall(answered ? 'completed' : 'missed');
+});
+
+let muted = false;
+$('muteBtn').addEventListener('click', (e) => {
+  muted = !muted;
+  localStream?.getAudioTracks().forEach(t => { t.enabled = !muted; });
+  e.currentTarget.classList.toggle('active', muted);
+});
+
+$('camBtn').addEventListener('click', async (e) => {
+  const track = localStream?.getVideoTracks()[0];
+  if (track) {
+    videoOn = !videoOn;
+    track.enabled = videoOn;
+    screenEl.classList.toggle('video-on', videoOn);
+    e.currentTarget.classList.toggle('off', !videoOn);
+    refreshFlipBtn();
+    return;
+  }
+  // Started as voice-only — add a camera track mid-call.
+  try {
+    const cam = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' } });
+    const vt = cam.getVideoTracks()[0];
+    localStream.addTrack(vt);
+    pc.addTrack(vt, localStream);
+    $('localVideo').srcObject = localStream;
+    videoOn = true;
+    screenEl.classList.add('video-on');
+    e.currentTarget.classList.remove('off');
+    refreshFlipBtn();
+    // renegotiate
+    makingOffer = true;
+    const offer = await pc.createOffer();
+    await pc.setLocalDescription(offer);
+    makingOffer = false;
+    signal({ kind: 'offer', sdp: pc.localDescription });
+  } catch (err) { alert('Camera permission is needed for video.'); }
+});
+
+let facing = 'user';
+let flipping = false;
+
+// Show Flip only when the device really has another camera to flip to.
+async function hasMultipleCameras() {
+  try {
+    const devs = await navigator.mediaDevices.enumerateDevices();
+    if (devs.filter(d => d.kind === 'videoinput').length > 1) return true;
+  } catch (_) {}
+  return /Android|iPhone|iPad|iPod/i.test(navigator.userAgent); // labels can be empty before permission
+}
+async function refreshFlipBtn() {
+  $('flipBtn').style.display = (videoOn && await hasMultipleCameras()) ? 'flex' : 'none';
+}
+
+// Open the other camera. Callers must have released the current camera first.
+async function openCamera(nextFacing, avoidDeviceId) {
+  const attempts = [{ facingMode: { exact: nextFacing } }, { facingMode: { ideal: nextFacing } }];
+  for (const video of attempts) {
+    try {
+      const s = await navigator.mediaDevices.getUserMedia({ video, audio: false });
+      const t = s.getVideoTracks()[0];
+      if (avoidDeviceId && t.getSettings().deviceId === avoidDeviceId) { t.stop(); continue; } // got the same camera back
+      return t;
+    } catch (_) { /* try the next strategy */ }
+  }
+  // Some devices ignore facingMode — cycle to a different camera by id instead.
+  const cams = (await navigator.mediaDevices.enumerateDevices()).filter(d => d.kind === 'videoinput');
+  const other = cams.find(d => d.deviceId && d.deviceId !== avoidDeviceId);
+  if (!other) throw new Error('No other camera available');
+  const s = await navigator.mediaDevices.getUserMedia({ video: { deviceId: { exact: other.deviceId } }, audio: false });
+  return s.getVideoTracks()[0];
+}
+
+$('flipBtn').addEventListener('click', async () => {
+  if (flipping || !localStream) return;
+  flipping = true;
+  const btn = $('flipBtn');
+  btn.disabled = true;
+
+  const oldTrack = localStream.getVideoTracks()[0];
+  const oldId = oldTrack?.getSettings?.().deviceId;
+  const wasEnabled = oldTrack ? oldTrack.enabled : true;
+  const next = facing === 'user' ? 'environment' : 'user';
+
+  // Release the current camera FIRST — most phones can't open two cameras at once,
+  // which is why asking for the new one while the old one was live silently failed.
+  if (oldTrack) { oldTrack.stop(); localStream.removeTrack(oldTrack); }
+
+  let newTrack = null;
+  try {
+    newTrack = await openCamera(next, oldId);
+    facing = next;
+  } catch (err) {
+    console.warn('Flip failed, restoring the previous camera:', err);
+    try {
+      const back = await navigator.mediaDevices.getUserMedia({
+        video: oldId ? { deviceId: { exact: oldId } } : { facingMode: facing }, audio: false,
+      });
+      newTrack = back.getVideoTracks()[0];
+    } catch (err2) { console.warn('Could not restore camera:', err2); }
+  }
+
+  if (newTrack) {
+    newTrack.enabled = wasEnabled;
+    localStream.addTrack(newTrack);
+    const sender = pc?.getSenders().find(s => s.track && s.track.kind === 'video')
+      || pc?.getTransceivers().find(t => t.receiver.track && t.receiver.track.kind === 'video')?.sender;
+    try { if (sender) await sender.replaceTrack(newTrack); } catch (err) { console.warn('replaceTrack failed:', err); }
+    $('localVideo').srcObject = localStream;
+    $('localVideo').style.transform = facing === 'user' ? 'scaleX(-1)' : 'none';
+  }
+
+  btn.disabled = false;
+  flipping = false;
+});
+
+let speakerOn = wantVideo;
+$('speakerBtn').addEventListener('click', async (e) => {
+  speakerOn = !speakerOn;
+  e.currentTarget.classList.toggle('active', speakerOn);
+  const el = $('remoteAudio');
+  try {
+    if (el.setSinkId) {
+      const devices = await navigator.mediaDevices.enumerateDevices();
+      const outs = devices.filter(d => d.kind === 'audiooutput');
+      const target = speakerOn
+        ? outs.find(d => /speaker/i.test(d.label)) || outs[0]
+        : outs.find(d => /earpiece|receiver/i.test(d.label)) || outs[0];
+      if (target) await el.setSinkId(target.deviceId);
+    }
+  } catch (_) { /* iOS Safari doesn't expose setSinkId — the OS route button handles it */ }
+});
+$('speakerBtn').classList.toggle('active', speakerOn);
+
+/* ---------- teardown ---------- */
+function finish(delay = 400) {
+  setTimeout(() => {
+    if (history.length > 1) history.back(); else window.location.href = 'notifications.html';
+  }, delay);
+}
+
+function endCall(status = 'ended', remote = false) {
+  if (ended) return;
+  ended = true;
+  clearTimeout(ringTimeout);
+  clearInterval(statsTimer);
+  clearInterval(durationTimer);
+  tone.stop();
+
+  if (!remote) {
+    if (answered) logCall(status === 'ended' ? 'completed' : status);
+    else if (!['missed', 'declined'].includes(status)) logCall('missed');
+    else logCall(status);
+  }
+
+  localStream?.getTracks().forEach(t => t.stop());
+  try { pc?.close(); } catch (_) {}
+  if (callChannel) window.sb.removeChannel(callChannel);
+  if (ringChannel) window.sb.removeChannel(ringChannel);
+  setStatus('Call ended');
+  finish(600);
+}
+
+window.addEventListener('beforeunload', () => { if (!ended) { signal({ kind: 'hangup' }); } });
+
+/* ---------- boot ---------- */
+document.addEventListener('cp-ready', async (e) => {
+  myUserId = e.detail.user.id;
+  if (!peerId) { setStatus('Missing call target'); return; }
+  if (role === 'callee' && !channelName) { setStatus('Call link expired'); return; }
+  try {
+    if (role === 'caller') await startAsCaller();
+    else await startAsCallee();
+  } catch (err) {
+    console.error('Call setup error:', err);
+    setStatus(
+      err.name === 'NotAllowedError' ? 'Microphone permission denied' :
+      err.name === 'NotFoundError' ? 'No microphone found' :
+      'Could not start call'
+    );
+  }
+});
+</script>
+<script>
+// Service worker: required for the Android install prompt and for the
+// Play Store TWA build. Registered after load so it never delays first paint.
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js').catch(err => console.warn('SW registration failed:', err));
+  });
+}
+</script>
+</body>
+</html>

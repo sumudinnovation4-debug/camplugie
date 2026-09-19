@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>Browse Camplugie</title>
+<style>
+:root {
+  --brand: #A78BFA;
+  --brand-dark: #7C3AED;
+  --brand-soft: rgba(167, 139, 250, 0.14);
+  --surface: #12101D;
+  --surface2: #1A1729;
+  --border: rgba(255,255,255,0.10);
+  --text: #F8F6FF;
+  --text3: #8D86AA;
+  --radius-sm: 12px;
+  --shadow-lg: 0 24px 80px rgba(0,0,0,0.48);
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+}
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html, body { margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  min-height: 100vh;
+  background: radial-gradient(circle at 30% 0%, rgba(255,255,255,0.10), transparent 45%), linear-gradient(160deg, #6D28D9 0%, #7C3AED 42%, #9333EA 100%);
+  color: var(--text);
+  display: flex; align-items: center; justify-content: center;
+  padding: calc(var(--safe-top) + 20px) 20px calc(var(--safe-bottom) + 20px);
+}
+.browse-card { width: 100%; max-width: 420px; text-align: center; }
+.browse-back {
+  display: inline-flex; align-items: center; gap: 6px;
+  color: rgba(255,255,255,0.75); text-decoration: none; font-size: 13.5px; font-weight: 600;
+  margin-bottom: 22px;
+}
+.browse-emoji { font-size: 40px; margin-bottom: 6px; }
+h1 { font-size: 24px; font-weight: 900; margin: 0 0 8px; letter-spacing: -0.01em; }
+p.sub { font-size: 14px; color: rgba(255,255,255,0.8); line-height: 1.5; margin: 0 0 26px; }
+
+/* University picker — same component as onboarding.html's "Your university" step */
+.uni-picker { position: relative; text-align: left; }
+.uni-picker-input {
+  display: flex; align-items: center; gap: 10px;
+  width: 100%; background: rgba(255,255,255,0.95); border: none; border-radius: var(--radius-sm);
+  padding: 14px; cursor: pointer;
+}
+.uni-picker-input input { flex: 1; border: none; background: none; outline: none; font: inherit; font-size: 15px; font-weight: 600; color: #1A1729; }
+.uni-picker-input input::placeholder { color: #8D86AA; font-weight: 500; }
+.uni-picker-input svg { width: 18px; height: 18px; color: var(--brand-dark); flex-shrink: 0; }
+.uni-list {
+  position: absolute; top: calc(100% + 6px); left: 0; right: 0; z-index: 30;
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm);
+  max-height: 240px; overflow-y: auto; box-shadow: var(--shadow-lg);
+  display: none;
+}
+.uni-list.open { display: block; }
+.uni-option { padding: 13px 14px; font-size: 14px; font-weight: 600; cursor: pointer; border-bottom: 1px solid var(--border); text-align: left; color: var(--text); }
+.uni-option:last-child { border-bottom: none; }
+.uni-option:hover { background: var(--surface2); }
+.uni-locked {
+  display: none; align-items: center; gap: 10px;
+  background: var(--brand-soft); border: 1px solid var(--brand); border-radius: var(--radius-sm);
+  padding: 14px; text-align: left;
+}
+.uni-locked svg { width: 18px; height: 18px; color: #fff; flex-shrink: 0; }
+.uni-locked .name { font-size: 14.5px; font-weight: 700; flex: 1; color: #fff; }
+.uni-locked .change { font-size: 12.5px; font-weight: 700; color: #fff; text-decoration: underline; cursor: pointer; flex-shrink: 0; }
+
+button#continueBtn {
+  width: 100%; border: none; border-radius: 999px; padding: 16px; margin-top: 16px;
+  background: #fff; color: var(--brand-dark); font-size: 15.5px; font-weight: 800;
+  cursor: pointer; box-shadow: 0 10px 26px rgba(0,0,0,0.2);
+}
+button#continueBtn:disabled { opacity: 0.5; cursor: not-allowed; }
+.browse-foot { margin-top: 22px; font-size: 13px; color: rgba(255,255,255,0.7); }
+.browse-foot a { color: #fff; font-weight: 700; text-decoration: none; }
+</style>
+<link rel="manifest" href="/manifest.webmanifest">
+<meta name="theme-color" content="#7C3AED">
+<meta name="color-scheme" content="dark light">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Camplugie">
+<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+<link rel="icon" href="/icons/icon-192.png" type="image/png">
+</head>
+<body>
+
+<div class="browse-card">
+  <a class="browse-back" href="index.html">&larr; Back</a>
+  <div class="browse-emoji">🎓</div>
+  <h1>Which campus are you browsing?</h1>
+  <p class="sub">Pick your school to see what's on sale — no account needed.</p>
+
+  <div class="uni-picker" id="uniPicker">
+    <div class="uni-picker-input" id="uniPickerInput">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input type="text" id="uniSearch" placeholder="Type to search your school…" autocomplete="off">
+    </div>
+    <div class="uni-list" id="uniList"></div>
+  </div>
+
+  <div class="uni-locked" id="uniLocked">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 12l2 2 4-4"/><circle cx="12" cy="12" r="10"/></svg>
+    <div class="name" id="uniLockedName"></div>
+    <div class="change" id="uniChange">Change</div>
+  </div>
+
+  <button id="continueBtn" disabled>Continue</button>
+
+  <div class="browse-foot">Buying or selling for real? <a href="auth.html?view=signup">Sign up free</a></div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script>
+window.CP = window.CP || {};
+// Escapes anything user-controlled before it goes into HTML. Listing titles,
+// usernames, comments and dispute notes are all free text a student typed —
+// without this, "<img src=x onerror=...>" in a username runs in everyone's
+// browser, including the admin dashboard.
+window.CP.esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g,
+  c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+const SUPABASE_URL = 'https://zgzamthhfykhjaldosvb.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpnemFtdGhoZnlraGphbGRvc3ZiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg0Nzc2NjksImV4cCI6MjA5NDA1MzY2OX0.YpH9Zn2a2XVDZnZIlWd4d4CxhUbkURZ_H7Yegw9vih4';
+window.sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+const uniSearch = document.getElementById('uniSearch');
+const uniList = document.getElementById('uniList');
+const uniPicker = document.getElementById('uniPicker');
+const uniLocked = document.getElementById('uniLocked');
+const uniLockedName = document.getElementById('uniLockedName');
+const uniChange = document.getElementById('uniChange');
+const continueBtn = document.getElementById('continueBtn');
+
+let UNIVERSITIES = [];
+let selectedId = '';
+
+// Same query onboarding.html uses for this exact same list — a plain,
+// un-gated select, so it behaves the same for a signed-in user finishing
+// onboarding and for a signed-out guest here.
+window.sb.from('universities').select('id, name').order('name').then(({ data, error }) => {
+  if (error) {
+    console.error('Universities load error:', error);
+    uniSearch.placeholder = 'Could not load campuses — try again';
+    return;
+  }
+  UNIVERSITIES = data || [];
+
+  // Returning guest: pre-select their last campus.
+  const saved = localStorage.getItem('cp_guest_university_id');
+  const savedUni = saved && UNIVERSITIES.find(u => u.id === saved);
+  if (savedUni) lockInUniversity(savedUni.id, savedUni.name);
+});
+
+function renderUniList(items) {
+  uniList.innerHTML = items.map(u => `<div class="uni-option" data-id="${u.id}" data-name="${CP.esc(u.name)}">${CP.esc(u.name)}</div>`).join('')
+    || `<div class="uni-option" style="color:var(--text3)">No matches — try a different search</div>`;
+}
+
+function lockInUniversity(id, name) {
+  selectedId = id;
+  uniLockedName.textContent = name;
+  uniPicker.style.display = 'none';
+  uniLocked.style.display = 'flex';
+  continueBtn.disabled = false;
+}
+
+uniSearch.addEventListener('focus', () => { uniList.classList.add('open'); renderUniList(UNIVERSITIES); });
+uniSearch.addEventListener('input', () => {
+  const q = uniSearch.value.trim().toLowerCase();
+  renderUniList(UNIVERSITIES.filter(u => u.name.toLowerCase().includes(q)));
+  uniList.classList.add('open');
+});
+document.addEventListener('click', (e) => { if (!uniPicker.contains(e.target)) uniList.classList.remove('open'); });
+uniList.addEventListener('click', (e) => {
+  const opt = e.target.closest('.uni-option');
+  if (!opt || !opt.dataset.id) return;
+  lockInUniversity(opt.dataset.id, opt.dataset.name);
+  uniList.classList.remove('open');
+});
+uniChange.addEventListener('click', () => {
+  selectedId = '';
+  continueBtn.disabled = true;
+  uniPicker.style.display = 'block';
+  uniLocked.style.display = 'none';
+  uniSearch.value = '';
+  uniSearch.focus();
+});
+
+continueBtn.addEventListener('click', () => {
+  if (!selectedId) return;
+  localStorage.setItem('cp_guest_university_id', selectedId);
+  window.location.href = `market.html?uni=${encodeURIComponent(selectedId)}`;
+});
+</script>
+<script>
+// Service worker: required for the Android install prompt and for the
+// Play Store TWA build. Registered after load so it never delays first paint.
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js').catch(err => console.warn('SW registration failed:', err));
+  });
+}
+</script>
+</body>
+</html>
