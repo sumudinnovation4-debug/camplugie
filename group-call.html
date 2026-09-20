@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Camplugie — Group Call</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Clash+Display:wght@500;600;700&family=Satoshi:wght@400;500;700;900&display=swap');
+
+:root {
+  --brand: #A78BFA; --brand-dark: #7C3AED; --brand-soft: rgba(167,139,250,0.14);
+  --accent: #FBBF24; --money: #34D399; --danger: #FB7185;
+  --bg: #090714; --surface: #12101D; --surface2: #1A1729; --border: rgba(255,255,255,0.10);
+  --text: #F8F6FF; --text2: #C9C3DE; --text3: #8D86AA;
+  --safe-top: env(safe-area-inset-top, 0px); --safe-bottom: env(safe-area-inset-bottom, 0px);
+}
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html, body { margin: 0; padding: 0; height: 100%; overflow: hidden; }
+body {
+  background: var(--bg); color: var(--text); font-family: 'Satoshi', -apple-system, sans-serif;
+  display: flex; flex-direction: column; height: 100vh;
+}
+.gc-header {
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  padding: calc(var(--safe-top) + 12px) 16px 12px; z-index: 5;
+}
+.gc-header b { font-size: 15px; }
+.gc-header span { display: block; font-size: 11.5px; color: var(--text3); }
+.gc-badge { background: var(--brand-soft); color: var(--brand); font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 999px; }
+.gc-stage {
+  flex: 1; min-height: 0; padding: 0 10px; display: flex; flex-direction: column; gap: 8px;
+}
+/* General mode: responsive video grid */
+.gc-grid { flex: 1; min-height: 0; display: grid; gap: 6px; grid-template-columns: repeat(var(--cols, 2), 1fr); overflow-y: auto; }
+.gc-tile {
+  position: relative; background: var(--surface2); border-radius: 14px; overflow: hidden;
+  aspect-ratio: 4/5; display: flex; align-items: center; justify-content: center;
+}
+.gc-tile video { width: 100%; height: 100%; object-fit: cover; }
+.gc-tile.no-video video { display: none; }
+.gc-tile .gc-avatar { width: 56px; height: 56px; border-radius: 50%; background: linear-gradient(135deg,var(--brand),var(--brand-dark)); display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 18px; }
+.gc-tile .gc-name { position: absolute; left: 8px; bottom: 8px; font-size: 12px; font-weight: 700; text-shadow: 0 1px 4px rgba(0,0,0,.6); display: flex; align-items: center; gap: 5px; }
+.gc-tile .gc-mic-off { width: 20px; height: 20px; border-radius: 50%; background: rgba(0,0,0,.5); display: flex; align-items: center; justify-content: center; }
+.gc-tile .gc-mic-off svg { width: 11px; height: 11px; }
+
+/* Lecture mode: one big stage + a scroll strip of student tiles (host view) */
+.gc-lecture-stage { flex: 1; min-height: 0; background: var(--surface2); border-radius: 16px; position: relative; overflow: hidden; display: flex; align-items: center; justify-content: center; }
+.gc-lecture-stage video { width: 100%; height: 100%; object-fit: cover; }
+.gc-lecture-stage .gc-avatar { width: 84px; height: 84px; font-size: 26px; }
+.gc-student-strip { display: flex; gap: 8px; overflow-x: auto; padding: 4px 2px; scrollbar-width: none; }
+.gc-student-tile {
+  position: relative; flex-shrink: 0; width: 78px; height: 96px; border-radius: 12px; background: var(--surface2);
+  display: flex; align-items: center; justify-content: center; border: 2px solid transparent; cursor: pointer;
+}
+.gc-student-tile.spotlighted { border-color: var(--accent); }
+.gc-student-tile .gc-avatar { width: 40px; height: 40px; font-size: 14px; }
+.gc-student-tile .gc-name { position: absolute; bottom: 4px; left: 0; right: 0; text-align: center; font-size: 9.5px; font-weight: 700; padding: 0 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.gc-student-tile .gc-star { position: absolute; top: 4px; right: 4px; font-size: 12px; }
+
+.gc-controls {
+  display: flex; align-items: center; justify-content: center; gap: 16px;
+  padding: 14px 16px calc(var(--safe-bottom) + 14px);
+}
+.gc-ctl { width: 54px; height: 54px; border-radius: 50%; border: none; background: var(--surface2); color: #fff; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+.gc-ctl svg { width: 22px; height: 22px; }
+.gc-ctl.off { background: #fff; color: var(--brand-dark); }
+.gc-ctl.end { background: var(--danger); }
+.gc-hint { text-align: center; font-size: 11.5px; color: var(--text3); padding-bottom: 6px; }
+</style>
+</head>
+<body>
+
+<div class="gc-header">
+  <div>
+    <b id="gcTitle">Connecting…</b>
+    <span id="gcSubtitle">&nbsp;</span>
+  </div>
+  <div class="gc-badge" id="gcBadge">General</div>
+</div>
+
+<div class="gc-stage">
+  <!-- General mode -->
+  <div class="gc-grid" id="gcGrid" style="display:none"></div>
+
+  <!-- Lecture mode -->
+  <div id="gcLecture" style="display:none; flex:1; min-height:0; display:flex; flex-direction:column; gap:8px;">
+    <div class="gc-lecture-stage" id="gcLectureStage"></div>
+    <div class="gc-hint" id="gcLectureHint"></div>
+    <div class="gc-student-strip" id="gcStudentStrip"></div>
+  </div>
+</div>
+
+<div class="gc-controls">
+  <button class="gc-ctl" id="micBtn" aria-label="Mute">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2M12 19v4M8 23h8"/></svg>
+  </button>
+  <button class="gc-ctl" id="camBtn" aria-label="Camera">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>
+  </button>
+  <button class="gc-ctl end" id="endBtn" aria-label="End call">
+    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 9c-3 0-5.6.8-7.8 2.2a1.5 1.5 0 0 0-.4 2.1l1.6 2.2c.4.6 1.2.8 1.9.5 1.4-.6 2.9-1 4.7-1s3.3.4 4.7 1c.7.3 1.5.1 1.9-.5l1.6-2.2c.5-.7.3-1.7-.4-2.1A15.6 15.6 0 0 0 12 9z"/></svg>
+  </button>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="config.js?v=3"></script>
+<script>
+const SUPABASE_URL = 'https://zgzamthhfykhjaldosvb.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpnemFtdGhoZnlraGphbGRvc3ZiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg0Nzc2NjksImV4cCI6MjA5NDA1MzY2OX0.YpH9Zn2a2XVDZnZIlWd4d4CxhUbkURZ_H7Yegw9vih4';
+window.sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+</script>
+<script>
+// Protected page — same guard pattern as call.html.
+(async () => {
+  const { data: { session } } = await window.sb.auth.getSession();
+  if (!session) { window.location.href = 'auth.html'; return; }
+  window.CP_USER = session.user;
+  const { data: profile } = await window.sb.from('profiles').select('*').eq('id', session.user.id).single();
+  window.CP_PROFILE = profile || null;
+  if (profile?.is_banned) { window.location.href = 'banned.html'; return; }
+  document.dispatchEvent(new CustomEvent('cp-ready', { detail: { user: session.user, profile } }));
+})();
+</script>
+<script>
+/* ============================================================
+   Group calling — two modes, both zero-infrastructure (no SFU):
+
+   GENERAL: full mesh. Every participant opens one RTCPeerConnection
+   to every other participant, sending+receiving audio and video.
+   Fine for small groups; each added participant adds N-1 connections
+   for everyone, so this isn't meant for huge calls.
+
+   LECTURE: star topology. The lecturer (host) opens one
+   RTCPeerConnection PER STUDENT — students never connect to each
+   other. Students send audio only by default; the lecturer sends
+   video+audio to everyone. When the host "calls up" a student, that
+   student's video is added to their one existing connection with the
+   host (ordinary renegotiation — no new connections). To make that
+   student visible to the WHOLE class without an SFU, the host draws
+   its own camera + the spotlighted student's video onto a <canvas>,
+   captures that canvas as a stream, and swaps every other student's
+   incoming video for that composited stream via replaceTrack (no
+   renegotiation needed for a track swap).
+
+   Signaling for both modes rides on one Supabase Realtime broadcast
+   channel per call (groupcall-<callId>), with messages addressed by
+   `to` (a specific user) or left unaddressed for "everyone".
+   ============================================================ */
+
+const params = new URLSearchParams(location.search);
+const groupId = params.get('groupId');
+const callId = params.get('callId');
+const mode = params.get('mode') === 'lecture' ? 'lecture' : 'general';
+const isHost = params.get('role') === 'host';
+
+let myUserId, myName;
+let iceServers = [];
+let signalChannel = null;
+let localStream = null;
+let micOn = true, camOn = mode === 'general' || isHost; // lecture-mode students start audio-only
+let ended = false;
+
+// userId -> { pc, videoEl?, tileEl, name, micMuted, hasVideo, makingOffer }
+const peers = {};
+
+// Lecture-only spotlight/canvas state
+let spotlightId = null;
+let canvasEl = null, canvasCtx = null, canvasStream = null, canvasTimer = null;
+
+function $(id) { return document.getElementById(id); }
+function initials(name) { return (name || '?').trim().split(/\s+/).slice(0, 2).map(w => w[0]).join('').toUpperCase(); }
+
+document.addEventListener('cp-ready', async (e) => {
+  myUserId = e.detail.user.id;
+  myName = e.detail.profile?.full_name || e.detail.profile?.username || 'Someone';
+
+  if (!groupId || !callId) { alert('Missing call info.'); window.location.href = 'groups.html'; return; }
+
+  $('gcBadge').textContent = mode === 'lecture' ? 'Lecture' : 'General call';
+  $('gcTitle').textContent = mode === 'lecture' ? (isHost ? 'Your lecture' : 'Lecture') : 'Group call';
+
+  if (mode === 'lecture') {
+    $('gcLecture').style.display = 'flex';
+    $('gcLectureHint').textContent = isHost
+      ? 'Tap a student below to bring them on video for everyone.'
+      : "You're on audio. The lecturer can bring you on video.";
+  } else {
+    $('gcGrid').style.display = 'grid';
+  }
+
+  try {
+    iceServers = await window.CP_getIceServers();
+  } catch (_) { iceServers = [{ urls: 'stun:stun.l.google.com:19302' }]; }
+
+  try {
+    localStream = await navigator.mediaDevices.getUserMedia({
+      audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
+      video: camOn ? { width: { ideal: 640 }, height: { ideal: 480 }, facingMode: 'user' } : false,
+    });
+  } catch (err) {
+    console.error('getUserMedia failed:', err);
+    try { localStream = await navigator.mediaDevices.getUserMedia({ audio: true }); camOn = false; }
+    catch (err2) { alert('Camera/microphone access is required for calls.'); window.location.href = 'group-thread.html?id=' + groupId; return; }
+  }
+
+  renderSelfTile();
+  if (mode === 'lecture' && isHost) setupHostCanvas();
+
+  signalChannel = window.sb.channel(`groupcall-${callId}`, {
+    config: { broadcast: { self: false }, presence: { key: myUserId } },
+  });
+  signalChannel.on('broadcast', { event: 'signal' }, ({ payload }) => handleSignal(payload));
+  signalChannel.on('presence', { event: 'join' }, ({ newPresences }) => newPresences.forEach(onPeerPresence));
+  signalChannel.on('presence', { event: 'leave' }, ({ leftPresences }) => leftPresences.forEach(onPeerLeave));
+
+  await signalChannel.subscribe(async (status) => {
+    if (status !== 'SUBSCRIBED') return;
+    await signalChannel.track({ userId: myUserId, name: myName, role: isHost ? 'host' : 'guest' });
+    // Pick up anyone already in the call before we joined.
+    Object.values(signalChannel.presenceState()).flat().forEach(onPeerPresence);
+  });
+
+  $('micBtn').addEventListener('click', toggleMic);
+  $('camBtn').addEventListener('click', toggleCam);
+  $('endBtn').addEventListener('click', () => leaveCall());
+  window.addEventListener('pagehide', () => leaveCall(true));
+  updateControlButtons();
+});
+
+function onPeerPresence(p) {
+  if (!p || p.userId === myUserId || peers[p.userId]) return;
+  const shouldInitiate = mode === 'lecture' ? isHost : (myUserId < p.userId);
+  peers[p.userId] = { pc: null, name: p.name, tileEl: null, micMuted: false, hasVideo: false, makingOffer: false };
+  addTile(p.userId, p.name);
+  if (shouldInitiate) connectTo(p.userId, { sendVideo: mode === 'general' || isHost, recvVideo: mode === 'general' });
+}
+
+function onPeerLeave(p) {
+  if (!p || !peers[p.userId]) return;
+  peers[p.userId].pc?.close();
+  peers[p.userId].tileEl?.remove();
+  delete peers[p.userId];
+  if (spotlightId === p.userId) clearSpotlight();
+  maybeEndIfEmpty();
+}
+
+/* ---------- peer connection plumbing ---------- */
+function signal(to, kind, data) {
+  signalChannel?.send({ type: 'broadcast', event: 'signal', payload: Object.assign({ from: myUserId, to, kind }, data) });
+}
+
+async function connectTo(targetId, { sendVideo, recvVideo }) {
+  const peer = peers[targetId];
+  const pc = new RTCPeerConnection({ iceServers, iceCandidatePoolSize: 2, bundlePolicy: 'max-bundle' });
+  peer.pc = pc;
+
+  pc.onicecandidate = (e) => { if (e.candidate) signal(targetId, 'ice', { candidate: e.candidate }); };
+  pc.ontrack = (e) => handleTrack(targetId, e);
+  pc.onconnectionstatechange = () => {
+    if (pc.connectionState === 'failed' || pc.connectionState === 'closed') {
+      if (!ended) markTileOffline(targetId);
+    }
+  };
+  pc.onnegotiationneeded = async () => {
+    if (peer.makingOffer) return;
+    try {
+      peer.makingOffer = true;
+      const offer = await pc.createOffer();
+      await pc.setLocalDescription(offer);
+      signal(targetId, 'offer', { sdp: pc.localDescription });
+    } finally { peer.makingOffer = false; }
+  };
+
+  localStream.getAudioTracks().forEach(t => pc.addTrack(t, localStream));
+  if (sendVideo && localStream.getVideoTracks()[0]) pc.addTrack(localStream.getVideoTracks()[0], localStream);
+  else pc.addTransceiver('video', { direction: recvVideo ? 'recvonly' : 'inactive' });
+  if (!sendVideo && recvVideo) { /* already added recvonly above */ }
+}
+
+async function handleSignal(payload) {
+  if (!payload || payload.from === myUserId) return;
+  if (payload.to && payload.to !== myUserId) return; // not for us
+  const fromId = payload.from;
+
+  if (payload.kind === 'offer') {
+    if (!peers[fromId]) { peers[fromId] = { pc: null, name: payload.fromName || 'Someone', tileEl: null, micMuted: false, hasVideo: false, makingOffer: false }; addTile(fromId, peers[fromId].name); }
+    let peer = peers[fromId];
+    if (!peer.pc) {
+      const pc = new RTCPeerConnection({ iceServers, iceCandidatePoolSize: 2, bundlePolicy: 'max-bundle' });
+      peer.pc = pc;
+      pc.onicecandidate = (e) => { if (e.candidate) signal(fromId, 'ice', { candidate: e.candidate }); };
+      pc.ontrack = (e) => handleTrack(fromId, e);
+      pc.onconnectionstatechange = () => { if ((pc.connectionState === 'failed' || pc.connectionState === 'closed') && !ended) markTileOffline(fromId); };
+      localStream.getAudioTracks().forEach(t => pc.addTrack(t, localStream));
+      // Guests in lecture mode only send video once spotlighted; general mode always sends.
+      if (mode === 'general' && localStream.getVideoTracks()[0]) pc.addTrack(localStream.getVideoTracks()[0], localStream);
+    }
+    await peer.pc.setRemoteDescription(new RTCSessionDescription(payload.sdp));
+    const answer = await peer.pc.createAnswer();
+    await peer.pc.setLocalDescription(answer);
+    signal(fromId, 'answer', { sdp: peer.pc.localDescription });
+
+  } else if (payload.kind === 'answer') {
+    const pc = peers[fromId]?.pc;
+    if (pc && pc.signalingState === 'have-local-offer') await pc.setRemoteDescription(new RTCSessionDescription(payload.sdp));
+
+  } else if (payload.kind === 'ice') {
+    const pc = peers[fromId]?.pc;
+    if (pc) { try { await pc.addIceCandidate(payload.candidate); } catch (e) { console.warn(e); } }
+
+  } else if (payload.kind === 'spotlight-request') {
+    // I'm the student being called up — start sending video to the host.
+    await enableMyVideoForSpotlight();
+
+  } else if (payload.kind === 'spotlight-clear') {
+    await disableMyVideoAfterSpotlight();
+
+  } else if (payload.kind === 'host-ended') {
+    alert('The lecturer ended the call.');
+    leaveCall(true);
+  }
+}
+
+function handleTrack(fromId, e) {
+  const peer = peers[fromId];
+  if (!peer) return;
+  const [stream] = e.streams;
+  if (e.track.kind === 'video') { peer.hasVideo = true; }
+  renderPeerMedia(fromId, stream);
+}
+
+/* ---------- tiles / rendering ---------- */
+function renderSelfTile() {
+  if (mode === 'lecture' && !isHost) return; // students don't see their own tile, just the stage
+  const el = document.createElement('div');
+  el.className = 'gc-tile' + (camOn ? '' : ' no-video');
+  el.innerHTML = `<video autoplay muted playsinline></video><div class="gc-avatar">${initials(myName)}</div><div class="gc-name">You</div>`;
+  el.querySelector('video').srcObject = localStream;
+  if (mode === 'lecture' && isHost) { $('gcLectureStage').appendChild(el); }
+  else { $('gcGrid').appendChild(el); regridGeneral(); }
+}
+
+function addTile(userId, name) {
+  const peer = peers[userId];
+  if (mode === 'general') {
+    const el = document.createElement('div');
+    el.className = 'gc-tile no-video';
+    el.innerHTML = `<video autoplay playsinline></video><div class="gc-avatar">${initials(name)}</div><div class="gc-name">${escHtml(name)}</div>`;
+    $('gcGrid').appendChild(el);
+    peer.tileEl = el;
+    regridGeneral();
+  } else if (mode === 'lecture' && isHost) {
+    const el = document.createElement('div');
+    el.className = 'gc-student-tile';
+    el.dataset.uid = userId;
+    el.innerHTML = `<div class="gc-avatar">${initials(name)}</div><div class="gc-name">${escHtml(name)}</div>`;
+    el.addEventListener('click', () => toggleSpotlight(userId));
+    $('gcStudentStrip').appendChild(el);
+    peer.tileEl = el;
+  }
+  // Non-host students in lecture mode don't render a tile for the host —
+  // the host's stream goes straight to the single big stage element.
+}
+
+function renderPeerMedia(userId, stream) {
+  const peer = peers[userId];
+  if (mode === 'general' && peer.tileEl) {
+    const v = peer.tileEl.querySelector('video');
+    v.srcObject = stream;
+    peer.tileEl.classList.toggle('no-video', !peer.hasVideo);
+  } else if (mode === 'lecture' && isHost) {
+    // This is a student's stream arriving at the host — audio always,
+    // video only once spotlighted. Feed it into the compositing canvas.
+    updateSpotlightSource(userId, stream);
+  } else if (mode === 'lecture' && !isHost) {
+    // Guest: the only incoming stream is the host's (composited) stream.
+    let stage = $('gcLectureStage');
+    let v = stage.querySelector('video');
+    if (!v) { stage.innerHTML = '<video autoplay playsinline></video>'; v = stage.querySelector('video'); }
+    v.srcObject = stream;
+  }
+}
+
+function markTileOffline(userId) {
+  const peer = peers[userId];
+  if (!peer?.tileEl) return;
+  peer.tileEl.style.opacity = '0.4';
+  const v = peer.tileEl.querySelector('video'); if (v) v.srcObject = null;
+}
+
+function regridGeneral() {
+  const n = $('gcGrid').children.length;
+  $('gcGrid').style.setProperty('--cols', n <= 1 ? 1 : n <= 4 ? 2 : 3);
+}
+
+function escHtml(s) { return String(s || '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+/* ---------- lecture spotlight (host side) ---------- */
+function setupHostCanvas() {
+  canvasEl = document.createElement('canvas');
+  canvasEl.width = 640; canvasEl.height = 480;
+  canvasCtx = canvasEl.getContext('2d');
+  const selfVideo = document.querySelector('#gcLectureStage video');
+
+  function draw() {
+    if (ended) return;
+    canvasCtx.fillStyle = '#000'; canvasCtx.fillRect(0, 0, canvasEl.width, canvasEl.height);
+    if (selfVideo && selfVideo.readyState >= 2) {
+      const w = spotlightId ? canvasEl.width * 0.62 : canvasEl.width;
+      canvasCtx.drawImage(selfVideo, 0, 0, w, canvasEl.height);
+    }
+    const spotVideo = spotlightId ? document.getElementById('spot-video-' + spotlightId) : null;
+    if (spotVideo && spotVideo.readyState >= 2) {
+      const w = canvasEl.width * 0.38, x = canvasEl.width * 0.62;
+      canvasCtx.drawImage(spotVideo, x, 0, w, canvasEl.height);
+    }
+    canvasTimer = requestAnimationFrame(draw);
+  }
+  draw();
+  canvasStream = canvasEl.captureStream(24);
+}
+
+async function toggleSpotlight(userId) {
+  if (spotlightId === userId) { clearSpotlight(); return; }
+  if (spotlightId) clearSpotlight(); // only one at a time in this MVP
+  spotlightId = userId;
+  peers[userId]?.tileEl?.classList.add('spotlighted');
+  signal(userId, 'spotlight-request', {});
+}
+
+function clearSpotlight() {
+  if (!spotlightId) return;
+  const prev = spotlightId;
+  peers[prev]?.tileEl?.classList.remove('spotlighted');
+  signal(prev, 'spotlight-clear', {});
+  spotlightId = null;
+  swapEveryoneToStream(getBroadcastStream());
+}
+
+// A hidden <video> per spotlighted student's incoming stream, used as a
+// draw source for the canvas (never shown directly to the host).
+function updateSpotlightSource(userId, stream) {
+  let v = document.getElementById('spot-video-' + userId);
+  if (!v) {
+    v = document.createElement('video');
+    v.id = 'spot-video-' + userId; v.autoplay = true; v.playsInline = true; v.muted = false;
+    v.style.display = 'none';
+    document.body.appendChild(v);
+  }
+  v.srcObject = stream;
+  if (userId === spotlightId) swapEveryoneToStream(getBroadcastStream());
+}
+
+// What every non-spotlighted student should currently be receiving as
+// "the host's video": plain self-camera normally, or the composited
+// canvas stream while someone is spotlighted.
+function getBroadcastStream() {
+  return spotlightId && canvasStream ? canvasStream : localStream;
+}
+
+function swapEveryoneToStream(stream) {
+  const videoTrack = stream.getVideoTracks()[0];
+  if (!videoTrack) return;
+  Object.entries(peers).forEach(([uid, peer]) => {
+    if (!peer.pc) return;
+    const sender = peer.pc.getSenders().find(s => s.track && s.track.kind === 'video');
+    if (sender) sender.replaceTrack(videoTrack).catch(err => console.error('replaceTrack failed:', err));
+  });
+}
+
+/* ---------- lecture spotlight (student side) ---------- */
+async function enableMyVideoForSpotlight() {
+  if (localStream.getVideoTracks()[0]) return; // already have it
+  try {
+    const camStream = await navigator.mediaDevices.getUserMedia({ video: { width: { ideal: 480 }, facingMode: 'user' } });
+    const track = camStream.getVideoTracks()[0];
+    localStream.addTrack(track);
+    const hostPeer = Object.values(peers)[0]; // students only ever have one peer: the host
+    hostPeer?.pc?.addTrack(track, localStream);
+    camOn = true;
+    updateControlButtons();
+  } catch (err) {
+    console.error('Could not enable camera for spotlight:', err);
+  }
+}
+async function disableMyVideoAfterSpotlight() {
+  const track = localStream.getVideoTracks()[0];
+  if (!track) return;
+  track.stop();
+  localStream.removeTrack(track);
+  camOn = false;
+  updateControlButtons();
+}
+
+/* ---------- controls ---------- */
+function toggleMic() {
+  micOn = !micOn;
+  localStream.getAudioTracks().forEach(t => t.enabled = micOn);
+  updateControlButtons();
+}
+function toggleCam() {
+  if (mode === 'lecture' && !isHost) return; // students can't self-promote to video
+  const track = localStream.getVideoTracks()[0];
+  if (!track) return;
+  camOn = !camOn;
+  track.enabled = camOn;
+  updateControlButtons();
+}
+function updateControlButtons() {
+  $('micBtn').classList.toggle('off', !micOn);
+  $('camBtn').classList.toggle('off', !camOn);
+  $('camBtn').style.display = (mode === 'lecture' && !isHost && !localStream.getVideoTracks()[0]) ? 'none' : 'flex';
+}
+
+/* ---------- leaving ---------- */
+async function maybeEndIfEmpty() {
+  if (!signalChannel) return;
+  const remaining = Object.keys(signalChannel.presenceState()).length;
+  if (remaining <= 1) {
+    await window.sb.from('group_calls').update({ ended_at: new Date().toISOString() }).eq('id', callId).is('ended_at', null);
+  }
+}
+
+async function leaveCall(silent) {
+  if (ended) return;
+  ended = true;
+  if (canvasTimer) cancelAnimationFrame(canvasTimer);
+  if (mode === 'lecture' && isHost) {
+    signalChannel?.send({ type: 'broadcast', event: 'signal', payload: { from: myUserId, kind: 'host-ended' } });
+    await window.sb.from('group_calls').update({ ended_at: new Date().toISOString() }).eq('id', callId).is('ended_at', null);
+  } else {
+    await maybeEndIfEmpty();
+  }
+  Object.values(peers).forEach(p => p.pc?.close());
+  localStream?.getTracks().forEach(t => t.stop());
+  if (signalChannel) window.sb.removeChannel(signalChannel);
+  if (!silent) window.location.href = `group-thread.html?id=${groupId}`;
+}
+</script>
+</body>
+</html>

@@ -1297,10 +1297,15 @@ body.chat-page { overflow: hidden; height: 100dvh; }
         <div class="thread-substatus" id="groupMemberCount"></div>
       </div>
     </div>
+    <button class="icon-btn call-icon-btn" id="groupCallBtn" aria-label="Start a call" style="display:none">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M6.6 10.8c1.4 2.8 3.8 5.1 6.6 6.6l2.2-2.2c.3-.3.7-.4 1-.2 1.1.4 2.3.6 3.6.6.6 0 1 .4 1 1V20c0 .6-.4 1-1 1-9.4 0-17-7.6-17-17 0-.6.4-1 1-1h3.5c.6 0 1 .4 1 1 0 1.2.2 2.4.6 3.6.1.4 0 .8-.2 1L6.6 10.8z"/></svg>
+    </button>
     <button class="icon-btn" id="groupInfoBtn" aria-label="Group info">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1"/><circle cx="12" cy="5" r="1"/><circle cx="12" cy="19" r="1"/></svg>
     </button>
   </header>
+
+  <div id="activeCallBanner" style="display:none"></div>
 
   <div class="chat-scroll" id="chatScroll" style="position:relative">
     <div class="thread-messages" id="groupMessages">
@@ -1867,6 +1872,11 @@ async function loadGroup(userId) {
   await loadMessages();
   subscribeToGroupMessages();
 
+  $('groupCallBtn').style.display = 'flex';
+  $('groupCallBtn').addEventListener('click', openCallSheet);
+  checkActiveCall();
+  subscribeToGroupCalls();
+
   presence = C.makePresence(`group-presence-${groupId}`, myUserId, {
     onSync(state) {
       const online = Object.keys(state).length;
@@ -1892,6 +1902,71 @@ async function loadGroup(userId) {
       }
     },
   });
+}
+
+/* ---------- Group calling ---------- */
+let activeCall = null;
+let callsChannel = null;
+
+function openCallSheet() {
+  if (activeCall) { joinCall(activeCall); return; }
+
+  let sheet = document.querySelector('.call-mode-sheet-backdrop');
+  if (!sheet) {
+    sheet = document.createElement('div');
+    sheet.className = 'msg-sheet-backdrop call-mode-sheet-backdrop show';
+    sheet.innerHTML = `
+      <div class="msg-sheet">
+        <div class="grab"></div>
+        <button data-mode="general">📞 Start a general call</button>
+        <button data-mode="lecture" id="lectureModeBtn" style="display:none">🎓 Start a lecture (you're the host)</button>
+        <button data-act="close">✕ Cancel</button>
+      </div>`;
+    document.body.appendChild(sheet);
+    sheet.addEventListener('click', (e) => {
+      if (e.target === sheet || e.target.dataset.act === 'close') { sheet.classList.remove('show'); return; }
+      const mode = e.target.dataset.mode;
+      if (mode) { sheet.classList.remove('show'); startGroupCall(mode); }
+    });
+  }
+  sheet.querySelector('#lectureModeBtn').style.display = isAdmin ? 'flex' : 'none';
+  sheet.classList.add('show');
+}
+
+async function startGroupCall(mode) {
+  const { data: call, error } = await window.sb.from('group_calls')
+    .insert({ group_id: groupId, host_id: myUserId, mode }).select().single();
+  if (error) { console.error('Could not start call:', error); alert("Couldn't start the call — try again."); return; }
+  window.location.href = `group-call.html?groupId=${groupId}&callId=${call.id}&mode=${mode}&role=host`;
+}
+
+function joinCall(call) {
+  window.location.href = `group-call.html?groupId=${groupId}&callId=${call.id}&mode=${call.mode}&role=guest`;
+}
+
+async function checkActiveCall() {
+  const { data } = await window.sb.from('group_calls')
+    .select('*, profiles!group_calls_host_id_fkey(full_name, username)')
+    .eq('group_id', groupId).is('ended_at', null)
+    .order('started_at', { ascending: false }).limit(1).maybeSingle();
+  activeCall = data || null;
+  renderCallBanner();
+}
+
+function renderCallBanner() {
+  const banner = $('activeCallBanner');
+  if (!activeCall) { banner.style.display = 'none'; banner.innerHTML = ''; return; }
+  const hostName = activeCall.profiles?.full_name || activeCall.profiles?.username || 'Someone';
+  const label = activeCall.mode === 'lecture' ? 'lecture' : 'call';
+  banner.style.cssText = 'display:flex;align-items:center;gap:10px;background:var(--brand-soft);color:var(--brand);margin:10px 16px 0;padding:10px 14px;border-radius:12px;font-size:13px;font-weight:700;';
+  banner.innerHTML = `<span style="flex:1">🔴 ${activeCall.mode === 'lecture' ? '🎓' : '📞'} ${C.esc(hostName)} started a ${label} — join now</span><button id="joinCallBtn" class="btn btn-primary" style="padding:8px 14px;font-size:12.5px;">Join</button>`;
+  $('joinCallBtn').addEventListener('click', () => joinCall(activeCall));
+}
+
+function subscribeToGroupCalls() {
+  callsChannel = window.sb.channel(`group-calls-${groupId}`)
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'group_calls', filter: `group_id=eq.${groupId}` }, () => checkActiveCall())
+    .subscribe();
 }
 
 document.addEventListener('cp-ready', (e) => {
