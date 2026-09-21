@@ -3245,7 +3245,12 @@ async function loadGroup(userId) {
   if (!groupId) { box.innerHTML = `<div style="text-align:center;padding:24px;color:var(--text3);font-size:13px;">No group specified.</div>`; return; }
 
   const { data: g, error } = await window.sb.from('groups').select('*').eq('id', groupId).single();
-  if (error || !g) { box.innerHTML = `<div style="text-align:center;padding:24px;color:var(--text3);font-size:13px;">Couldn't load this group.</div>`; return; }
+  if (error || !g) {
+    console.error('loadGroup failed for id', groupId, error);
+    const detail = error ? (error.message || error.code || JSON.stringify(error)) : 'No group data came back (check the id in the URL, and that RLS allows you to read it).';
+    box.innerHTML = `<div style="text-align:center;padding:24px;color:var(--text3);font-size:13px;">Couldn't load this group.<br><span style="font-size:11px;opacity:.7">${esc(detail)}</span></div>`;
+    return;
+  }
   group = g;
 
   $('groupName').textContent = g.name;
