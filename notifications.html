@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Camplugie — Notifications</title>
+<title>Camplugie — Group</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Clash+Display:wght@500;600;700&family=Satoshi:wght@400;500;700;900&display=swap');
 
@@ -971,146 +971,553 @@ img { max-width: 100%; display: block; }
 .cart-summary-row b { font-size: 18px; }
 
 
-/* ===== Notifications / chat list upgrades ===== */
-.tab-count {
-  margin-left: 5px; background: var(--brand); color: #fff; font-size: 10px; font-weight: 800;
-  border-radius: 999px; padding: 1px 6px; display: none;
-}
-.tab-count.show { display: inline-block; }
-.notif-tab.active .tab-count { background: rgba(255,255,255,.28); }
+/* ============================================================
+   WHATSAPP-STYLE CHAT UPGRADE  (chat-thread + group-thread)
+   ============================================================ */
 
-.chat-row { position: relative; }
-.chat-row .avatar img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; }
-.chat-row .avatar .presence-dot {
-  position: absolute; right: 1px; bottom: 1px; width: 12px; height: 12px;
-  border-radius: 50%; background: var(--money); border: 2px solid var(--bg);
-}
-.chat-row-bottom .preview { display: flex; align-items: center; gap: 4px; min-width: 0; }
-.chat-row-bottom .preview .txt { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.chat-row-bottom .preview .msg-ticks svg { width: 14px; height: 10px; }
-.chat-row-bottom .preview .msg-ticks.read { color: #5BC8FF; }
-.chat-unread-badge {
-  background: var(--brand); color: #fff; font-size: 10.5px; font-weight: 800;
-  min-width: 20px; height: 20px; border-radius: 999px; padding: 0 6px;
-  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
-}
-.chat-row.unread .chat-row-top .name { font-weight: 800; }
-.chat-row.unread .chat-row-bottom .preview { color: var(--text); font-weight: 600; }
-.chat-listing-tag { font-size: 10.5px; color: var(--brand); margin-top: 3px; }
-
-.activity-filter { display: flex; gap: 6px; padding: 12px 16px 6px; overflow-x: auto; scrollbar-width: none; }
-.activity-filter::-webkit-scrollbar { display: none; }
-.activity-row { cursor: pointer; }
-.activity-row .activity-icon {
-  width: 38px; height: 38px; border-radius: 50%; display: flex; align-items: center;
-  justify-content: center; font-size: 16px; flex-shrink: 0;
-}
-.activity-icon.social { background: var(--brand-soft); }
-.activity-icon.money { background: rgba(52,211,153,0.16); }
-.activity-icon.system { background: var(--accent-soft); }
-.activity-text { font-size: 13.5px; line-height: 1.4; }
-.activity-time { font-size: 11px; color: var(--text3); margin-top: 3px; }
-
-.call-row {
-  display: flex; align-items: center; gap: 12px; padding: 12px 16px;
-  border-bottom: 1px solid var(--border); cursor: pointer;
-}
-.call-icon { width: 40px; height: 40px; border-radius: 50%; background: var(--surface2); display: flex; align-items: center; justify-content: center; font-size: 17px; flex-shrink: 0; }
-.call-time { font-size: 11px; color: var(--text3); flex-shrink: 0; }
-.call-back-btn { background: none; border: none; color: var(--money); cursor: pointer; padding: 6px; flex-shrink: 0; }
-.call-back-btn svg { width: 19px; height: 19px; }
-
-.call-notice {
-  margin: 10px 16px; padding: 11px 13px; border-radius: var(--radius-sm);
-  background: var(--surface); border: 1px dashed var(--border);
-  font-size: 11.5px; color: var(--text3); line-height: 1.5;
-}
-.call-notice.warn { border-color: var(--accent); color: var(--accent); background: var(--accent-soft); }
-.admin-empty { text-align: center; padding: 26px 16px; color: var(--text3); font-size: 13px; }
-
-.group-row { display: flex; align-items: center; gap: 12px; padding: 12px 16px; border-bottom: 1px solid var(--border); cursor: pointer; }
-.group-row .avatar { width: 48px; height: 48px; border-radius: 15px; font-size: 15px; display: flex; align-items: center; justify-content: center; background: var(--surface2); flex-shrink: 0; font-weight: 800; }
-
-/* ===== Call screen (voice + video) ===== */
-.call-screen {
-  position: fixed; inset: 0; z-index: 200;
-  background: linear-gradient(180deg, var(--brand-dark), #0E0A1D 70%);
-  display: flex; flex-direction: column; align-items: center; justify-content: center;
-  color: #fff; text-align: center; padding: 24px;
-}
-.call-screen.video-on { background: #000; }
-
-#remoteVideo, #localVideo { display: none; }
-.call-screen.video-on #remoteVideo {
-  display: block; position: absolute; inset: 0; width: 100%; height: 100%;
-  object-fit: cover; background: #000;
-}
-.call-screen.video-on #localVideo {
-  display: block; position: absolute; top: calc(16px + var(--safe-top)); right: 14px;
-  width: 104px; height: 142px; object-fit: cover; border-radius: 14px;
-  border: 2px solid rgba(255,255,255,.22); z-index: 3; background: #111; transform: scaleX(-1);
+/* The whole page becomes a fixed app frame: header / scroller / composer.
+   Only the message list scrolls — the header and composer never move,
+   which is the single biggest thing that made the old chat feel "not WhatsApp". */
+body.chat-page { overflow: hidden; height: 100dvh; }
+.chat-frame {
+  position: fixed; inset: 0; left: 50%; transform: translateX(-50%);
+  width: 100%; max-width: 480px;
+  display: flex; flex-direction: column;
+  height: 100dvh;
+  background: var(--bg-gradient), var(--bg);
+  /* The slide-in panels park at translateX(100%) when closed. Without this
+     they spill out of the frame and sit next to the chat on a wide screen. */
+  overflow: hidden;
 }
 
-.call-info { position: relative; z-index: 2; transition: opacity .3s; }
-.call-screen.video-on .call-info {
-  position: absolute; top: calc(18px + var(--safe-top)); left: 16px; text-align: left;
+/* ---- Header ---- */
+.chat-top {
+  flex-shrink: 0; display: flex; align-items: center; gap: 4px;
+  padding: calc(8px + var(--safe-top)) 8px 8px;
+  background: rgba(18,16,29,0.96); backdrop-filter: blur(16px);
+  border-bottom: 1px solid var(--border); z-index: 5;
 }
-.call-screen.video-on .call-info .avatar { display: none; }
-.call-screen.video-on .call-info h2 { font-size: 16px; text-shadow: 0 2px 10px rgba(0,0,0,.7); }
-.call-screen.video-on .call-info p { text-shadow: 0 2px 10px rgba(0,0,0,.7); }
+.chat-top .icon-btn { flex-shrink: 0; }
+.thread-header-info { cursor: pointer; }
+.thread-substatus { font-size: 11px; color: var(--text3); line-height: 1.3; }
+.thread-substatus.online { color: var(--money); font-weight: 700; }
+.thread-substatus.typing { color: var(--brand); font-weight: 700; }
 
-.call-info .avatar {
-  width: 104px; height: 104px; font-size: 34px; margin: 0 auto 18px;
-  border-radius: 50%; display: flex; align-items: center; justify-content: center;
-  background: rgba(255,255,255,.14); font-weight: 800;
+/* ---- Scrolling message area ---- */
+.chat-scroll {
+  flex: 1; min-height: 0; overflow-y: auto; -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
 }
-.call-info .avatar.ringing { animation: ringpulse 1.6s ease-in-out infinite; }
-@keyframes ringpulse {
-  0%,100% { box-shadow: 0 0 0 0 rgba(255,255,255,.28); }
-  50% { box-shadow: 0 0 0 20px rgba(255,255,255,0); }
+.thread-messages {
+  padding: 10px 10px 14px; display: flex; flex-direction: column; gap: 2px;
+  min-height: 100%;
+  background:
+    radial-gradient(circle at 12% 8%, rgba(167,139,250,.07), transparent 42%),
+    radial-gradient(circle at 88% 62%, rgba(251,191,36,.05), transparent 40%);
 }
-.call-info h2 { font-size: 22px; }
-.call-info p { color: rgba(255,255,255,0.75); font-size: 14px; margin-top: 6px; font-variant-numeric: tabular-nums; }
-.call-quality { margin-top: 10px; font-size: 11.5px; color: rgba(255,255,255,.6); }
-.call-quality.bad { color: var(--accent); }
 
-.call-controls, .call-answer {
-  position: absolute; bottom: calc(34px + var(--safe-bottom)); left: 0; right: 0;
-  display: flex; justify-content: center; gap: 14px; z-index: 4; flex-wrap: wrap;
+/* Empty group: a card, not a stray line of grey text. */
+.chat-empty {
+  margin: auto; text-align: center; padding: 26px 22px; max-width: 300px;
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+  box-shadow: var(--shadow);
 }
-.call-answer { gap: 60px; }
-.call-ctl {
-  width: 58px; border: none; background: none; color: #fff;
-  display: flex; flex-direction: column; align-items: center; gap: 6px; cursor: pointer;
-  font: inherit; font-size: 10.5px; font-weight: 600;
+.chat-empty .em { font-size: 34px; display: block; margin-bottom: 10px; }
+.chat-empty b { display: block; font-size: 15.5px; margin-bottom: 5px; }
+.chat-empty span { display: block; font-size: 13px; color: var(--text3); line-height: 1.5; }
+.chat-empty button {
+  margin-top: 14px; background: var(--brand); color: #fff; border: none;
+  border-radius: 999px; padding: 10px 18px; font: inherit; font-size: 13px; font-weight: 800; cursor: pointer;
 }
-.call-ctl svg { width: 22px; height: 22px; }
-.call-ctl > svg {
-  box-sizing: content-box; padding: 16px; border-radius: 50%;
-  background: rgba(255,255,255,0.16); transition: background .15s, transform .12s;
-}
-.call-ctl:active > svg { transform: scale(.92); }
-.call-ctl.active > svg { background: #fff; color: var(--brand-dark); }
-.call-ctl.end > svg { background: var(--danger); }
-.call-ctl.accept > svg { background: var(--money); color: #06281B; }
-.call-ctl.off > svg { background: rgba(255,255,255,0.08); opacity: .55; }
+.chat-pinned { flex-shrink: 0; }
 
-/* Incoming-call overlay shown on every other page */
+/* ---- Bubbles ---- */
+.msg-row { display: flex; margin-top: 2px; align-items: flex-end; gap: 6px; }
+.msg-row.mine { justify-content: flex-end; }
+.msg-row.grouped { margin-top: 1px; }
+.msg-bubble {
+  max-width: 82%; padding: 6px 9px 5px; border-radius: 14px;
+  font-size: 14px; line-height: 1.38; position: relative;
+  word-break: break-word; white-space: pre-wrap;
+  box-shadow: 0 1px 1px rgba(0,0,0,.18);
+}
+.msg-row.mine .msg-bubble { background: var(--brand); color: #fff; border-bottom-right-radius: 4px; }
+.msg-row.theirs .msg-bubble { background: var(--surface2); color: var(--text); border-bottom-left-radius: 4px; }
+.msg-row.grouped .msg-bubble { border-radius: 14px; }
+.msg-row.mine.grouped .msg-bubble { border-bottom-right-radius: 14px; border-top-right-radius: 5px; }
+.msg-row.theirs.grouped .msg-bubble { border-bottom-left-radius: 14px; border-top-left-radius: 5px; }
+.msg-bubble a { text-decoration: underline; opacity: .95; }
+
+/* WhatsApp's trick: a transparent spacer so the timestamp sits on the last line
+   of text instead of dropping onto its own row. */
+.msg-meta-space { display: inline-block; width: 62px; height: 1px; }
+.msg-meta-space.wide { width: 76px; }
+.msg-meta {
+  position: absolute; right: 9px; bottom: 5px;
+  display: flex; align-items: center; gap: 3px;
+  font-size: 10px; line-height: 1; white-space: nowrap;
+}
+.msg-row.mine .msg-meta { color: rgba(255,255,255,0.78); }
+.msg-row.theirs .msg-meta { color: var(--text3); }
+.msg-ticks { display: inline-flex; }
+.msg-ticks svg { width: 15px; height: 11px; }
+.msg-ticks.read { color: #5BC8FF; }
+.msg-ticks.pending { opacity: .55; }
+.msg-edited { font-style: italic; opacity: .75; }
+
+/* ---- Sender name (groups) ---- */
+.msg-sender-name { font-size: 11.5px; font-weight: 800; margin-bottom: 2px; }
+
+/* ---- Reply quote inside a bubble ---- */
+.msg-reply {
+  display: block; border-left: 3px solid rgba(255,255,255,.65);
+  background: rgba(0,0,0,.18); border-radius: 6px;
+  padding: 4px 8px; margin-bottom: 4px; font-size: 12px; line-height: 1.3;
+  max-height: 46px; overflow: hidden; cursor: pointer;
+}
+.msg-row.theirs .msg-reply { border-left-color: var(--brand); background: rgba(255,255,255,.05); }
+.msg-reply b { display: block; font-size: 11.5px; margin-bottom: 1px; }
+.msg-reply span { opacity: .8; }
+
+/* ---- Media in bubbles ---- */
+.msg-bubble.has-media { padding: 4px 4px 5px; }
+.msg-media { border-radius: 11px; max-width: 250px; max-height: 320px; object-fit: cover; display: block; cursor: pointer; }
+.msg-bubble.has-media .msg-caption { padding: 5px 6px 0; font-size: 14px; }
+.msg-bubble.has-media .msg-meta { right: 10px; bottom: 8px; text-shadow: 0 1px 4px rgba(0,0,0,.7); color: #fff !important; }
+.msg-file {
+  display: flex; align-items: center; gap: 9px; padding: 4px 2px; min-width: 180px; cursor: pointer;
+}
+.msg-file .fi { width: 36px; height: 36px; border-radius: 50%; background: rgba(255,255,255,.18); display: flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0; }
+.msg-file .fn { font-size: 13px; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.msg-file .fs { font-size: 11px; opacity: .7; }
+
+/* ---- Voice note ---- */
+.msg-voice { display: flex; align-items: center; gap: 9px; min-width: 190px; padding: 3px 2px; }
+.msg-voice button { width: 34px; height: 34px; border-radius: 50%; border: none; background: rgba(255,255,255,.2); color: inherit; display: flex; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0; }
+.msg-row.theirs .msg-voice button { background: var(--brand); color: #fff; }
+.msg-voice svg { width: 14px; height: 14px; }
+.msg-voice .vbar { flex: 1; height: 3px; border-radius: 3px; background: rgba(255,255,255,.3); position: relative; }
+.msg-row.theirs .msg-voice .vbar { background: rgba(255,255,255,.14); }
+.msg-voice .vbar i { position: absolute; inset: 0 auto 0 0; width: 0; border-radius: 3px; background: currentColor; display: block; }
+.msg-voice .vdur { font-size: 11px; opacity: .8; min-width: 30px; }
+
+/* ---- Separators / system pills ---- */
+.thread-date-sep { text-align: center; margin: 14px 0 8px; }
+.thread-date-sep span { background: var(--surface2); color: var(--text3); font-size: 11px; font-weight: 700; padding: 4px 12px; border-radius: 999px; }
+.thread-system-msg, .system-msg { text-align: center; margin: 8px 0; }
+.thread-system-msg span, .system-msg span { background: var(--brand-soft); color: var(--brand); font-size: 11.5px; font-weight: 700; padding: 6px 14px; border-radius: 999px; display: inline-block; max-width: 86%; }
+.unread-sep { text-align: center; margin: 12px 0 6px; }
+.unread-sep span { background: var(--danger); color: #fff; font-size: 10.5px; font-weight: 800; padding: 4px 12px; border-radius: 999px; letter-spacing: .04em; }
+
+/* ---- Typing bubble ---- */
+.typing-row { display: flex; margin-top: 4px; }
+.typing-bubble { background: var(--surface2); border-radius: 14px; border-bottom-left-radius: 4px; padding: 10px 13px; display: flex; gap: 4px; }
+.typing-bubble i { width: 6px; height: 6px; border-radius: 50%; background: var(--text3); animation: tdot 1.2s infinite; }
+.typing-bubble i:nth-child(2) { animation-delay: .18s; }
+.typing-bubble i:nth-child(3) { animation-delay: .36s; }
+@keyframes tdot { 0%,60%,100% { opacity:.3; transform: translateY(0);} 30% { opacity:1; transform: translateY(-3px);} }
+
+/* ---- Scroll-to-bottom pill ---- */
+.scroll-bottom-btn {
+  position: absolute; right: 14px; bottom: 14px; width: 40px; height: 40px; border-radius: 50%;
+  background: var(--surface3); border: 1px solid var(--border); color: var(--text);
+  display: none; align-items: center; justify-content: center; cursor: pointer; z-index: 4; box-shadow: var(--shadow);
+}
+.scroll-bottom-btn.show { display: flex; }
+.scroll-bottom-btn svg { width: 18px; height: 18px; }
+.scroll-bottom-btn .n {
+  position: absolute; top: -5px; right: -3px; background: var(--brand); color: #fff;
+  font-size: 10px; font-weight: 800; min-width: 18px; height: 18px; border-radius: 999px;
+  display: none; align-items: center; justify-content: center; padding: 0 5px;
+}
+.scroll-bottom-btn .n.show { display: flex; }
+
+/* ---- Composer ---- */
+.thread-composer {
+  position: relative; left: auto; right: auto; bottom: auto; transform: none;
+  flex-shrink: 0; width: 100%; max-width: none; box-sizing: border-box;
+  display: flex; gap: 7px; align-items: flex-end;
+  padding: 8px 10px calc(8px + var(--safe-bottom));
+  background: rgba(18,16,29,0.97); backdrop-filter: blur(14px); border-top: 1px solid var(--border);
+}
+.composer-pill {
+  flex: 1; display: flex; align-items: flex-end; gap: 4px; min-width: 0;
+  background: var(--surface2); border: 1px solid var(--border); border-radius: 22px; padding: 3px 4px 3px 10px;
+}
+.composer-pill textarea {
+  flex: 1; background: none; border: none; outline: none; resize: none;
+  font: inherit; font-size: 15px; line-height: 1.35; color: var(--text);
+  padding: 9px 2px; max-height: 120px; min-height: 20px;
+}
+.composer-pill textarea::placeholder { color: var(--text3); }
+.composer-icon {
+  background: none; border: none; color: var(--text3); width: 34px; height: 34px;
+  display: flex; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0; border-radius: 50%;
+}
+.composer-icon svg { width: 20px; height: 20px; }
+.composer-icon:active { background: var(--surface3); }
+.thread-send-btn { width: 44px; height: 44px; border-radius: 50%; background: var(--brand); color: #fff; border: none; display: flex; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0; transition: transform .12s; }
+.thread-send-btn:active { transform: scale(.92); }
+.thread-send-btn svg { width: 19px; height: 19px; }
+.thread-send-btn.recording { background: var(--danger); }
+
+/* Reply / edit preview above the composer */
+.composer-reply {
+  display: none; align-items: center; gap: 9px; padding: 7px 12px;
+  background: var(--surface); border-top: 1px solid var(--border); flex-shrink: 0;
+}
+.composer-reply.show { display: flex; }
+.composer-reply .bar { width: 3px; align-self: stretch; border-radius: 3px; background: var(--brand); flex-shrink: 0; }
+.composer-reply .txt { flex: 1; min-width: 0; font-size: 12.5px; }
+.composer-reply .txt b { display: block; color: var(--brand); font-size: 11.5px; }
+.composer-reply .txt span { color: var(--text3); display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.composer-reply button { background: none; border: none; color: var(--text3); font-size: 20px; cursor: pointer; line-height: 1; padding: 0 4px; }
+
+/* Recording bar */
+.rec-bar { display: none; align-items: center; gap: 10px; flex: 1; padding: 0 6px; }
+.rec-bar.show { display: flex; }
+.rec-bar .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--danger); animation: recpulse 1s infinite; }
+@keyframes recpulse { 0%,100% { opacity: 1; } 50% { opacity: .25; } }
+.rec-bar .t { font-size: 14px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.rec-bar .hint { font-size: 12px; color: var(--text3); flex: 1; }
+.rec-bar .cancel { background: none; border: none; color: var(--danger); font-size: 13px; font-weight: 800; cursor: pointer; }
+
+/* ---- Long-press action sheet ---- */
+.msg-sheet-backdrop {
+  position: fixed; inset: 0; background: rgba(0,0,0,.55); z-index: 300;
+  display: none; align-items: flex-end; justify-content: center; backdrop-filter: blur(2px);
+}
+.msg-sheet-backdrop.show { display: flex; }
+.msg-sheet {
+  width: 100%; max-width: 480px; background: var(--surface); border-radius: 20px 20px 0 0;
+  padding: 10px 0 calc(14px + var(--safe-bottom)); border: 1px solid var(--border); border-bottom: none;
+  animation: sheetUp .2s ease;
+}
+@keyframes sheetUp { from { transform: translateY(24px); opacity: .5; } }
+.msg-sheet .grab { width: 38px; height: 4px; border-radius: 4px; background: var(--surface3); margin: 0 auto 10px; }
+.msg-sheet button {
+  width: 100%; background: none; border: none; color: var(--text); font: inherit; font-size: 15px;
+  text-align: left; padding: 14px 22px; cursor: pointer; display: flex; align-items: center; gap: 13px;
+}
+.msg-sheet button:active { background: var(--surface2); }
+.msg-sheet button.danger { color: var(--danger); }
+.msg-sheet .reactions { display: flex; justify-content: space-around; padding: 6px 14px 12px; border-bottom: 1px solid var(--border); margin-bottom: 4px; }
+.msg-sheet .reactions button { width: auto; font-size: 27px; padding: 6px; border-radius: 50%; justify-content: center; }
+
+/* Reaction chip under a bubble */
+.msg-reacts { display: flex; gap: 3px; margin-top: -6px; margin-bottom: 4px; }
+.msg-row.mine + .msg-reacts { justify-content: flex-end; padding-right: 6px; }
+.msg-reacts span { background: var(--surface3); border: 1px solid var(--border); border-radius: 999px; padding: 1px 7px; font-size: 12px; }
+
+/* Image lightbox */
+.img-viewer { position: fixed; inset: 0; background: rgba(0,0,0,.94); z-index: 400; display: none; align-items: center; justify-content: center; }
+.img-viewer.show { display: flex; }
+.img-viewer img { max-width: 100%; max-height: 100%; object-fit: contain; }
+.img-viewer button { position: absolute; top: calc(14px + var(--safe-top)); right: 16px; background: rgba(255,255,255,.16); border: none; color: #fff; width: 38px; height: 38px; border-radius: 50%; font-size: 20px; cursor: pointer; }
+
+/* Upload progress pill */
+.upload-pill { position: absolute; left: 50%; transform: translateX(-50%); bottom: 12px; background: var(--surface3); border: 1px solid var(--border); border-radius: 999px; padding: 7px 15px; font-size: 12px; font-weight: 700; z-index: 6; display: none; }
+.upload-pill.show { display: block; }
+
+/* Attach menu */
+.attach-menu {
+  position: absolute; bottom: 68px; left: 12px; background: var(--surface); border: 1px solid var(--border);
+  border-radius: 16px; padding: 7px; box-shadow: var(--shadow-lg); z-index: 20; display: none; min-width: 190px;
+}
+.attach-menu.show { display: block; }
+.attach-menu button { width: 100%; background: none; border: none; color: var(--text); font: inherit; font-size: 14px; text-align: left; padding: 11px 13px; border-radius: 11px; cursor: pointer; display: flex; align-items: center; gap: 11px; }
+.attach-menu button:active { background: var(--surface2); }
+.attach-menu .em { width: 32px; height: 32px; border-radius: 50%; background: var(--brand-soft); display: flex; align-items: center; justify-content: center; font-size: 15px; }
+
+
+/* ============================================================
+   FIXES: composer alignment, desktop framing, file bubbles,
+   and the incoming-call popup (this page is a fixed frame, so
+   the popup needs its own styles or it renders hidden behind it).
+   ============================================================ */
+
+/* Desktop: present the chat as a centred panel instead of a bare column. */
+@media (min-width: 720px) {
+  .chat-frame {
+    border-left: 1px solid var(--border); border-right: 1px solid var(--border);
+    box-shadow: 0 0 90px rgba(124,58,237,.16);
+  }
+}
+
+/* File bubbles: name on one line, hint underneath, long names ellipsised. */
+.msg-file > span:last-child { min-width: 0; display: block; }
+.msg-file .fn, .msg-file .fs { display: block; }
+.msg-file .fn { max-width: 210px; }
+
+/* Quoted reply: show up to two full lines instead of clipping mid-line. */
+.msg-reply { max-height: none; white-space: normal; }
+.msg-reply span { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+
+/* Incoming-call popup */
 .incoming-call {
-  position: fixed; inset: 0; z-index: 500;
+  position: fixed; inset: 0; z-index: 1000;
   background: linear-gradient(180deg, var(--brand-dark), #0E0A1D 70%);
   display: flex; flex-direction: column; align-items: center; justify-content: center;
-  color: #fff; text-align: center; padding: 24px;
+  color: #fff; text-align: center;
+  padding: calc(24px + var(--safe-top)) 24px calc(24px + var(--safe-bottom));
 }
 .incoming-call .avatar {
   width: 104px; height: 104px; font-size: 34px; border-radius: 50%; margin-bottom: 18px;
   background: rgba(255,255,255,.14); display: flex; align-items: center; justify-content: center;
   font-weight: 800; animation: ringpulse 1.6s ease-in-out infinite;
 }
-.incoming-call h2 { font-size: 22px; }
-.incoming-call p { color: rgba(255,255,255,.75); font-size: 14px; margin-top: 6px; }
+@keyframes ringpulse {
+  0%,100% { box-shadow: 0 0 0 0 rgba(255,255,255,.28); }
+  50% { box-shadow: 0 0 0 20px rgba(255,255,255,0); }
+}
+.incoming-call h2 { font-size: 22px; margin: 0; max-width: 100%; overflow-wrap: anywhere; }
+.incoming-call p { color: rgba(255,255,255,.75); font-size: 14px; margin: 6px 0 0; }
 .incoming-call .row { display: flex; gap: 60px; margin-top: 46px; }
+.call-ctl {
+  width: 64px; border: none; background: none; color: #fff;
+  display: flex; flex-direction: column; align-items: center; gap: 8px; cursor: pointer;
+  font: inherit; font-size: 12px; font-weight: 700;
+}
+.call-ctl svg { width: 24px; height: 24px; }
+.call-ctl > svg {
+  box-sizing: content-box; padding: 17px; border-radius: 50%;
+  background: rgba(255,255,255,0.16); transition: transform .12s;
+}
+.call-ctl:active > svg { transform: scale(.92); }
+.call-ctl.end > svg { background: var(--danger); }
+.call-ctl.accept > svg { background: var(--money); color: #06281B; }
+@media (max-height: 460px) {
+  .incoming-call .avatar { width: 64px; height: 64px; font-size: 22px; margin-bottom: 10px; }
+  .incoming-call .row { margin-top: 20px; }
+}
 
+/* ============================================================
+   GROUP CHAT — WhatsApp-parity additions
+   (pinned bar, select mode, search, mentions, info panel,
+    member rows, message-info sheet, call chooser)
+   ============================================================ */
+
+/* ---- Pinned message bar ---- */
+.pin-bar {
+  display: none; align-items: center; gap: 10px; flex-shrink: 0;
+  padding: 8px 14px; background: var(--surface); border-bottom: 1px solid var(--border);
+  cursor: pointer;
+}
+.pin-bar.show { display: flex; }
+.pin-bar .ic { color: var(--accent); flex-shrink: 0; font-size: 13px; }
+.pin-bar .tx { flex: 1; min-width: 0; font-size: 12.5px; }
+.pin-bar .tx b { display: block; font-size: 11px; color: var(--accent); }
+.pin-bar .tx span { display: block; color: var(--text2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pin-bar button { background: none; border: none; color: var(--text3); font-size: 18px; line-height: 1; cursor: pointer; padding: 0 2px; }
+
+/* ---- Banner row for locked composer ---- */
+.composer-locked {
+  flex-shrink: 0; display: none; align-items: center; justify-content: center; gap: 8px;
+  padding: 14px 16px calc(14px + var(--safe-bottom));
+  background: rgba(18,16,29,0.97); border-top: 1px solid var(--border);
+  font-size: 13px; color: var(--text3); font-weight: 600; text-align: center;
+}
+.composer-locked.show { display: flex; }
+
+/* ---- Selection mode header ---- */
+.select-top {
+  position: absolute; top: 0; left: 0; right: 0; z-index: 8;
+  display: none; align-items: center; gap: 6px;
+  padding: calc(8px + var(--safe-top)) 8px 8px;
+  background: var(--surface); border-bottom: 1px solid var(--border);
+}
+.select-top.show { display: flex; }
+.select-top .count { flex: 1; font-size: 16px; font-weight: 800; padding-left: 6px; }
+.msg-row.selected .msg-bubble { outline: 2px solid var(--accent); }
+.msg-row.selectable { cursor: pointer; }
+
+/* ---- In-chat search ---- */
+.search-top {
+  position: absolute; top: 0; left: 0; right: 0; z-index: 8;
+  display: none; align-items: center; gap: 6px;
+  padding: calc(8px + var(--safe-top)) 8px 8px;
+  background: var(--surface); border-bottom: 1px solid var(--border);
+}
+.search-top.show { display: flex; }
+.search-top input {
+  flex: 1; min-width: 0; background: var(--surface2); border: 1px solid var(--border);
+  border-radius: 999px; padding: 10px 14px; font: inherit; font-size: 14px; color: var(--text); outline: none;
+}
+.search-top .hits { font-size: 12px; color: var(--text3); font-variant-numeric: tabular-nums; min-width: 44px; text-align: center; }
+mark.hit { background: var(--accent); color: #1A1200; border-radius: 3px; padding: 0 1px; }
+.msg-bubble.search-focus { outline: 2px solid var(--accent); }
+
+/* ---- Mentions ---- */
+.mention { font-weight: 800; color: var(--accent); }
+.msg-row.theirs .mention { color: var(--accent); }
+.msg-row.mine .mention { color: #FFF3CC; }
+.msg-row.mentions-me .msg-bubble { border-left: 3px solid var(--accent); }
+
+.mention-pop {
+  position: absolute; bottom: 100%; left: 10px; right: 10px; margin-bottom: 6px;
+  background: var(--surface); border: 1px solid var(--border); border-radius: 14px;
+  box-shadow: var(--shadow-lg); max-height: 210px; overflow-y: auto; z-index: 30; display: none;
+}
+.mention-pop.show { display: block; }
+.mention-pop button {
+  width: 100%; background: none; border: none; color: var(--text); font: inherit; font-size: 14px;
+  display: flex; align-items: center; gap: 10px; padding: 9px 12px; cursor: pointer; text-align: left;
+}
+.mention-pop button:active, .mention-pop button.active { background: var(--surface2); }
+.mention-pop .av { width: 30px; height: 30px; border-radius: 50%; background: var(--brand-soft); color: var(--brand); display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 800; flex-shrink: 0; overflow: hidden; }
+.mention-pop .av img { width: 100%; height: 100%; object-fit: cover; }
+.mention-pop .un { font-size: 11.5px; color: var(--text3); }
+
+/* ---- Jump-to-unread pill ---- */
+.unread-jump {
+  position: absolute; top: 10px; left: 50%; transform: translateX(-50%);
+  background: var(--brand); color: #fff; border: none; border-radius: 999px;
+  padding: 7px 15px; font: inherit; font-size: 12px; font-weight: 800;
+  box-shadow: var(--shadow); z-index: 5; display: none; cursor: pointer;
+}
+.unread-jump.show { display: block; }
+
+/* ---- Swipe-to-reply ---- */
+.msg-row { transition: transform .16s ease; }
+.msg-row.swiping { transition: none; }
+.swipe-hint {
+  position: absolute; left: 10px; top: 50%; transform: translateY(-50%);
+  opacity: 0; color: var(--brand); font-size: 15px; pointer-events: none;
+}
+
+/* ---- Group info panel ---- */
+.gi-panel {
+  position: absolute; inset: 0; z-index: 60;
+  background: var(--bg-gradient), var(--bg);
+  display: flex; flex-direction: column;
+  transform: translateX(100%);
+  visibility: hidden; pointer-events: none;
+  transition: transform .22s ease, visibility 0s linear .22s;
+}
+.gi-panel.show {
+  transform: none; visibility: visible; pointer-events: auto;
+  transition: transform .22s ease, visibility 0s;
+}
+.gi-body { flex: 1; min-height: 0; overflow-y: auto; padding-bottom: calc(26px + var(--safe-bottom)); }
+.gi-hero { text-align: center; padding: 22px 18px 14px; }
+.gi-hero .av {
+  width: 92px; height: 92px; border-radius: 50%; margin: 0 auto 12px; overflow: hidden;
+  background: linear-gradient(135deg, var(--brand), var(--brand-dark));
+  display: flex; align-items: center; justify-content: center; font-size: 30px; font-weight: 800;
+}
+.gi-hero .av img { width: 100%; height: 100%; object-fit: cover; }
+.gi-hero h2 { font-size: 21px; }
+.gi-hero .sub { font-size: 12.5px; color: var(--text3); margin-top: 4px; }
+.gi-hero .desc { font-size: 13.5px; color: var(--text2); margin-top: 10px; line-height: 1.45; white-space: pre-wrap; }
+
+.gi-quick { display: flex; justify-content: center; gap: 12px; padding: 4px 16px 16px; flex-wrap: wrap; }
+.gi-quick button {
+  background: var(--surface2); border: 1px solid var(--border); color: var(--text);
+  border-radius: 14px; padding: 10px 14px; font: inherit; font-size: 12.5px; font-weight: 700;
+  display: flex; flex-direction: column; align-items: center; gap: 4px; cursor: pointer; min-width: 74px;
+}
+.gi-quick button .em { font-size: 17px; }
+.gi-quick button.on { border-color: var(--brand); color: var(--brand); }
+
+.gi-section { border-top: 8px solid rgba(0,0,0,.22); padding: 14px 16px 6px; }
+.gi-section > h3 { font-size: 12px; letter-spacing: .06em; text-transform: uppercase; color: var(--text3); margin-bottom: 10px; }
+.gi-row {
+  display: flex; align-items: center; gap: 12px; padding: 11px 2px; cursor: pointer;
+  font-size: 14.5px;
+}
+.gi-row .av { width: 40px; height: 40px; border-radius: 50%; flex-shrink: 0; overflow: hidden; background: var(--surface3); color: var(--text2); display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 800; }
+.gi-row .av img { width: 100%; height: 100%; object-fit: cover; }
+.gi-row .tx { flex: 1; min-width: 0; }
+.gi-row .tx b { display: block; font-size: 14.5px; font-weight: 700; }
+.gi-row .tx span { display: block; font-size: 12px; color: var(--text3); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.gi-tag { font-size: 10.5px; font-weight: 800; padding: 3px 8px; border-radius: 999px; background: var(--brand-soft); color: var(--brand); flex-shrink: 0; }
+.gi-tag.owner { background: var(--accent-soft); color: var(--accent); }
+.gi-tag.lecturer { background: rgba(52,211,153,.16); color: var(--money); }
+.gi-danger { color: var(--danger); font-weight: 700; }
+
+.gi-media { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 6px; scrollbar-width: none; }
+.gi-media::-webkit-scrollbar { display: none; }
+.gi-media img, .gi-media .doc {
+  width: 84px; height: 84px; border-radius: 12px; object-fit: cover; flex-shrink: 0; cursor: pointer;
+  background: var(--surface2); display: flex; align-items: center; justify-content: center; font-size: 24px;
+}
+
+.gi-add { display: flex; gap: 8px; margin: 6px 0 10px; }
+.gi-add input {
+  flex: 1; min-width: 0; background: var(--surface2); border: 1px solid var(--border); border-radius: 999px;
+  padding: 11px 15px; font: inherit; font-size: 14px; color: var(--text); outline: none;
+}
+.gi-add button { background: var(--brand); color: #fff; border: none; border-radius: 999px; padding: 0 18px; font: inherit; font-size: 13.5px; font-weight: 800; cursor: pointer; }
+
+.gi-toggle { display: flex; align-items: center; gap: 12px; padding: 12px 2px; font-size: 14.5px; }
+.gi-toggle .tx { flex: 1; }
+.gi-toggle .tx span { display: block; font-size: 12px; color: var(--text3); }
+.switch { width: 46px; height: 27px; border-radius: 999px; background: var(--surface3); border: none; position: relative; cursor: pointer; flex-shrink: 0; transition: background .16s; }
+.switch i { position: absolute; top: 3px; left: 3px; width: 21px; height: 21px; border-radius: 50%; background: #fff; transition: transform .16s; }
+.switch.on { background: var(--money); }
+.switch.on i { transform: translateX(19px); }
+
+/* ---- Message info sheet rows ---- */
+.mi-list { max-height: 44vh; overflow-y: auto; padding: 0 8px; }
+.mi-row { display: flex; align-items: center; gap: 10px; padding: 9px 14px; font-size: 14px; }
+.mi-row .av { width: 32px; height: 32px; border-radius: 50%; background: var(--surface3); display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 800; flex-shrink: 0; }
+.mi-row .st { margin-left: auto; font-size: 11.5px; color: var(--text3); }
+.mi-row .st.read { color: #5BC8FF; font-weight: 700; }
+.msg-sheet h4 { padding: 4px 22px 10px; font-size: 12px; letter-spacing: .06em; text-transform: uppercase; color: var(--text3); }
+
+/* ---- Call chooser sheet ---- */
+.call-mode-sheet-backdrop .msg-sheet button .em { font-size: 19px; width: 34px; text-align: center; }
+.call-mode-sheet-backdrop .msg-sheet button small { display: block; font-size: 11.5px; color: var(--text3); font-weight: 500; }
+.call-mode-sheet-backdrop .msg-sheet button > span.col { display: flex; flex-direction: column; gap: 2px; }
+
+/* ---- Add people / invite picker ---- */
+.gi-addpeople {
+  width: 100%; display: flex; align-items: center; gap: 12px; margin: 2px 0 10px;
+  background: none; border: none; color: var(--text); font: inherit; font-size: 14.5px;
+  padding: 11px 2px; cursor: pointer; text-align: left;
+}
+.gi-addpeople .ic {
+  width: 40px; height: 40px; border-radius: 50%; background: var(--brand); color: #fff;
+  display: flex; align-items: center; justify-content: center; font-size: 22px; font-weight: 700; flex-shrink: 0;
+}
+.gi-addpeople .tx b { display: block; font-weight: 700; }
+.gi-addpeople .tx span { display: block; font-size: 12px; color: var(--text3); }
+
+.pp-search { padding: 10px 14px 6px; flex-shrink: 0; }
+.pp-search input {
+  width: 100%; background: var(--surface2); border: 1px solid var(--border); border-radius: 999px;
+  padding: 12px 16px; font: inherit; font-size: 14.5px; color: var(--text); outline: none;
+}
+.pp-list { flex: 1; min-height: 0; overflow-y: auto; padding: 4px 14px calc(20px + var(--safe-bottom)); }
+.pp-row { display: flex; align-items: center; gap: 11px; padding: 10px 2px; }
+.pp-row .av {
+  width: 42px; height: 42px; border-radius: 50%; flex-shrink: 0; overflow: hidden;
+  background: var(--surface3); color: var(--text2);
+  display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 800;
+}
+.pp-row .av img { width: 100%; height: 100%; object-fit: cover; }
+.pp-row .tx { flex: 1; min-width: 0; }
+.pp-row .tx b { display: block; font-size: 14.5px; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pp-row .tx span { display: block; font-size: 12px; color: var(--text3); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pp-btn {
+  flex-shrink: 0; border: 1px solid var(--brand); background: none; color: var(--brand);
+  border-radius: 999px; padding: 7px 14px; font: inherit; font-size: 12.5px; font-weight: 800; cursor: pointer;
+}
+.pp-btn.solid { background: var(--brand); color: #fff; }
+.pp-btn.plug { border-color: var(--accent); color: var(--accent); margin-right: 6px; }
+.pp-btn.plug.done { border-color: var(--border); color: var(--text3); }
+.pp-btn[disabled] { opacity: .5; cursor: default; }
+.pp-empty { text-align: center; color: var(--text3); font-size: 13.5px; padding: 26px 10px; }
+.pp-invite {
+  display: flex; align-items: center; gap: 11px; padding: 12px 2px; margin-bottom: 4px;
+  border-bottom: 1px solid var(--border); cursor: pointer;
+}
+.pp-invite .ic { width: 42px; height: 42px; border-radius: 50%; background: var(--brand-soft); color: var(--brand); display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; }
+.pp-invite b { display: block; font-size: 14.5px; }
+.pp-invite span { display: block; font-size: 12px; color: var(--text3); }
+
+/* ---- Forward picker ---- */
+.fw-list { max-height: 46vh; overflow-y: auto; }
 </style>
 <link rel="manifest" href="/manifest.webmanifest">
 <meta name="theme-color" content="#7C3AED">
@@ -1122,99 +1529,206 @@ img { max-width: 100%; display: block; }
 <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
 <link rel="icon" href="/icons/icon-192.png" type="image/png">
 </head>
-<body>
+<body class="chat-page">
 
-<div class="app-shell">
+<div class="chat-frame">
 
-  <header class="cp-page-header">
-    <h1>Chats</h1>
-    <button class="icon-btn" id="markAllReadBtn" aria-label="Mark all read" style="margin-left:auto">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 7 5 11 12.5 2"/><polyline points="7 10.6 8.2 11.8 16.8 2"/></svg>
+  <header class="chat-top" id="mainTop">
+    <a class="icon-btn" href="groups.html" aria-label="Back">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+    </a>
+    <div class="thread-header-info" id="groupHeaderInfo">
+      <div class="avatar" id="groupAvatar">··</div>
+      <div style="min-width:0">
+        <b id="groupName">Loading…</b>
+        <div class="thread-substatus" id="groupMemberCount"></div>
+      </div>
+    </div>
+    <button class="icon-btn" id="groupSearchBtn" aria-label="Search in chat">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.7" y2="16.7"/></svg>
+    </button>
+    <button class="icon-btn call-icon-btn" id="groupCallBtn" aria-label="Start a call" style="display:none">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M6.6 10.8c1.4 2.8 3.8 5.1 6.6 6.6l2.2-2.2c.3-.3.7-.4 1-.2 1.1.4 2.3.6 3.6.6.6 0 1 .4 1 1V20c0 .6-.4 1-1 1-9.4 0-17-7.6-17-17 0-.6.4-1 1-1h3.5c.6 0 1 .4 1 1 0 1.2.2 2.4.6 3.6.1.4 0 .8-.2 1L6.6 10.8z"/></svg>
+    </button>
+    <button class="icon-btn" id="groupInfoBtn" aria-label="Group info">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1"/><circle cx="12" cy="5" r="1"/><circle cx="12" cy="19" r="1"/></svg>
     </button>
   </header>
 
-  <div class="notif-tabs" style="overflow-x:auto;scrollbar-width:none">
-    <button class="notif-tab active" data-panel="chats">Chats<span class="tab-count" id="chatsCount"></span></button>
-    <button class="notif-tab" data-panel="groups">Groups<span class="tab-count" id="groupsCount"></span></button>
-    <button class="notif-tab" data-panel="calls">Calls</button>
-    <button class="notif-tab" data-panel="activity">Activity<span class="dot" id="activityDot"></span></button>
+  <!-- Selection-mode header (WhatsApp replaces the bar when you pick messages) -->
+  <div class="select-top" id="selectTop">
+    <button class="icon-btn" id="selectCancelBtn" aria-label="Cancel">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </button>
+    <span class="count" id="selectCount">1 selected</span>
+    <button class="icon-btn" id="selCopyBtn" aria-label="Copy">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>
+    </button>
+    <button class="icon-btn" id="selForwardBtn" aria-label="Forward">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 17 20 12 15 7"/><path d="M4 18v-2a4 4 0 0 1 4-4h12"/></svg>
+    </button>
+    <button class="icon-btn" id="selDeleteBtn" aria-label="Delete">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/></svg>
+    </button>
   </div>
 
-  <!-- ===== CHATS ===== -->
-  <div class="notif-panel active" id="chatsPanel">
-    <div class="chat-search-wrap" style="display:flex;gap:8px;align-items:center;padding:10px 16px 4px">
-      <div class="cp-search" style="flex:1">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-        <input type="text" id="convoSearchInput" placeholder="Search conversations…" autocomplete="off">
-      </div>
-      <button class="icon-btn" id="newChatBtn" aria-label="New chat">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
-      </button>
+  <!-- In-chat search header -->
+  <div class="search-top" id="searchTop">
+    <button class="icon-btn" id="searchCloseBtn" aria-label="Close search">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="15 18 9 12 15 6"/></svg>
+    </button>
+    <input id="searchInput" type="search" placeholder="Search in this group…" autocomplete="off">
+    <span class="hits" id="searchHits"></span>
+    <button class="icon-btn" id="searchPrevBtn" aria-label="Previous match">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"/></svg>
+    </button>
+    <button class="icon-btn" id="searchNextBtn" aria-label="Next match">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+    </button>
+  </div>
+
+  <!-- Pinned message -->
+  <div class="pin-bar" id="pinBar">
+    <span class="ic">📌</span>
+    <span class="tx"><b>Pinned message</b><span id="pinText"></span></span>
+    <button id="pinCloseBtn" aria-label="Unpin">×</button>
+  </div>
+
+  <div id="activeCallBanner" style="display:none"></div>
+
+  <div class="chat-scroll" id="chatScroll" style="position:relative">
+    <button class="unread-jump" id="unreadJump">↑ Unread messages</button>
+    <div class="thread-messages" id="groupMessages">
+      <div style="text-align:center;padding:24px;color:var(--text3);font-size:13px;">Loading…</div>
+    </div>
+    <div class="upload-pill" id="uploadPill">Uploading…</div>
+  </div>
+
+  <button class="scroll-bottom-btn" id="scrollBottomBtn" aria-label="Scroll to latest">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+    <span class="n"></span>
+  </button>
+
+  <div class="composer-reply" id="composerReply">
+    <span class="bar"></span>
+    <span class="txt"><b id="replyName"></b><span id="replyText"></span></span>
+    <button id="cancelReplyBtn" aria-label="Cancel reply">×</button>
+  </div>
+
+  <div class="composer-locked" id="composerLocked">🔒 Only admins can send messages in this group</div>
+
+  <div class="thread-composer" id="threadComposer">
+    <div class="attach-menu" id="attachMenu">
+      <button data-pick="image"><span class="em">🖼️</span> Photo</button>
+      <button data-pick="video"><span class="em">🎬</span> Video</button>
+      <button data-pick="file"><span class="em">📎</span> Document</button>
+      <button data-pick="announce" id="announceOpt"><span class="em">📣</span> Announcement</button>
     </div>
 
-    <div id="newChatPanel" style="display:none">
-      <div class="cp-search-wrap" style="padding:8px 16px 0">
-        <div class="cp-search">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-          <input type="text" id="userSearchInput" placeholder="Search students by name…" autocomplete="off">
+    <div class="mention-pop" id="mentionPop"></div>
+
+    <button class="composer-icon" id="attachBtn" aria-label="Attach">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
+    </button>
+
+    <div class="composer-pill" id="composerPill">
+      <textarea id="groupMessageInput" rows="1" placeholder="Message the group…" autocomplete="off"></textarea>
+    </div>
+
+    <div class="rec-bar" id="recBar">
+      <span class="dot"></span>
+      <span class="t" id="recTime">0:00</span>
+      <span class="hint">Recording — tap ✓ to send</span>
+      <button class="cancel" id="recCancel">Cancel</button>
+    </div>
+
+    <button class="thread-send-btn" id="groupSendBtn" aria-label="Send">
+      <svg id="sendIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/></svg>
+    </button>
+  </div>
+
+  <!-- ===== Group info panel (slides in over the thread) ===== -->
+  <section class="gi-panel" id="groupInfoPanel" aria-hidden="true">
+    <header class="chat-top">
+      <button class="icon-btn" id="giBackBtn" aria-label="Back">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+      </button>
+      <div style="flex:1;padding-left:4px"><b style="font-size:16px">Group info</b></div>
+      <button class="icon-btn" id="giEditBtn" aria-label="Edit group" style="display:none">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>
+      </button>
+    </header>
+
+    <div class="gi-body">
+      <div class="gi-hero">
+        <div class="av" id="giAvatar">··</div>
+        <h2 id="giName">Group</h2>
+        <div class="sub" id="giSub">Group · 0 members</div>
+        <div class="desc" id="giDesc"></div>
+      </div>
+
+      <div class="gi-quick">
+        <button id="giCallBtn"><span class="em">📞</span>Call</button>
+        <button id="giInviteBtn"><span class="em">🔗</span>Invite</button>
+        <button id="giMuteBtn"><span class="em">🔔</span>Mute</button>
+      </div>
+
+      <div class="gi-section" id="giMediaSection">
+        <h3>Media, links &amp; docs</h3>
+        <div class="gi-media" id="giMedia"></div>
+      </div>
+
+      <div class="gi-section" id="giSettingsSection" style="display:none">
+        <h3>Group settings</h3>
+        <div class="gi-toggle">
+          <div class="tx"><b>Send messages</b><span>Restrict to admins only (announcement group)</span></div>
+          <button class="switch" id="giOnlyAdmins" aria-label="Only admins can send"><i></i></button>
         </div>
       </div>
-      <div id="userSearchResults"></div>
+
+      <div class="gi-section">
+        <h3 id="giMembersTitle">Members</h3>
+        <button class="gi-addpeople" id="giAddPeopleBtn" style="display:none">
+          <span class="ic">+</span>
+          <span class="tx"><b>Add people</b><span>Search anyone on Camplugie</span></span>
+        </button>
+        <div id="giMembers"></div>
+      </div>
+
+      <div class="gi-section">
+        <div class="gi-row gi-danger" id="giLeaveBtn"><span style="width:40px;text-align:center">🚪</span><div class="tx"><b>Exit group</b></div></div>
+        <div class="gi-row gi-danger" id="giDeleteBtn" style="display:none"><span style="width:40px;text-align:center">🗑️</span><div class="tx"><b>Delete group</b></div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== Add people / invite picker ===== -->
+  <section class="gi-panel" id="peoplePanel" aria-hidden="true">
+    <header class="chat-top">
+      <button class="icon-btn" id="ppBackBtn" aria-label="Back">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+      </button>
+      <div style="flex:1;padding-left:4px;min-width:0">
+        <b style="font-size:16px">Add people</b>
+        <div class="thread-substatus" id="ppSub">Tap Add to put someone in this group</div>
+      </div>
+    </header>
+
+    <div class="pp-search">
+      <input id="ppSearch" type="search" placeholder="Search by name or @username…" autocomplete="off">
     </div>
 
-    <div class="chat-list" id="chatList">
-      <div class="admin-empty">Loading…</div>
-    </div>
-  </div>
-
-  <!-- ===== GROUPS ===== -->
-  <div class="notif-panel" id="groupsPanel">
-    <div class="admin-empty">Loading…</div>
-  </div>
-
-  <!-- ===== CALLS ===== -->
-  <div class="notif-panel" id="callsPanel">
-    <div class="admin-empty">Loading…</div>
-  </div>
-
-  <!-- ===== ACTIVITY ===== -->
-  <div class="notif-panel" id="activityPanel">
-    <div class="activity-filter" id="activityFilter">
-      <button class="fb-filter-chip active" data-filter="all">All</button>
-      <button class="fb-filter-chip" data-filter="unread">Unread</button>
-      <button class="fb-filter-chip" data-filter="money">Money</button>
-      <button class="fb-filter-chip" data-filter="social">Social</button>
-    </div>
-    <div id="activityList"><div class="admin-empty">Loading…</div></div>
-  </div>
+    <div class="pp-list" id="ppList"></div>
+  </section>
 
 </div>
 
-<nav class="cp-bottom-nav">
-  <a class="cp-nav-item" href="home.html">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-    Home
-  </a>
-  <a class="cp-nav-item" href="yard.html">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
-    Yard
-  </a>
-  <a class="cp-nav-fab" href="create.html" aria-label="Sell">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-  </a>
-  <button class="cp-nav-item active" data-tab="notifications" style="position:relative">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
-    Notifications
-  </button>
-  <a class="cp-nav-item" href="profile.html">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-    Profile
-  </a>
-</nav>
+<input type="file" id="filePicker" style="display:none">
 
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <script src="config.js?v=3"></script>
+<script src="chat-core.js?v=4"></script>
 <script>
 // Shared Supabase client — loaded on every page after the Supabase UMD script.
 // Uses the same project as the React app (public anon key, safe to expose client-side; RLS enforces access).
@@ -1398,466 +1912,1527 @@ window.CP_signOut = async () => {
 })();
 </script>
 <script>
+/* ============================================================
+   Camplugie group chat — WhatsApp-parity build
+   ------------------------------------------------------------
+   On top of the basics (bubbles, media, voice notes, replies,
+   reactions, typing, presence) this adds the things that made
+   the old screen feel "not WhatsApp":
+
+     • read receipts (ticks) + per-message "Message info"
+     • unread divider + jump-to-unread pill
+     • @mentions with autocomplete and highlighting
+     • pinned message bar
+     • select mode: multi copy / forward / delete
+     • forward to another group
+     • search inside the conversation
+     • swipe-right-to-reply
+     • a real group-info screen: members, roles, add/remove,
+       promote/demote, invite link, mute, announcement-only mode,
+       media gallery, exit / delete group
+     • per-group saved drafts
+     • system messages when people join or leave
+
+   Everything that needs a column this project may not have yet
+   (last_read_at, is_muted, pinned_message_id, only_admins_can_post,
+   mentions) degrades silently instead of breaking the chat — see
+   optional() below, and camplugie-groups.sql for the migration.
+   ============================================================ */
+
+const C = window.CPChat;
 const $ = (id) => document.getElementById(id);
-const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const esc = C.esc;
 
-let myUserId = null;
-let myUniversityId = null;
-let allChats = [];
-let allActivity = [];
-let activityFilter = 'all';
-const loaded = { groups: false, calls: false };
+/* ---------- state ---------- */
+let myUserId = null, myName = 'Someone', myAvatar = null;
+let groupId = null, group = null;
+let isAdmin = false, isOwner = false, canLecture = false;
+let members = [];
+const memberMap = new Map();
+let memberNames = {};
+let messages = [];
+const byId = new Map();
+let replyTo = null, editing = null;
+let presence = null, scroller = null;
+let announceMode = false;
+let muted = false;
+let canPost = true;
+let unreadAnchorId = null;
+let bootDone = false;
+let selectMode = false;
+const selected = new Set();
+let searchOn = false, searchTerm = '', searchHits = [], searchIdx = 0;
+let mentionRe = null;
+const typingNow = new Map();
 
-const TICK_ONE = '<svg viewBox="0 0 18 13" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><polyline points="2 7 6.5 11.5 15 2"/></svg>';
-const TICK_TWO = '<svg viewBox="0 0 18 13" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 7 5 11 12.5 2"/><polyline points="7 10.6 8.2 11.8 16.8 2"/></svg>';
-
-/* ============ CHATS ============ */
-
-function renderChatRow(c) {
-  const isBuyer = c.buyer_id === myUserId;
-  const other = isBuyer ? c.seller : c.buyer;
-  const name = other?.full_name || other?.username || 'Camplugie user';
-  const unread = c._unread || 0;
-  const mineLast = c._lastSenderId === myUserId;
-
-  const avatar = other?.avatar_url
-    ? `<img src="${esc(other.avatar_url)}" alt="">`
-    : esc(window.CP.initials(name));
-
-  const ticks = mineLast
-    ? `<span class="msg-ticks${c._lastRead ? ' read' : ''}" style="color:${c._lastRead ? '#5BC8FF' : 'var(--text3)'}">${c._lastDelivered || c._lastRead ? TICK_TWO : TICK_ONE}</span>`
-    : '';
-
-  return `
-    <div class="chat-row${unread ? ' unread' : ''}" data-id="${esc(c.id)}">
-      <div class="avatar">${avatar}</div>
-      <div class="chat-row-text">
-        <div class="chat-row-top">
-          <span class="name">${esc(name)}</span>
-          <span class="time">${c.last_message_at ? window.CP.timeAgo(c.last_message_at) : ''}</span>
-        </div>
-        <div class="chat-row-bottom">
-          <span class="preview">${ticks}<span class="txt">${esc(c.last_message || 'Say hi 👋')}</span></span>
-          ${unread ? `<span class="chat-unread-badge">${unread > 99 ? '99+' : unread}</span>` : ''}
-        </div>
-        ${c.listings?.title ? `<div class="chat-listing-tag">🛍 ${esc(c.listings.title)}</div>` : ''}
-      </div>
-    </div>`;
+// Optional DB features. If a column/table is missing we add its key here
+// once and never touch it again this session.
+const OFF = new Set();
+function optional(err, key) {
+  if (!err) return false;
+  const msg = `${err.message || ''} ${err.details || ''} ${err.hint || ''}`;
+  if (/column|does not exist|schema cache|relation|Could not find/i.test(msg)) { OFF.add(key); return true; }
+  return false;
 }
 
-function paintChats(list) {
-  const el = $('chatList');
-  if (!list.length) {
-    el.innerHTML = `<div class="admin-empty">No conversations yet — tap ✏️ to message a student, or message a seller from a listing.</div>`;
+const box = $('groupMessages');
+const input = $('groupMessageInput');
+const DRAFT_KEY = () => `cp-draft-group-${groupId}`;
+
+/* ============================================================
+   RENDERING
+   ============================================================ */
+
+function decorate(m) {
+  m._mine = m.sender_id === myUserId;
+  if (m.reply_to && byId.has(m.reply_to)) {
+    const p = byId.get(m.reply_to);
+    m.reply_to_content = p.media_url
+      ? (p.media_type?.startsWith('image') ? '📷 Photo'
+        : p.media_type?.startsWith('video') ? '🎬 Video'
+        : p.media_type?.startsWith('audio') ? '🎤 Voice note' : '📎 Attachment')
+      : p.content;
+    m.reply_to_name = p.sender_id === myUserId ? 'You' : (memberNames[p.sender_id] || 'Member');
+  }
+  return m;
+}
+
+// Ticks in a group mean something slightly different from a 1:1 chat:
+// two grey = at least one other member has opened the chat since you sent,
+// blue = everyone has. Exact per-person state lives in "Message info".
+function computeReceipts() {
+  if (OFF.has('last_read_at')) return;
+  const others = members.filter(x => x.user_id !== myUserId);
+  messages.forEach(m => {
+    if (!m._mine || m._pending) return;
+    const t = new Date(m.created_at).getTime();
+    const readers = others.filter(o => o.last_read_at && new Date(o.last_read_at).getTime() >= t);
+    m._readBy = readers.length;
+    m._others = others.length;
+    m.delivered_at = readers.length ? m.created_at : null;
+    m.read_at = (others.length && readers.length >= others.length) ? m.created_at : null;
+  });
+}
+
+function buildMentionRegex() {
+  const names = [];
+  members.forEach(mem => {
+    const n = mem.profile?.full_name, u = mem.profile?.username;
+    if (n) names.push(n);
+    if (u) names.push(u);
+  });
+  names.push('everyone', 'all');
+  if (!names.length) { mentionRe = null; return; }
+  names.sort((a, b) => b.length - a.length);
+  const alt = names.map(n => esc(n).replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|');
+  mentionRe = new RegExp(`@(?:${alt})`, 'g');
+}
+
+function escapeRe(s) { return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
+
+// Only touch text between tags — never attribute values or URLs.
+function mapText(html, fn) {
+  return html.replace(/>([^<]+)</g, (_, t) => '>' + fn(t) + '<');
+}
+
+function highlight(text) {
+  let out = text;
+  if (mentionRe) out = out.replace(mentionRe, mm => `\u0001${mm}\u0002`);
+  if (searchTerm) {
+    out = out.replace(new RegExp(escapeRe(searchTerm), 'ig'), s => `\u0003${s}\u0004`);
+  }
+  return out
+    .replace(/\u0001([^\u0002]*)\u0002/g, '<span class="mention">$1</span>')
+    .replace(/\u0003([^\u0004]*)\u0004/g, '<mark class="hit">$1</mark>');
+}
+
+function mentionsMe(m) {
+  if (!m.content || m._mine) return false;
+  const me = memberMap.get(myUserId)?.profile;
+  const tags = [me?.full_name, me?.username, 'everyone', 'all'].filter(Boolean);
+  return tags.some(t => m.content.includes('@' + t));
+}
+
+function render() {
+  if (!messages.length) {
+    box.innerHTML = `<div class="chat-empty">
+        <span class="em">👋</span>
+        <b>${esc(group?.name || 'This group')} is ready</b>
+        <span>No messages yet. Say hi, or bring your coursemates in.</span>
+        ${isAdmin ? '<button id="emptyAddBtn">Add people</button>' : ''}
+      </div>`;
+    const b = document.getElementById('emptyAddBtn');
+    if (b) b.addEventListener('click', openPeople);
     return;
   }
-  el.innerHTML = list.map(renderChatRow).join('');
+  computeReceipts();
 
-  const totalUnread = list.reduce((n, c) => n + (c._unread || 0), 0);
-  const badge = $('chatsCount');
-  badge.textContent = totalUnread;
-  badge.classList.toggle('show', totalUnread > 0);
+  let html = '', lastDay = null, prev = null;
+
+  messages.forEach((m) => {
+    const day = C.dayLabel(m.created_at);
+    if (day !== lastDay) { html += `<div class="thread-date-sep"><span>${day}</span></div>`; lastDay = day; prev = null; }
+
+    if (unreadAnchorId && m.id === unreadAnchorId) {
+      html += `<div class="unread-sep" id="unreadSep"><span>UNREAD MESSAGES</span></div>`;
+      prev = null;
+    }
+
+    if (m.message_type === 'system') {
+      html += `<div class="system-msg"><span>${esc(m.content)}</span></div>`;
+      prev = null; return;
+    }
+    if (m.is_announcement) {
+      html += `<div class="system-msg"><span>📣 ${esc(m.content)}</span></div>`;
+      prev = null; return;
+    }
+
+    const grouped = prev && prev.sender_id === m.sender_id &&
+      (new Date(m.created_at) - new Date(prev.created_at)) < 180000;
+
+    let row = C.rowHtml(m, {
+      mine: m._mine,
+      grouped,
+      showTicks: !OFF.has('last_read_at'),
+      senderName: (!m._mine && !grouped) ? (memberNames[m.sender_id] || 'Member') : null,
+      senderColor: C.colorFor(m.sender_id),
+    });
+
+    row = mapText(row, highlight);
+
+    const extra = [];
+    if (selectMode) extra.push('selectable');
+    if (selected.has(m.id)) extra.push('selected');
+    if (mentionsMe(m)) extra.push('mentions-me');
+    if (extra.length) row = row.replace('class="msg-row ', `class="msg-row ${extra.join(' ')} `);
+
+    html += row;
+    prev = m;
+  });
+
+  html += `<div class="typing-row" id="typingRow" style="display:none">
+    <div class="typing-bubble"><i></i><i></i><i></i></div></div>`;
+
+  box.innerHTML = html;
 }
 
-async function loadChats(userId) {
-  const { data, error } = await window.sb
-    .from('conversations')
-    .select('*, listings(id, title), buyer:profiles!conversations_buyer_id_fkey(id, username, full_name, avatar_url), seller:profiles!conversations_seller_id_fkey(id, username, full_name, avatar_url)')
-    .or(`buyer_id.eq.${userId},seller_id.eq.${userId}`)
-    .order('last_message_at', { ascending: false, nullsFirst: false });
+/* ============================================================
+   LOADING + REALTIME
+   ============================================================ */
+
+async function loadMessages() {
+  const { data, error } = await window.sb.from('group_messages')
+    .select('*').eq('group_id', groupId).order('created_at', { ascending: true }).limit(500);
 
   if (error) {
-    console.error('Conversations load error:', error);
-    $('chatList').innerHTML = `<div class="admin-empty">Couldn't load chats.</div>`;
+    console.error('Group messages error:', error);
+    box.innerHTML = `<div style="text-align:center;padding:24px;color:var(--text3);font-size:13px;">Couldn't load messages.</div>`;
+    return;
+  }
+  messages = data || [];
+  byId.clear();
+  messages.forEach(m => byId.set(m.id, m));
+  messages.forEach(decorate);
+
+  // Where the unread divider goes: first message from someone else that
+  // arrived after the last time I opened this group.
+  const me = memberMap.get(myUserId);
+  if (me?.last_read_at) {
+    const since = new Date(me.last_read_at).getTime();
+    const first = messages.find(m => !m._mine && new Date(m.created_at).getTime() > since);
+    unreadAnchorId = first ? first.id : null;
+  }
+
+  render();
+
+  if (unreadAnchorId) {
+    const sep = document.getElementById('unreadSep');
+    if (sep) { sep.scrollIntoView({ block: 'center' }); $('unreadJump').classList.add('show'); }
+    else scroller.toBottom(false);
+  } else {
+    scroller.toBottom(false);
+  }
+  markRead();
+}
+
+function subscribeToGroupMessages() {
+  window.sb.channel(`group-messages-${groupId}`)
+    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'group_messages', filter: `group_id=eq.${groupId}` }, ({ new: m }) => {
+      if (byId.has(m.id)) return;
+      const pIdx = messages.findIndex(x => x._pending && x.content === m.content && x.sender_id === m.sender_id);
+      if (pIdx !== -1) { byId.delete(messages[pIdx].id); messages.splice(pIdx, 1); }
+      byId.set(m.id, m);
+      messages.push(decorate(m));
+      render();
+      scroller.onIncoming(m.sender_id === myUserId);
+      if (scroller.nearBottom()) markRead();
+      if (mentionsMe(m) && navigator.vibrate) navigator.vibrate(18);
+    })
+    .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'group_messages', filter: `group_id=eq.${groupId}` }, ({ new: m }) => {
+      const i = messages.findIndex(x => x.id === m.id);
+      if (i === -1) return;
+      messages[i] = decorate(Object.assign(messages[i], m));
+      byId.set(m.id, messages[i]);
+      render();
+    })
+    .subscribe();
+
+  // Other members opening the chat is what moves my ticks from grey to blue.
+  window.sb.channel(`group-members-${groupId}`)
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'group_members', filter: `group_id=eq.${groupId}` }, ({ new: row, eventType }) => {
+      if (eventType === 'DELETE') return;
+      const mem = memberMap.get(row.user_id);
+      if (mem) { mem.last_read_at = row.last_read_at; mem.role = row.role; render(); }
+      else loadMembers().then(render);
+    })
+    .subscribe();
+
+  // Group settings (pin, announcement-only, name) changing under us.
+  window.sb.channel(`group-row-${groupId}`)
+    .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'groups', filter: `id=eq.${groupId}` }, ({ new: g }) => {
+      group = Object.assign(group || {}, g);
+      applyGroupSettings();
+      renderPinBar();
+      renderInfoPanel();
+    })
+    .subscribe();
+}
+
+async function markRead() {
+  if (OFF.has('last_read_at') || !myUserId || !groupId) return;
+  const now = new Date().toISOString();
+  const { error } = await window.sb.from('group_members')
+    .update({ last_read_at: now }).eq('group_id', groupId).eq('user_id', myUserId);
+  if (optional(error, 'last_read_at')) return;
+  const me = memberMap.get(myUserId);
+  if (me) me.last_read_at = now;
+}
+
+/* ============================================================
+   SENDING
+   ============================================================ */
+
+function findMentionIds(text) {
+  const ids = [];
+  members.forEach(mem => {
+    const n = mem.profile?.full_name, u = mem.profile?.username;
+    if ((n && text.includes('@' + n)) || (u && text.includes('@' + u))) ids.push(mem.user_id);
+  });
+  if (/@(everyone|all)\b/i.test(text)) members.forEach(m => { if (!ids.includes(m.user_id)) ids.push(m.user_id); });
+  return ids;
+}
+
+async function sendMessage(extra = {}) {
+  const content = (extra.content !== undefined ? extra.content : input.value).trim();
+  if ((!content && !extra.media_url) || !groupId) return;
+  if (!canPost) { alert('Only admins can send messages in this group.'); return; }
+
+  if (editing) {
+    const id = editing.id; editing = null; clearReplyBar();
+    input.value = ''; input.style.height = 'auto'; updateSendIcon(); saveDraft();
+    await window.sb.from('group_messages')
+      .update({ content, edited_at: new Date().toISOString() }).eq('id', id);
     return;
   }
 
-  allChats = data || [];
+  if (extra.content === undefined) { input.value = ''; input.style.height = 'auto'; saveDraft(); }
+  updateSendIcon();
 
-  // Per-conversation unread count + last-message tick state, in one query.
-  if (allChats.length) {
-    const ids = allChats.map(c => c.id);
-    const { data: msgs } = await window.sb
-      .from('messages')
-      .select('conversation_id, sender_id, read_at, delivered_at, created_at')
-      .in('conversation_id', ids)
-      .order('created_at', { ascending: false })
-      .limit(1500);
+  const payload = {
+    group_id: groupId, sender_id: myUserId, content,
+    message_type: extra.media_type ? 'media' : 'text',
+    is_announcement: announceMode,
+    reply_to: replyTo ? replyTo.id : null,
+    media_url: extra.media_url || null,
+    media_type: extra.media_type || null,
+    media_duration: extra.media_duration || null,
+    created_at: new Date().toISOString(),
+  };
+  const mentionIds = findMentionIds(content);
+  if (mentionIds.length && !OFF.has('mentions')) payload.mentions = mentionIds;
 
-    const counts = {}, lastOf = {};
-    (msgs || []).forEach(m => {
-      if (!lastOf[m.conversation_id]) lastOf[m.conversation_id] = m;
-      if (m.sender_id !== userId && !m.read_at) counts[m.conversation_id] = (counts[m.conversation_id] || 0) + 1;
-    });
-    allChats.forEach(c => {
-      c._unread = counts[c.id] || 0;
-      const last = lastOf[c.id];
-      c._lastSenderId = last?.sender_id || null;
-      c._lastRead = !!last?.read_at;
-      c._lastDelivered = !!last?.delivered_at;
-    });
+  const tempId = 'tmp-' + Math.random().toString(36).slice(2);
+  const optimistic = decorate(Object.assign({ id: tempId, _pending: true }, payload));
+  messages.push(optimistic); byId.set(tempId, optimistic);
+  clearReplyBar(); setAnnounce(false);
+  render(); scroller.toBottom(true);
+
+  let { data: sent, error } = await window.sb.from('group_messages').insert(payload).select('*').single();
+
+  // Retry once without the optional mentions column if this DB doesn't have it.
+  if (error && optional(error, 'mentions')) {
+    delete payload.mentions;
+    ({ data: sent, error } = await window.sb.from('group_messages').insert(payload).select('*').single());
   }
 
-  applyConvoSearch();
-}
-
-function applyConvoSearch() {
-  const q = ($('convoSearchInput').value || '').trim().toLowerCase();
-  if (!q) return paintChats(allChats);
-  paintChats(allChats.filter(c => {
-    const other = c.buyer_id === myUserId ? c.seller : c.buyer;
-    const name = (other?.full_name || other?.username || '').toLowerCase();
-    return name.includes(q)
-      || (c.last_message || '').toLowerCase().includes(q)
-      || (c.listings?.title || '').toLowerCase().includes(q);
-  }));
-}
-
-$('convoSearchInput').addEventListener('input', applyConvoSearch);
-
-/* ============ ACTIVITY ============ */
-
-const ICONS = { like: '❤️', comment: '💬', repost: '🔁', order: '💰', payment: '💰', escrow: '🔒', message: '✉️', plug: '🤝', mention: '@', delivery: '🛵', wallet: '👛', system: '🔔' };
-const KINDS = { order: 'money', payment: 'money', escrow: 'money', wallet: 'money', delivery: 'money', system: 'system' };
-
-function targetFor(a) {
-  const d = a.data || {};
-  if (a.type === 'message' && d.conversation_id) return `chat-thread.html?id=${d.conversation_id}`;
-  if (d.listing_id) return `listing.html?id=${d.listing_id}`;
-  if (d.post_id) return `yard.html?post=${d.post_id}`;
-  if (d.order_id || ['order', 'escrow', 'payment'].includes(a.type)) return 'orders.html';
-  if (a.type === 'wallet') return 'wallet.html';
-  if (d.profile_id) return `profile-view.html?id=${d.profile_id}`;
-  return null;
-}
-
-function renderActivityRow(a) {
-  const icon = ICONS[a.type] || '🔔';
-  const kind = KINDS[a.type] || 'social';
-  const href = targetFor(a);
-  return `
-    <div class="activity-row${a.is_read ? '' : ' unread'}" data-id="${esc(a.id)}" data-href="${esc(href || '')}">
-      <div class="activity-icon ${kind}">${icon}</div>
-      <div style="flex:1;min-width:0">
-        <div class="activity-text"><b>${esc(a.title || 'Notification')}</b>${a.body ? ' ' + esc(a.body) : ''}</div>
-        <div class="activity-time">${window.CP.timeAgo(a.created_at)}</div>
-      </div>
-    </div>`;
-}
-
-function paintActivity() {
-  const el = $('activityList');
-  let list = allActivity;
-  if (activityFilter === 'unread') list = list.filter(a => !a.is_read);
-  else if (activityFilter !== 'all') list = list.filter(a => (KINDS[a.type] || 'social') === activityFilter);
-
-  el.innerHTML = list.length
-    ? list.map(renderActivityRow).join('')
-    : `<div class="admin-empty">${activityFilter === 'all' ? "You're all caught up 🎉" : 'Nothing here.'}</div>`;
-
-  $('activityDot').style.display = allActivity.some(a => !a.is_read) ? 'block' : 'none';
-}
-
-async function loadActivity(userId) {
-  const { data, error } = await window.sb.from('notifications')
-    .select('*').eq('user_id', userId).order('created_at', { ascending: false }).limit(100);
-
-  if (error) { console.error('Notifications load error:', error); $('activityList').innerHTML = `<div class="admin-empty">Couldn't load activity.</div>`; return; }
-  allActivity = data || [];
-  paintActivity();
-}
-
-$('activityFilter').addEventListener('click', (e) => {
-  const chip = e.target.closest('.fb-filter-chip'); if (!chip) return;
-  document.querySelectorAll('#activityFilter .fb-filter-chip').forEach(c => c.classList.remove('active'));
-  chip.classList.add('active');
-  activityFilter = chip.dataset.filter;
-  paintActivity();
-});
-
-$('markAllReadBtn').addEventListener('click', async () => {
-  const active = document.querySelector('.notif-tab.active')?.dataset.panel;
-  if (active === 'activity') {
-    allActivity.forEach(a => { a.is_read = true; });
-    paintActivity();
-    await window.sb.from('notifications').update({ is_read: true }).eq('user_id', myUserId).eq('is_read', false);
-  } else {
-    if (!confirm('Mark all chats as read?')) return;
-    const now = new Date().toISOString();
-    allChats.forEach(c => { c._unread = 0; });
-    applyConvoSearch();
-    const ids = allChats.map(c => c.id);
-    if (ids.length) {
-      await window.sb.from('messages').update({ read_at: now, delivered_at: now })
-        .in('conversation_id', ids).neq('sender_id', myUserId).is('read_at', null);
-    }
-  }
-});
-
-/* ============ GROUPS ============ */
-
-function groupsFailed(where, err) {
-  console.error('Groups load error (' + where + '):', err);
-  loaded.groups = false; // so tapping the Groups tab again retries instead of staying stuck
-  const panel = $('groupsPanel');
-  panel.innerHTML = `
-    <div class="admin-empty">
-      Couldn't load groups.
-      <div style="font-size:11px;margin-top:6px;opacity:.7">${esc((err && (err.message || err.code)) || 'unknown error')}</div>
-      <button id="retryGroupsBtn" style="margin-top:14px;padding:8px 18px;border-radius:999px;border:1px solid var(--border,#ddd);background:transparent;color:inherit;font:inherit;font-weight:600;cursor:pointer">Try again</button>
-    </div>`;
-  $('retryGroupsBtn').addEventListener('click', () => { loaded.groups = true; loadGroups(); });
-}
-
-async function loadGroups() {
-  const panel = $('groupsPanel');
-  if (!myUserId) { loaded.groups = false; return; } // auth not ready yet; the tab click / cp-ready will call again
-  panel.innerHTML = `<div class="admin-empty">Loading…</div>`;
-
-  // Two plain queries instead of one embedded select, so this never depends on
-  // Supabase recognising the group_members -> groups relationship.
-  const { data: memberRows, error: memberErr } = await window.sb
-    .from('group_members').select('group_id').eq('user_id', myUserId);
-  if (memberErr) return groupsFailed('group_members', memberErr);
-
-  const groupIds = (memberRows || []).map(r => r.group_id);
-  let groups = [];
-  if (groupIds.length) {
-    // select('*') on purpose: naming columns (last_message, invite_code, ...) made the
-    // whole tab fail with "column does not exist" whenever one of them was missing.
-    const { data: groupRows, error: groupErr } = await window.sb
-      .from('groups').select('*').in('id', groupIds);
-    if (groupErr) return groupsFailed('groups', groupErr);
-    groups = groupRows || [];
+  const i = messages.findIndex(m => m.id === tempId);
+  if (error) {
+    console.error('Group send error:', error);
+    if (i !== -1) { messages.splice(i, 1); byId.delete(tempId); render(); }
+    alert('Could not send — try again.');
+    if (!extra.media_url) { input.value = content; updateSendIcon(); }
+    return;
   }
 
-  // Groups you created should always show, even if your group_members row never
-  // landed (the insert in groups.html can fail silently behind RLS). Best-effort only.
+  if (i !== -1) { messages.splice(i, 1); byId.delete(tempId); }
+  if (!byId.has(sent.id)) { byId.set(sent.id, sent); messages.push(decorate(sent)); }
+  render(); scroller.toBottom(true);
+
+  const preview = content || (payload.media_type?.startsWith('image') ? '📷 Photo'
+    : payload.media_type?.startsWith('audio') ? '🎤 Voice note' : '📎 Attachment');
+  window.sb.from('groups')
+    .update({ last_message: preview, last_message_at: new Date().toISOString() })
+    .eq('id', groupId).then(() => {}, () => {});
+}
+
+async function postSystem(text) {
+  await window.sb.from('group_messages').insert({
+    group_id: groupId, sender_id: myUserId, content: text,
+    message_type: 'system', created_at: new Date().toISOString(),
+  }).then(() => {}, () => {});
+}
+
+/* ============================================================
+   COMPOSER
+   ============================================================ */
+
+C.autoGrow(input);
+
+function updateSendIcon() {
+  const hasText = input.value.trim().length > 0;
+  $('sendIcon').outerHTML = hasText
+    ? '<svg id="sendIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>'
+    : '<svg id="sendIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/></svg>';
+}
+
+function saveDraft() {
   try {
-    const { data: mine, error: mineErr } = await window.sb
-      .from('groups').select('*').eq('creator_id', myUserId);
-    if (!mineErr && mine) {
-      const seen = new Set(groups.map(g => g.id));
-      mine.forEach(g => { if (!seen.has(g.id)) groups.push(g); });
-    }
-  } catch (_) { /* column may be named differently; ignore */ }
-
-  groups = groups.sort((a, b) => new Date(b.last_message_at || 0) - new Date(a.last_message_at || 0));
-
-  const badge = $('groupsCount');
-  badge.textContent = groups.length;
-  badge.classList.toggle('show', groups.length > 0);
-
-  panel.innerHTML = `
-    <div class="group-discover-card" style="cursor:pointer" id="openGroupsBtn">
-      <div class="avatar" style="background:var(--brand-soft)">👥</div>
-      <div class="info"><b>Discover groups</b><span>Create one, browse your campus, or join with an invite code</span></div>
-      <button>Open</button>
-    </div>
-    ${groups.length ? groups.map(g => `
-      <div class="group-row" data-group="${esc(g.id)}">
-        <div class="avatar">${esc(window.CP.initials(g.name))}</div>
-        <div class="chat-row-text">
-          <div class="chat-row-top">
-            <span class="name">${esc(g.name)}</span>
-            <span class="time">${g.last_message_at ? window.CP.timeAgo(g.last_message_at) : ''}</span>
-          </div>
-          <div class="chat-row-bottom">
-            <span class="preview"><span class="txt">${esc(g.last_message || `${g.member_count || 1} members`)}</span></span>
-          </div>
-        </div>
-      </div>`).join('')
-      : `<div class="admin-empty">You haven't joined any groups yet.</div>`}
-  `;
-
-  $('openGroupsBtn').addEventListener('click', () => { window.location.href = 'groups.html'; });
-  panel.querySelectorAll('.group-row').forEach(row => {
-    row.addEventListener('click', () => { window.location.href = `group-thread.html?id=${row.dataset.group}`; });
-  });
+    const v = input.value.trim();
+    if (v) localStorage.setItem(DRAFT_KEY(), v); else localStorage.removeItem(DRAFT_KEY());
+  } catch (_) {}
+}
+function loadDraft() {
+  try {
+    const v = localStorage.getItem(DRAFT_KEY());
+    if (v) { input.value = v; C.autoGrow(input); updateSendIcon(); }
+  } catch (_) {}
 }
 
-/* ============ CALLS ============ */
+input.addEventListener('input', () => { updateSendIcon(); presence?.typing(myName); saveDraft(); updateMentionPop(); });
+input.addEventListener('keydown', (e) => {
+  const pop = $('mentionPop');
+  if (pop.classList.contains('show') && (e.key === 'Enter' || e.key === 'Tab')) {
+    const first = pop.querySelector('button');
+    if (first) { e.preventDefault(); first.click(); return; }
+  }
+  if (e.key === 'Enter' && !e.shiftKey && window.matchMedia('(pointer:fine)').matches) { e.preventDefault(); sendMessage(); }
+});
 
-async function loadCalls() {
-  const panel = $('callsPanel');
+/* ---- @mention autocomplete ---- */
+function currentMentionQuery() {
+  const caret = input.selectionStart || 0;
+  const before = input.value.slice(0, caret);
+  const m = before.match(/(?:^|\s)@([\p{L}\p{N}_. ]{0,24})$/u);
+  return m ? { query: m[1], start: caret - m[1].length - 1 } : null;
+}
 
-  // Warn only if TURN isn't set up — that's the actual cause of failed calls.
-  const ice = await window.CP_getIceServers();
-  const hasTurn = ice.some(s => String(s.urls).includes('turn'));
+function updateMentionPop() {
+  const pop = $('mentionPop');
+  const ctx = currentMentionQuery();
+  if (!ctx) { pop.classList.remove('show'); return; }
+  const q = ctx.query.trim().toLowerCase();
+  const list = members
+    .filter(m => m.user_id !== myUserId)
+    .filter(m => {
+      if (!q) return true;
+      const n = (m.profile?.full_name || '').toLowerCase();
+      const u = (m.profile?.username || '').toLowerCase();
+      return n.includes(q) || u.includes(q);
+    })
+    .slice(0, 8);
 
-  panel.innerHTML = `
-    ${hasTurn
-      ? `<div class="call-notice">📞 Calls run over the internet (WebRTC) — no airtime used. Relay is configured, so calls work on campus WiFi and mobile data.</div>`
-      : `<div class="call-notice warn">⚠️ No TURN relay configured — calls will fail for some people on campus WiFi or mobile data. Add free TURN credentials in <b>config.js</b> to fix this.</div>`}
-    <div id="callsList"><div class="admin-empty">Loading…</div></div>`;
+  const rows = [];
+  if (!q || 'everyone'.startsWith(q)) {
+    rows.push(`<button data-insert="everyone"><span class="av">@</span><span><b>Everyone</b><span class="un">Notify the whole group</span></span></button>`);
+  }
+  list.forEach(m => {
+    const name = m.profile?.full_name || m.profile?.username || 'Member';
+    const av = m.profile?.avatar_url
+      ? `<span class="av"><img src="${esc(m.profile.avatar_url)}" alt=""></span>`
+      : `<span class="av">${esc(window.CP.initials(name))}</span>`;
+    rows.push(`<button data-insert="${esc(name)}">${av}<span><b>${esc(name)}</b>${m.profile?.username ? `<span class="un">@${esc(m.profile.username)}</span>` : ''}</span></button>`);
+  });
 
-  const { data, error } = await window.sb.from('call_logs')
-    .select('*, caller:profiles!call_logs_caller_id_fkey(id, full_name, username), callee:profiles!call_logs_callee_id_fkey(id, full_name, username)')
-    .or(`caller_id.eq.${myUserId},callee_id.eq.${myUserId}`)
-    .order('created_at', { ascending: false }).limit(50);
+  if (!rows.length) { pop.classList.remove('show'); return; }
+  pop.innerHTML = rows.join('');
+  pop.classList.add('show');
+}
 
-  const list = $('callsList');
-  if (error) { console.error('Call log error:', error); list.innerHTML = `<div class="admin-empty">Couldn't load call history.</div>`; return; }
-  if (!data || !data.length) { list.innerHTML = `<div class="admin-empty">No calls yet — start one from any chat.</div>`; return; }
+$('mentionPop').addEventListener('click', (e) => {
+  const btn = e.target.closest('button[data-insert]'); if (!btn) return;
+  const ctx = currentMentionQuery(); if (!ctx) return;
+  const name = btn.dataset.insert;
+  const before = input.value.slice(0, ctx.start);
+  const after = input.value.slice(input.selectionStart || 0);
+  input.value = `${before}@${name} ${after}`;
+  $('mentionPop').classList.remove('show');
+  input.focus();
+  const pos = (before + '@' + name + ' ').length;
+  input.setSelectionRange(pos, pos);
+  updateSendIcon(); saveDraft();
+});
 
-  list.innerHTML = data.map(c => {
-    const outgoing = c.caller_id === myUserId;
-    const other = outgoing ? c.callee : c.caller;
-    const name = other?.full_name || other?.username || 'User';
-    const missed = ['missed', 'declined'].includes(c.status);
-    const arrow = missed ? '↙' : outgoing ? '↗' : '↙';
-    const label = missed ? (outgoing ? 'No answer' : 'Missed') : outgoing ? 'Outgoing' : 'Incoming';
-    const dur = c.duration_seconds ? ` · ${Math.floor(c.duration_seconds / 60)}:${String(c.duration_seconds % 60).padStart(2, '0')}` : '';
-    return `
-      <div class="call-row" data-peer="${esc(other?.id || '')}" data-name="${esc(name)}" data-video="${c.type === 'video' ? '1' : '0'}">
-        <div class="call-icon">${c.type === 'video' ? '📹' : '📞'}</div>
-        <div class="call-row-text">
-          <b>${esc(name)}</b>
-          <span class="${missed ? 'missed' : ''}">${arrow} ${label}${dur}</span>
-        </div>
-        <span class="call-time">${window.CP.timeAgo(c.created_at)}</span>
-        <button class="call-back-btn" aria-label="Call back">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
-        </button>
+function showReplyBar(m, mode = 'reply') {
+  $('replyName').textContent = mode === 'edit' ? 'Editing message' : (m._mine ? 'You' : (memberNames[m.sender_id] || 'Member'));
+  $('replyText').textContent = m.media_url ? '📎 Attachment' : (m.content || '').slice(0, 80);
+  $('composerReply').classList.add('show');
+  input.focus();
+}
+function clearReplyBar() { replyTo = null; editing = null; $('composerReply').classList.remove('show'); }
+$('cancelReplyBtn').addEventListener('click', () => { clearReplyBar(); setAnnounce(false); });
+
+function setAnnounce(on) {
+  announceMode = on;
+  input.placeholder = on ? '📣 Announcement to the group…' : 'Message the group…';
+  $('composerPill').style.borderColor = on ? 'var(--accent)' : 'var(--border)';
+}
+
+/* ---- voice notes ---- */
+const recorder = C.makeRecorder();
+async function stopAndSendVoice() {
+  $('recBar').classList.remove('show'); $('composerPill').style.display = '';
+  $('groupSendBtn').classList.remove('recording');
+  const out = await recorder.stop(); updateSendIcon();
+  if (!out) return;
+  try {
+    showUpload('Sending voice note…');
+    const up = await C.uploadFile(out.file, myUserId);
+    hideUpload();
+    sendMessage({ content: '', media_url: up.url, media_type: 'audio/webm', media_duration: out.seconds });
+  } catch (err) { hideUpload(); alert(err.message || 'Could not send voice note.'); }
+}
+
+$('groupSendBtn').addEventListener('click', async () => {
+  if (recorder.active) return stopAndSendVoice();
+  if (input.value.trim()) return sendMessage();
+  try {
+    $('composerPill').style.display = 'none';
+    $('recBar').classList.add('show');
+    $('groupSendBtn').classList.add('recording');
+    $('sendIcon').outerHTML = '<svg id="sendIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
+    await recorder.start((sec) => { $('recTime').textContent = C.mmss(sec); });
+  } catch (err) {
+    $('composerPill').style.display = ''; $('recBar').classList.remove('show');
+    $('groupSendBtn').classList.remove('recording'); updateSendIcon();
+    alert('Microphone permission is needed for voice notes.');
+  }
+});
+$('recCancel').addEventListener('click', () => {
+  recorder.cancel();
+  $('recBar').classList.remove('show'); $('composerPill').style.display = '';
+  $('groupSendBtn').classList.remove('recording'); updateSendIcon();
+});
+
+/* ---- attachments ---- */
+const picker = $('filePicker');
+$('attachBtn').addEventListener('click', (e) => { e.stopPropagation(); $('attachMenu').classList.toggle('show'); });
+document.addEventListener('click', () => $('attachMenu').classList.remove('show'));
+$('attachMenu').addEventListener('click', (e) => {
+  const btn = e.target.closest('button[data-pick]'); if (!btn) return;
+  const kind = btn.dataset.pick;
+  if (kind === 'announce') { setAnnounce(true); input.focus(); return; }
+  picker.accept = kind === 'image' ? 'image/*' : kind === 'video' ? 'video/*' : '*/*';
+  picker.click();
+});
+function showUpload(t) { const p = $('uploadPill'); p.textContent = t; p.classList.add('show'); }
+function hideUpload() { $('uploadPill').classList.remove('show'); }
+
+picker.addEventListener('change', async () => {
+  const file = picker.files[0]; picker.value = '';
+  if (!file) return;
+  if (file.size > 25 * 1024 * 1024) { alert('That file is over 25MB — try a smaller one.'); return; }
+  try {
+    showUpload('Uploading…');
+    const ready = await C.compressImage(file);
+    const up = await C.uploadFile(ready, myUserId);
+    hideUpload();
+    sendMessage({ content: input.value.trim(), media_url: up.url, media_type: up.type });
+    input.value = ''; updateSendIcon(); saveDraft();
+  } catch (err) {
+    hideUpload();
+    alert(err.message?.includes('Bucket')
+      ? 'Media bucket missing — create a public bucket called "chat-media" in Supabase Storage.'
+      : (err.message || 'Upload failed'));
+  }
+});
+
+/* ============================================================
+   MESSAGE ACTIONS
+   ============================================================ */
+
+C.wireActionSheet(box, (id) => byId.get(id), async (action, id) => {
+  const m = byId.get(id); if (!m) return;
+
+  if (action === 'reply') { replyTo = m; showReplyBar(m); return; }
+  if (action === 'copy') { try { await navigator.clipboard.writeText(m.content || m.media_url || ''); } catch (_) {} return; }
+  if (action === 'edit') { editing = m; input.value = m.content || ''; updateSendIcon(); showReplyBar(m, 'edit'); return; }
+  if (action === 'select') { enterSelectMode(id); return; }
+  if (action === 'forward') { openForwardSheet([id]); return; }
+  if (action === 'info') { openMessageInfo(m); return; }
+  if (action === 'pin') { togglePin(m); return; }
+
+  if (action === 'delete') {
+    if (!(m._mine || isAdmin)) { alert('Only the sender or a group admin can delete this.'); return; }
+    if (!confirm('Delete this message for everyone?')) return;
+    await window.sb.from('group_messages')
+      .update({ is_deleted: true, content: '', media_url: null }).eq('id', id);
+    return;
+  }
+
+  if (action.startsWith('react:')) {
+    const emoji = action.slice(6);
+    const reactions = Object.assign({}, m.reactions || {});
+    const list = new Set(reactions[emoji] || []);
+    list.has(myUserId) ? list.delete(myUserId) : list.add(myUserId);
+    if (list.size) reactions[emoji] = [...list]; else delete reactions[emoji];
+    await window.sb.from('group_messages').update({ reactions }).eq('id', id);
+  }
+});
+
+// Extra rows the shared sheet doesn't ship with, injected once.
+(function extendActionSheet() {
+  const wait = setInterval(() => {
+    const sheet = document.querySelector('.msg-sheet-backdrop .msg-sheet');
+    if (!sheet) return;
+    clearInterval(wait);
+    const del = sheet.querySelector('[data-act="delete"]');
+    const add = (act, label, cls) => {
+      const b = document.createElement('button');
+      b.dataset.act = act; b.textContent = label;
+      if (cls) b.className = cls;
+      sheet.insertBefore(b, del);
+      return b;
+    };
+    add('forward', '↪️ Forward');
+    add('select', '☑️ Select messages');
+    add('pin', '📌 Pin message').id = 'sheetPinBtn';
+    add('info', 'ℹ️ Message info').id = 'sheetInfoBtn';
+  }, 120);
+})();
+
+// Only show "Message info" on my own messages, and "Pin" to admins.
+document.addEventListener('click', (e) => {
+  if (!e.target.closest('.msg-row')) return;
+  setTimeout(() => {
+    const info = document.getElementById('sheetInfoBtn');
+    const pin = document.getElementById('sheetPinBtn');
+    if (info) info.style.display = OFF.has('last_read_at') ? 'none' : 'flex';
+    if (pin) pin.style.display = (isAdmin && !OFF.has('pinned_message_id')) ? 'flex' : 'none';
+  }, 0);
+}, true);
+
+/* ---- jump to a quoted message ---- */
+box.addEventListener('click', (e) => {
+  if (selectMode) {
+    const row = e.target.closest('.msg-row');
+    if (row) { toggleSelected(row.dataset.mid); return; }
+  }
+  const q = e.target.closest('[data-jump]'); if (!q) return;
+  jumpTo(q.dataset.jump);
+});
+
+function jumpTo(mid) {
+  const row = box.querySelector(`.msg-row[data-mid="${mid}"]`);
+  if (!row) return;
+  row.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  const b = row.querySelector('.msg-bubble');
+  b.style.outline = '2px solid var(--accent)';
+  setTimeout(() => { b.style.outline = ''; }, 1200);
+}
+
+C.wireVoicePlayback(box);
+C.wireLightbox(box);
+
+/* ---- swipe right to reply ---- */
+(function wireSwipeReply() {
+  let row = null, startX = 0, startY = 0, dx = 0, active = false;
+  box.addEventListener('touchstart', (e) => {
+    if (selectMode) return;
+    row = e.target.closest('.msg-row');
+    if (!row) return;
+    startX = e.touches[0].clientX; startY = e.touches[0].clientY; dx = 0; active = false;
+  }, { passive: true });
+
+  box.addEventListener('touchmove', (e) => {
+    if (!row) return;
+    const x = e.touches[0].clientX - startX;
+    const y = Math.abs(e.touches[0].clientY - startY);
+    if (!active && (x < 12 || y > 18)) { if (y > 18) row = null; return; }
+    active = true;
+    dx = Math.max(0, Math.min(72, x));
+    row.classList.add('swiping');
+    row.style.transform = `translateX(${dx}px)`;
+  }, { passive: true });
+
+  const release = () => {
+    if (!row) return;
+    row.classList.remove('swiping');
+    row.style.transform = '';
+    if (dx > 46) {
+      const m = byId.get(row.dataset.mid);
+      if (m && !m.is_deleted) { replyTo = m; showReplyBar(m); if (navigator.vibrate) navigator.vibrate(10); }
+    }
+    row = null; dx = 0; active = false;
+  };
+  box.addEventListener('touchend', release, { passive: true });
+  box.addEventListener('touchcancel', release, { passive: true });
+})();
+
+/* ============================================================
+   SELECT MODE
+   ============================================================ */
+
+function enterSelectMode(firstId) {
+  selectMode = true; selected.clear();
+  if (firstId) selected.add(firstId);
+  $('selectTop').classList.add('show');
+  paintSelectCount(); render();
+}
+function exitSelectMode() {
+  selectMode = false; selected.clear();
+  $('selectTop').classList.remove('show');
+  render();
+}
+function toggleSelected(id) {
+  if (selected.has(id)) selected.delete(id); else selected.add(id);
+  if (!selected.size) return exitSelectMode();
+  paintSelectCount(); render();
+}
+function paintSelectCount() {
+  $('selectCount').textContent = `${selected.size} selected`;
+}
+$('selectCancelBtn').addEventListener('click', exitSelectMode);
+
+$('selCopyBtn').addEventListener('click', async () => {
+  const text = [...selected]
+    .map(id => byId.get(id)).filter(Boolean)
+    .sort((a, b) => new Date(a.created_at) - new Date(b.created_at))
+    .map(m => `[${C.clock(m.created_at)}] ${m._mine ? 'You' : (memberNames[m.sender_id] || 'Member')}: ${m.content || m.media_url || ''}`)
+    .join('\n');
+  try { await navigator.clipboard.writeText(text); } catch (_) {}
+  exitSelectMode();
+});
+
+$('selForwardBtn').addEventListener('click', () => openForwardSheet([...selected]));
+
+$('selDeleteBtn').addEventListener('click', async () => {
+  const ids = [...selected].filter(id => { const m = byId.get(id); return m && (m._mine || isAdmin); });
+  if (!ids.length) { alert('You can only delete your own messages.'); return; }
+  if (!confirm(`Delete ${ids.length} message${ids.length === 1 ? '' : 's'} for everyone?`)) return;
+  await window.sb.from('group_messages')
+    .update({ is_deleted: true, content: '', media_url: null }).in('id', ids);
+  exitSelectMode();
+});
+
+/* ============================================================
+   FORWARD
+   ============================================================ */
+
+async function openForwardSheet(ids) {
+  const msgs = ids.map(i => byId.get(i)).filter(Boolean);
+  if (!msgs.length) return;
+
+  const { data } = await window.sb.from('group_members')
+    .select('group_id, groups(id, name)').eq('user_id', myUserId);
+  const targets = (data || []).map(r => r.groups).filter(g => g && g.id !== groupId);
+
+  const sheet = makeSheet('fwdSheet');
+  sheet.querySelector('.msg-sheet').innerHTML = `
+    <div class="grab"></div>
+    <h4>Forward to</h4>
+    <div class="fw-list">
+      ${targets.length
+        ? targets.map(g => `<button data-fw="${esc(g.id)}"><span class="av" style="width:34px;height:34px;border-radius:50%;background:var(--brand-soft);color:var(--brand);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:12px">${esc(window.CP.initials(g.name))}</span>${esc(g.name)}</button>`).join('')
+        : `<div style="padding:16px 22px;color:var(--text3);font-size:13.5px">You're not in any other group yet.</div>`}
+    </div>
+    <button data-act="close">✕ Cancel</button>`;
+  sheet.classList.add('show');
+
+  sheet.addEventListener('click', async (e) => {
+    if (e.target === sheet || e.target.dataset.act === 'close') { sheet.classList.remove('show'); return; }
+    const btn = e.target.closest('button[data-fw]'); if (!btn) return;
+    sheet.classList.remove('show');
+    const target = btn.dataset.fw;
+    const rows = msgs
+      .sort((a, b) => new Date(a.created_at) - new Date(b.created_at))
+      .map(m => ({
+        group_id: target, sender_id: myUserId,
+        content: m.content || '',
+        message_type: m.media_url ? 'media' : 'text',
+        media_url: m.media_url || null,
+        media_type: m.media_type || null,
+        media_duration: m.media_duration || null,
+        created_at: new Date().toISOString(),
+      }));
+    const { error } = await window.sb.from('group_messages').insert(rows);
+    if (error) { alert("Couldn't forward those messages."); return; }
+    exitSelectMode();
+    if (confirm('Forwarded. Open that group?')) window.location.href = `group-thread.html?id=${target}`;
+  }, { once: false });
+}
+
+function makeSheet(id) {
+  let sheet = document.getElementById(id);
+  if (sheet) return sheet;
+  sheet = document.createElement('div');
+  sheet.id = id;
+  sheet.className = 'msg-sheet-backdrop';
+  sheet.innerHTML = '<div class="msg-sheet"></div>';
+  document.body.appendChild(sheet);
+  return sheet;
+}
+
+/* ============================================================
+   MESSAGE INFO (who has read it)
+   ============================================================ */
+
+function openMessageInfo(m) {
+  if (!m._mine) { alert('Message info is only available for messages you sent.'); return; }
+  const t = new Date(m.created_at).getTime();
+  const rows = members
+    .filter(x => x.user_id !== myUserId)
+    .map(x => {
+      const name = x.profile?.full_name || x.profile?.username || 'Member';
+      const read = x.last_read_at && new Date(x.last_read_at).getTime() >= t;
+      return `<div class="mi-row">
+        <span class="av">${esc(window.CP.initials(name))}</span>
+        <span>${esc(name)}</span>
+        <span class="st ${read ? 'read' : ''}">${read ? 'Read ✓✓' : 'Delivered'}</span>
       </div>`;
+    }).join('');
+
+  const sheet = makeSheet('infoSheet');
+  sheet.querySelector('.msg-sheet').innerHTML = `
+    <div class="grab"></div>
+    <h4>Read by ${m._readBy || 0} of ${m._others || 0}</h4>
+    <div class="mi-list">${rows || '<div style="padding:16px 22px;color:var(--text3)">No one else in this group yet.</div>'}</div>
+    <button data-act="close">✕ Close</button>`;
+  sheet.classList.add('show');
+  sheet.onclick = (e) => { if (e.target === sheet || e.target.dataset.act === 'close') sheet.classList.remove('show'); };
+}
+
+/* ============================================================
+   PINNED MESSAGE
+   ============================================================ */
+
+async function togglePin(m) {
+  if (!isAdmin) { alert('Only admins can pin messages.'); return; }
+  const next = group?.pinned_message_id === m.id ? null : m.id;
+  const { error } = await window.sb.from('groups').update({ pinned_message_id: next }).eq('id', groupId);
+  if (optional(error, 'pinned_message_id')) { alert('Pinning needs the pinned_message_id column — see camplugie-groups.sql.'); return; }
+  if (error) return;
+  group.pinned_message_id = next;
+  renderPinBar();
+}
+
+function renderPinBar() {
+  const bar = $('pinBar');
+  const pid = group?.pinned_message_id;
+  const m = pid ? byId.get(pid) : null;
+  if (!m || m.is_deleted) { bar.classList.remove('show'); return; }
+  $('pinText').textContent = m.media_url ? '📎 Attachment' : (m.content || '').slice(0, 90);
+  bar.classList.add('show');
+  $('pinCloseBtn').style.display = isAdmin ? 'block' : 'none';
+}
+$('pinBar').addEventListener('click', (e) => {
+  if (e.target.id === 'pinCloseBtn') {
+    const m = byId.get(group?.pinned_message_id);
+    if (m) togglePin(m);
+    return;
+  }
+  if (group?.pinned_message_id) jumpTo(group.pinned_message_id);
+});
+
+/* ============================================================
+   SEARCH IN CONVERSATION
+   ============================================================ */
+
+$('groupSearchBtn').addEventListener('click', () => {
+  searchOn = true;
+  $('searchTop').classList.add('show');
+  $('searchInput').value = ''; $('searchInput').focus();
+});
+$('searchCloseBtn').addEventListener('click', () => {
+  searchOn = false; searchTerm = ''; searchHits = []; searchIdx = 0;
+  $('searchTop').classList.remove('show'); $('searchHits').textContent = '';
+  render(); scroller.toBottom(false);
+});
+$('searchInput').addEventListener('input', () => {
+  searchTerm = $('searchInput').value.trim();
+  if (!searchTerm) { searchHits = []; $('searchHits').textContent = ''; render(); return; }
+  const q = searchTerm.toLowerCase();
+  searchHits = messages.filter(m => (m.content || '').toLowerCase().includes(q)).map(m => m.id);
+  searchIdx = searchHits.length - 1;
+  render();
+  paintSearch();
+});
+function paintSearch() {
+  $('searchHits').textContent = searchHits.length ? `${searchIdx + 1}/${searchHits.length}` : '0/0';
+  if (searchHits[searchIdx]) jumpTo(searchHits[searchIdx]);
+}
+$('searchNextBtn').addEventListener('click', () => {
+  if (!searchHits.length) return;
+  searchIdx = (searchIdx + 1) % searchHits.length; paintSearch();
+});
+$('searchPrevBtn').addEventListener('click', () => {
+  if (!searchHits.length) return;
+  searchIdx = (searchIdx - 1 + searchHits.length) % searchHits.length; paintSearch();
+});
+
+/* ---- jump-to-unread pill ---- */
+$('unreadJump').addEventListener('click', () => {
+  const sep = document.getElementById('unreadSep');
+  if (sep) sep.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  $('unreadJump').classList.remove('show');
+});
+
+/* ============================================================
+   GROUP INFO PANEL
+   ============================================================ */
+
+const panel = $('groupInfoPanel');
+function openInfo() { renderInfoPanel(); panel.classList.add('show'); panel.setAttribute('aria-hidden', 'false'); }
+function closeInfo() { panel.classList.remove('show'); panel.setAttribute('aria-hidden', 'true'); }
+$('groupInfoBtn').addEventListener('click', openInfo);
+$('groupHeaderInfo').addEventListener('click', openInfo);
+$('giBackBtn').addEventListener('click', closeInfo);
+
+function renderInfoPanel() {
+  if (!group) return;
+  const name = group.name || 'Group';
+  $('giName').textContent = name;
+  $('giAvatar').innerHTML = group.avatar_url
+    ? `<img src="${esc(group.avatar_url)}" alt="">`
+    : esc(window.CP.initials(name));
+  $('giSub').textContent = `Group · ${members.length} member${members.length === 1 ? '' : 's'}`;
+  $('giDesc').textContent = group.description || '';
+  $('giMembersTitle').textContent = `${members.length} member${members.length === 1 ? '' : 's'}`;
+  $('giEditBtn').style.display = isAdmin ? 'flex' : 'none';
+  $('giAddPeopleBtn').style.display = 'flex';
+  $('giDeleteBtn').style.display = isOwner ? 'flex' : 'none';
+  $('giSettingsSection').style.display = (isAdmin && !OFF.has('only_admins_can_post')) ? 'block' : 'none';
+  $('giOnlyAdmins').classList.toggle('on', !!group.only_admins_can_post);
+  $('giMuteBtn').classList.toggle('on', muted);
+  $('giMuteBtn').innerHTML = `<span class="em">${muted ? '🔕' : '🔔'}</span>${muted ? 'Unmute' : 'Mute'}`;
+
+  // members, admins first
+  const sorted = [...members].sort((a, b) => {
+    const rank = r => ['creator', 'owner'].includes(r) ? 0 : ['admin', 'moderator'].includes(r) ? 1 : 2;
+    return rank(a.role) - rank(b.role) ||
+      (a.profile?.full_name || '').localeCompare(b.profile?.full_name || '');
+  });
+  $('giMembers').innerHTML = sorted.map(m => {
+    const nm = m.profile?.full_name || m.profile?.username || 'Member';
+    const av = m.profile?.avatar_url ? `<img src="${esc(m.profile.avatar_url)}" alt="">` : esc(window.CP.initials(nm));
+    const tag = ['creator', 'owner'].includes(m.role) ? '<span class="gi-tag owner">Creator</span>'
+      : ['admin', 'moderator'].includes(m.role) ? '<span class="gi-tag">Admin</span>'
+      : (m.can_lecture || m.role === 'lecturer') ? '<span class="gi-tag lecturer">Lecturer</span>' : '';
+    return `<div class="gi-row" data-member="${esc(m.user_id)}">
+      <span class="av">${av}</span>
+      <span class="tx"><b>${esc(nm)}${m.user_id === myUserId ? ' (You)' : ''}</b>
+        <span>${m.profile?.username ? '@' + esc(m.profile.username) : ''}</span></span>
+      ${tag}
+    </div>`;
   }).join('');
 
-  list.querySelectorAll('.call-row').forEach(row => {
-    row.addEventListener('click', () => {
-      if (!row.dataset.peer) return;
-      window.location.href = `call.html?peer=${row.dataset.peer}&name=${encodeURIComponent(row.dataset.name)}&role=caller&mode=${row.dataset.video === '1' ? 'video' : 'audio'}`;
-    });
-  });
+  // media strip
+  const media = messages.filter(m => m.media_url && !m.is_deleted).slice(-24).reverse();
+  $('giMedia').innerHTML = media.length
+    ? media.map(m => m.media_type?.startsWith('image')
+      ? `<img src="${esc(m.media_url)}" data-view="${esc(m.media_url)}" alt="">`
+      : `<a class="doc" href="${esc(m.media_url)}" target="_blank" rel="noopener">${m.media_type?.startsWith('video') ? '🎬' : m.media_type?.startsWith('audio') ? '🎤' : '📎'}</a>`).join('')
+    : `<div style="color:var(--text3);font-size:13px;padding:6px 0">Nothing shared yet.</div>`;
+  $('giMediaSection').style.display = 'block';
 }
 
-/* ============ NEW CHAT ============ */
+C.wireLightbox($('giMedia'));
 
-$('newChatBtn').addEventListener('click', () => {
-  const panel = $('newChatPanel');
-  const opening = panel.style.display === 'none';
-  panel.style.display = opening ? 'block' : 'none';
-  $('chatList').style.display = opening ? 'none' : 'block';
-  document.querySelector('.chat-search-wrap').style.display = opening ? 'none' : 'flex';
-  if (opening) $('userSearchInput').focus(); else $('userSearchResults').innerHTML = '';
+/* ---- member actions ---- */
+$('giMembers').addEventListener('click', (e) => {
+  const row = e.target.closest('[data-member]'); if (!row) return;
+  const uid = row.dataset.member;
+  const mem = memberMap.get(uid);
+  if (!mem || uid === myUserId) return;
+  const nm = mem.profile?.full_name || mem.profile?.username || 'Member';
+
+  const sheet = makeSheet('memberSheet');
+  const canManage = isAdmin && !['creator', 'owner'].includes(mem.role);
+  sheet.querySelector('.msg-sheet').innerHTML = `
+    <div class="grab"></div>
+    <h4>${esc(nm)}</h4>
+    <button data-m="view">👤 View profile</button>
+    <button data-m="dm">💬 Message privately</button>
+    ${canManage ? `<button data-m="role">${['admin', 'moderator'].includes(mem.role) ? '⬇️ Dismiss as admin' : '⬆️ Make group admin'}</button>` : ''}
+    ${canManage ? `<button data-m="lecture">${(mem.can_lecture || mem.role === 'lecturer') ? '🚫 Remove lecture access' : '🎓 Allow them to lecture'}</button>` : ''}
+    ${canManage ? `<button data-m="remove" class="danger">🚫 Remove from group</button>` : ''}
+    <button data-act="close">✕ Cancel</button>`;
+  sheet.classList.add('show');
+
+  sheet.onclick = async (ev) => {
+    if (ev.target === sheet || ev.target.dataset.act === 'close') { sheet.classList.remove('show'); return; }
+    const btn = ev.target.closest('button[data-m]'); if (!btn) return;
+    sheet.classList.remove('show');
+
+    if (btn.dataset.m === 'view') { window.location.href = `profile-view.html?id=${uid}`; return; }
+    if (btn.dataset.m === 'dm') {
+      const cid = await window.CP.openOrCreateConversation(myUserId, uid);
+      if (cid) window.location.href = `chat-thread.html?id=${cid}`;
+      return;
+    }
+    if (btn.dataset.m === 'role') {
+      const nextRole = ['admin', 'moderator'].includes(mem.role) ? 'member' : 'admin';
+      const { error } = await window.sb.from('group_members')
+        .update({ role: nextRole }).eq('group_id', groupId).eq('user_id', uid);
+      if (error) { alert("Couldn't change that member's role."); return; }
+      mem.role = nextRole;
+      if (!OFF.has('can_add_members')) {
+        window.sb.from('group_members')
+          .update({ can_add_members: nextRole === 'admin', can_remove_members: nextRole === 'admin' })
+          .eq('group_id', groupId).eq('user_id', uid).then(() => {}, () => {});
+      }
+      postSystem(`${nm} is ${nextRole === 'admin' ? 'now an admin' : 'no longer an admin'}`);
+      renderInfoPanel();
+      return;
+    }
+    if (btn.dataset.m === 'lecture') {
+      const next = !(mem.can_lecture || mem.role === 'lecturer');
+      const { error } = await window.sb.from('group_members')
+        .update({ can_lecture: next }).eq('group_id', groupId).eq('user_id', uid);
+      if (optional(error, 'can_lecture')) {
+        alert('Lecture rights need the can_lecture column — run camplugie-groups.sql in Supabase.');
+        return;
+      }
+      if (error) { alert("Couldn't change their lecture access."); return; }
+      mem.can_lecture = next;
+      postSystem(next ? `${nm} can now start lectures in this group` : `${nm} can no longer start lectures`);
+      renderInfoPanel();
+      return;
+    }
+
+    if (btn.dataset.m === 'remove') {
+      if (!confirm(`Remove ${nm} from the group?`)) return;
+      const { error } = await window.sb.from('group_members')
+        .delete().eq('group_id', groupId).eq('user_id', uid);
+      if (error) { alert("Couldn't remove that member."); return; }
+      members = members.filter(x => x.user_id !== uid);
+      memberMap.delete(uid);
+      postSystem(`${nm} was removed from the group`);
+      refreshMemberDerived(); renderInfoPanel(); render();
+    }
+  };
 });
 
-let userSearchDebounce;
-$('userSearchInput').addEventListener('input', (e) => {
-  clearTimeout(userSearchDebounce);
-  const q = e.target.value.trim();
-  userSearchDebounce = setTimeout(() => searchUsers(q), 280);
-});
+/* ============================================================
+   ADD PEOPLE  (search everyone on Camplugie, add or plug them)
+   ============================================================ */
 
-async function searchUsers(q) {
-  const results = $('userSearchResults');
-  if (!q) { results.innerHTML = ''; return; }
-  results.innerHTML = `<div class="admin-empty">Searching…</div>`;
+const people = $('peoplePanel');
+let ppRows = [];
+let myPlugs = new Set();
 
-  let query = window.sb.from('profiles').select('id, full_name, username, avatar_url').neq('id', myUserId).limit(20);
-  if (myUniversityId) query = query.eq('university_id', myUniversityId);
-  const { data, error } = await query.or(`full_name.ilike.%${q}%,username.ilike.%${q}%`);
+function openPeople() {
+  people.classList.add('show');
+  people.setAttribute('aria-hidden', 'false');
+  $('ppSub').textContent = isAdmin
+    ? 'Tap Add to put someone in this group'
+    : 'Only admins can add people — you can still plug them';
+  $('ppSearch').value = '';
+  loadPlugs();
+  searchPeople('');
+  setTimeout(() => $('ppSearch').focus(), 250);
+}
+function closePeople() { people.classList.remove('show'); people.setAttribute('aria-hidden', 'true'); }
 
-  if (error) { console.error(error); results.innerHTML = `<div class="admin-empty">Couldn't search.</div>`; return; }
-  if (!data || !data.length) { results.innerHTML = `<div class="admin-empty">No students found.</div>`; return; }
+$('giAddPeopleBtn').addEventListener('click', openPeople);
+$('ppBackBtn').addEventListener('click', closePeople);
+$('giInviteBtn').addEventListener('click', openPeople);
 
-  // NOTE: class is `user-row`, not `chat-row` — the chat-row delegate below used
-  // to fire on these too and navigate to chat-thread.html?id=undefined.
-  results.innerHTML = data.map(u => `
-    <div class="chat-row user-row" data-user="${esc(u.id)}">
-      <div class="avatar">${u.avatar_url ? `<img src="${esc(u.avatar_url)}" alt="">` : esc(window.CP.initials(u.full_name || u.username))}</div>
-      <div class="chat-row-text"><div class="chat-row-top"><span class="name">${esc(u.full_name || u.username)}</span></div>
-      <div class="chat-row-bottom"><span class="preview"><span class="txt">@${esc(u.username || '')}</span></span></div></div>
-    </div>`).join('');
+// Who I've already plugged, so the button reads right.
+async function loadPlugs() {
+  if (OFF.has('plugs')) return;
+  const { data, error } = await window.sb.from('plugs')
+    .select('user_id, plug_id').or(`user_id.eq.${myUserId},plug_id.eq.${myUserId}`);
+  if (error) { OFF.add('plugs'); return; }
+  myPlugs = new Set((data || []).map(r => r.user_id === myUserId ? r.plug_id : r.user_id));
 }
 
-async function startConversation(otherUserId, rowEl) {
-  if (rowEl) rowEl.style.opacity = '.5';
-  const id = await window.CP.openOrCreateConversation(myUserId, otherUserId, null);
-  if (!id) { if (rowEl) rowEl.style.opacity = ''; alert('Could not start a chat — please try again.'); return; }
-  window.location.href = `chat-thread.html?id=${id}`;
-}
-
-/* ============ TABS ============ */
-
-document.querySelectorAll('.notif-tab').forEach(tab => {
-  tab.addEventListener('click', () => {
-    document.querySelectorAll('.notif-tab').forEach(t => t.classList.remove('active'));
-    document.querySelectorAll('.notif-panel').forEach(p => p.classList.remove('active'));
-    tab.classList.add('active');
-    const panel = tab.dataset.panel;
-    $(panel + 'Panel').classList.add('active');
-    document.querySelector('.cp-page-header h1').textContent =
-      { chats: 'Chats', groups: 'Groups', calls: 'Calls', activity: 'Activity' }[panel];
-
-    // This is the bug that made Groups and Calls look permanently empty:
-    // the loaders existed but nothing ever called them.
-    if (panel === 'groups' && !loaded.groups) { loaded.groups = true; loadGroups(); }
-    if (panel === 'calls' && !loaded.calls) { loaded.calls = true; loadCalls(); }
-  });
+let ppTimer = null;
+$('ppSearch').addEventListener('input', () => {
+  clearTimeout(ppTimer);
+  ppTimer = setTimeout(() => searchPeople($('ppSearch').value.trim()), 260);
 });
 
-/* ============ CLICK ROUTING ============ */
+async function searchPeople(q) {
+  const list = $('ppList');
+  list.innerHTML = `<div class="pp-empty">Searching…</div>`;
 
-document.addEventListener('click', (e) => {
-  // New-chat search results
-  const userRow = e.target.closest('.user-row');
-  if (userRow) { startConversation(userRow.dataset.user, userRow); return; }
+  const sel = 'id, full_name, username, avatar_url, is_verified, university_id, universities(name)';
+  let query = window.sb.from('profiles').select(sel).neq('id', myUserId).limit(40);
 
-  // Existing conversations
-  const chatRow = e.target.closest('#chatList .chat-row');
-  if (chatRow && chatRow.dataset.id) { window.location.href = `chat-thread.html?id=${chatRow.dataset.id}`; return; }
-});
-
-document.addEventListener('click', async (e) => {
-  const row = e.target.closest('.activity-row');
-  if (!row) return;
-  if (row.classList.contains('unread')) {
-    row.classList.remove('unread');
-    const item = allActivity.find(a => String(a.id) === row.dataset.id);
-    if (item) item.is_read = true;
-    $('activityDot').style.display = allActivity.some(a => !a.is_read) ? 'block' : 'none';
-    window.sb.from('notifications').update({ is_read: true }).eq('id', row.dataset.id).then(() => {}, () => {});
+  if (q) {
+    const term = q.replace(/^@/, '').replace(/[%,]/g, '');
+    query = query.or(`username.ilike.%${term}%,full_name.ilike.%${term}%`);
+  } else if (window.CP_PROFILE?.university_id) {
+    // No search text yet → show people from my own campus first.
+    query = query.eq('university_id', window.CP_PROFILE.university_id);
   }
-  if (row.dataset.href) window.location.href = row.dataset.href;
+
+  let { data, error } = await query;
+  if (error) {
+    // 'universities(name)' may not join on every setup — retry plain.
+    ({ data, error } = await window.sb.from('profiles')
+      .select('id, full_name, username, avatar_url, is_verified')
+      .neq('id', myUserId).limit(40));
+  }
+  if (error) { list.innerHTML = `<div class="pp-empty">Couldn't load people right now.</div>`; return; }
+
+  ppRows = (data || []).filter(p => !p.is_banned);
+  renderPeople(q);
+}
+
+function renderPeople(q) {
+  const list = $('ppList');
+  const invite = `<div class="pp-invite" id="ppInviteRow">
+      <span class="ic">🔗</span>
+      <span style="flex:1;min-width:0"><b>Share invite link</b><span>Anyone with the link can join</span></span>
+    </div>`;
+
+  if (!ppRows.length) {
+    list.innerHTML = invite + `<div class="pp-empty">${q ? `No one found for "${esc(q)}".` : 'No one to show yet.'}</div>`;
+    wireInviteRow();
+    return;
+  }
+
+  list.innerHTML = invite + ppRows.map(p => {
+    const nm = p.full_name || p.username || 'Camplugie user';
+    const av = p.avatar_url
+      ? `<span class="av"><img src="${esc(p.avatar_url)}" alt=""></span>`
+      : `<span class="av">${esc(window.CP.initials(nm))}</span>`;
+    const inGroup = memberMap.has(p.id);
+    const plugged = myPlugs.has(p.id);
+    const sub = [p.username ? '@' + p.username : '', p.universities?.name || ''].filter(Boolean).join(' · ');
+
+    return `<div class="pp-row" data-uid="${esc(p.id)}">
+      ${av}
+      <span class="tx"><b>${esc(nm)}${p.is_verified ? ' ✅' : ''}</b><span>${esc(sub)}</span></span>
+      <button class="pp-btn plug${plugged ? ' done' : ''}" data-plug="${esc(p.id)}"${plugged ? ' disabled' : ''}>${plugged ? 'Plugged' : 'Plug'}</button>
+      ${inGroup
+        ? `<button class="pp-btn" disabled>In group</button>`
+        : isAdmin ? `<button class="pp-btn solid" data-add="${esc(p.id)}">Add</button>` : ''}
+    </div>`;
+  }).join('');
+
+  wireInviteRow();
+}
+
+function wireInviteRow() {
+  const row = $('ppInviteRow');
+  if (row) row.addEventListener('click', shareInvite);
+}
+
+async function shareInvite() {
+  const link = group?.invite_code
+    ? `${location.origin}/groups.html?join=${group.invite_code}`
+    : `${location.origin}/group-thread.html?id=${groupId}`;
+  const text = `Join "${group?.name || 'our group'}" on Camplugie: ${link}`;
+  if (navigator.share) { try { await navigator.share({ title: group?.name, text, url: link }); return; } catch (_) {} }
+  try { await navigator.clipboard.writeText(text); alert(group?.invite_code ? `Invite link copied.\n\nInvite code: ${group.invite_code}` : 'Invite link copied.'); }
+  catch (_) { prompt('Copy this invite link:', link); }
+}
+
+$('ppList').addEventListener('click', async (e) => {
+  const addBtn = e.target.closest('[data-add]');
+  const plugBtn = e.target.closest('[data-plug]');
+
+  if (addBtn) {
+    const uid = addBtn.dataset.add;
+    const p = ppRows.find(x => x.id === uid);
+    addBtn.disabled = true; addBtn.textContent = 'Adding…';
+    const ok = await addMember(uid, p?.full_name || p?.username || 'Someone');
+    if (ok) { addBtn.classList.remove('solid'); addBtn.textContent = 'In group'; }
+    else { addBtn.disabled = false; addBtn.textContent = 'Add'; }
+    return;
+  }
+
+  if (plugBtn) {
+    const uid = plugBtn.dataset.plug;
+    plugBtn.disabled = true; plugBtn.textContent = 'Plugging…';
+    const { error } = await window.sb.from('plugs').insert({ user_id: myUserId, plug_id: uid });
+    // A duplicate just means we're already plugged — treat it as success.
+    if (error && !/duplicate|unique/i.test(error.message || '')) {
+      console.error('Plug insert failed:', error);
+      plugBtn.disabled = false; plugBtn.textContent = 'Plug';
+      alert(`Couldn't plug them: ${error.message || 'unknown error'}\n\nThis usually means the plugs table needs the insert policy from camplugie-groups.sql.`);
+      return;
+    }
+    myPlugs.add(uid);
+    plugBtn.classList.add('done'); plugBtn.textContent = 'Plugged';
+  }
 });
 
-/* ============ REALTIME ============ */
+async function addMember(uid, nm) {
+  if (!isAdmin) { alert('Only group admins can add people.'); return false; }
+  if (memberMap.has(uid)) return true;
 
-function subscribeRealtime(userId) {
-  // New messages anywhere → refresh the chat list ordering + unread counts.
-  window.sb.channel('inbox-messages')
-    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, () => {
-      clearTimeout(window.__chatRefresh);
-      window.__chatRefresh = setTimeout(() => loadChats(userId), 500);
-    })
-    .subscribe();
+  let payload = { group_id: groupId, user_id: uid, role: 'member', can_send_messages: true };
+  let { error } = await window.sb.from('group_members').insert(payload);
+  if (error && optional(error, 'can_send_messages')) {
+    ({ error } = await window.sb.from('group_members')
+      .insert({ group_id: groupId, user_id: uid, role: 'member' }));
+  }
+  if (error) {
+    console.error('Add member error:', error);
+    alert(`Couldn't add them: ${error.message || 'unknown error'}\n\nThis usually means the group_members insert policy from camplugie-groups.sql is missing.`);
+    return false;
+  }
 
-  window.sb.channel(`inbox-notifs-${userId}`)
-    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'notifications', filter: `user_id=eq.${userId}` }, ({ new: n }) => {
-      allActivity.unshift(n);
-      paintActivity();
-    })
+  postSystem(`${nm} was added to the group`);
+  await loadMembers();
+  window.sb.from('groups').update({ member_count: members.length }).eq('id', groupId).then(() => {}, () => {});
+  renderInfoPanel(); render();
+  return true;
+}
+
+/* ---- mute / settings / leave / delete ---- */
+$('giMuteBtn').addEventListener('click', async () => {
+  if (OFF.has('is_muted')) { alert('Muting needs the is_muted column — see camplugie-groups.sql.'); return; }
+  const next = !muted;
+  const { error } = await window.sb.from('group_members')
+    .update({ is_muted: next }).eq('group_id', groupId).eq('user_id', myUserId);
+  if (optional(error, 'is_muted')) { alert('Muting needs the is_muted column — see camplugie-groups.sql.'); return; }
+  if (error) return;
+  muted = next; renderInfoPanel();
+});
+
+$('giOnlyAdmins').addEventListener('click', async () => {
+  if (!isAdmin) return;
+  const next = !group.only_admins_can_post;
+  const { error } = await window.sb.from('groups').update({ only_admins_can_post: next }).eq('id', groupId);
+  if (optional(error, 'only_admins_can_post')) { alert('This needs the only_admins_can_post column — see camplugie-groups.sql.'); return; }
+  if (error) return;
+  group.only_admins_can_post = next;
+  applyGroupSettings(); renderInfoPanel();
+  postSystem(next ? 'Only admins can send messages now' : 'All members can send messages now');
+});
+
+$('giEditBtn').addEventListener('click', async () => {
+  const name = prompt('Group name', group.name || '');
+  if (name === null) return;
+  const description = prompt('Group description', group.description || '');
+  const patch = { name: name.trim() || group.name };
+  if (description !== null) patch.description = description;
+  const { error } = await window.sb.from('groups').update(patch).eq('id', groupId);
+  if (error) { alert("Couldn't save those changes."); return; }
+  Object.assign(group, patch);
+  $('groupName').textContent = group.name;
+  renderInfoPanel();
+});
+
+$('giLeaveBtn').addEventListener('click', async () => {
+  const otherAdmins = members.some(m => m.user_id !== myUserId && ['creator', 'owner', 'admin', 'moderator'].includes(m.role));
+  if (isAdmin && !otherAdmins && members.length > 1) {
+    if (!confirm("You're the only admin here. If you leave, no one will be able to manage this group. Leave anyway?")) return;
+  } else if (!confirm('Exit this group? You\'ll stop getting its messages.')) return;
+  await postSystem(`${myName} left the group`);
+  const { error } = await window.sb.from('group_members')
+    .delete().eq('group_id', groupId).eq('user_id', myUserId);
+  if (error) { alert("Couldn't leave the group."); return; }
+  window.sb.from('groups').update({ member_count: Math.max(1, members.length - 1) })
+    .eq('id', groupId).then(() => {}, () => {});
+  window.location.href = 'groups.html';
+});
+
+$('giDeleteBtn').addEventListener('click', async () => {
+  if (!isOwner) return;
+  if (!confirm('Delete this group for everyone? This cannot be undone.')) return;
+  const { error } = await window.sb.from('groups').delete().eq('id', groupId);
+  if (error) { alert("Couldn't delete the group."); return; }
+  window.location.href = 'groups.html';
+});
+
+function applyGroupSettings() {
+  canPost = !group?.only_admins_can_post || isAdmin;
+  $('threadComposer').style.display = canPost ? 'flex' : 'none';
+  $('composerLocked').classList.toggle('show', !canPost);
+  $('announceOpt').style.display = isAdmin ? 'flex' : 'none';
+  if (group?.name) $('groupName').textContent = group.name;
+}
+
+/* ============================================================
+   MEMBERS
+   ============================================================ */
+
+async function loadMembers() {
+  let sel = 'user_id, role, last_read_at, is_muted, can_lecture, profiles(id, full_name, username, avatar_url, university_id)';
+  let { data, error } = await window.sb.from('group_members').select(sel).eq('group_id', groupId);
+
+  // Fall back through the optional columns if this DB doesn't have them yet.
+  if (error) {
+    optional(error, 'last_read_at'); optional(error, 'is_muted'); optional(error, 'can_lecture');
+    OFF.add('last_read_at'); OFF.add('is_muted'); OFF.add('can_lecture');
+    ({ data, error } = await window.sb.from('group_members')
+      .select('user_id, role, profiles(id, full_name, username, avatar_url, university_id)').eq('group_id', groupId));
+  }
+  if (error) { console.error('Members error:', error); return; }
+
+  members = (data || []).map(r => ({
+    user_id: r.user_id,
+    role: r.role || 'member',
+    last_read_at: r.last_read_at || null,
+    is_muted: !!r.is_muted,
+    can_lecture: !!r.can_lecture,
+    profile: r.profiles || null,
+  }));
+  refreshMemberDerived();
+}
+
+function refreshMemberDerived() {
+  memberMap.clear(); memberNames = {};
+  members.forEach(m => {
+    memberMap.set(m.user_id, m);
+    memberNames[m.user_id] = m.profile?.full_name || m.profile?.username || 'Member';
+  });
+  const me = memberMap.get(myUserId);
+  // This project stores the group creator as role 'creator' (groups.html) and
+  // also stamps groups.creator_id — accept every spelling so the person who
+  // made the group always gets the admin tools.
+  const creatorId = group?.creator_id || group?.created_by || group?.owner_id || null;
+  isOwner = (!!me && ['creator', 'owner'].includes(me.role)) || creatorId === myUserId;
+  isAdmin = isOwner || (!!me && ['admin', 'moderator'].includes(me.role));
+  // A course rep (admin) can hand lecture rights to a lecturer without making
+  // them an admin — they get the podium, not the member list.
+  canLecture = isAdmin || !!me?.can_lecture || me?.role === 'lecturer';
+  muted = !!me?.is_muted;
+  buildMentionRegex();
+  paintHeaderCount();
+}
+
+function paintHeaderCount() {
+  if (typingNow.size) return;
+  const n = members.length || group?.member_count || 1;
+  $('groupMemberCount').textContent = `${n} member${n === 1 ? '' : 's'}`;
+}
+
+/* ============================================================
+   BOOT
+   ============================================================ */
+
+function toastBanner(msg) {
+  let el = document.getElementById('cpToast');
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'cpToast';
+    el.style.cssText = 'position:fixed;left:50%;bottom:calc(90px + var(--safe-bottom));transform:translateX(-50%);max-width:88%;background:var(--surface3);border:1px solid var(--border);border-radius:14px;padding:12px 16px;font-size:13px;line-height:1.4;color:var(--text);z-index:500;box-shadow:var(--shadow-lg)';
+    document.body.appendChild(el);
+  }
+  el.textContent = msg;
+  clearTimeout(toastBanner._t);
+  toastBanner._t = setTimeout(() => el.remove(), 7000);
+}
+
+async function loadGroup(userId) {
+  groupId = new URLSearchParams(window.location.search).get('id');
+  if (!groupId) { box.innerHTML = `<div style="text-align:center;padding:24px;color:var(--text3);font-size:13px;">No group specified.</div>`; return; }
+
+  const { data: g, error } = await window.sb.from('groups').select('*').eq('id', groupId).single();
+  if (error || !g) {
+    console.error('loadGroup failed for id', groupId, error);
+    const detail = error ? (error.message || error.code || JSON.stringify(error)) : 'No group data came back (check the id in the URL, and that RLS allows you to read it).';
+    box.innerHTML = `<div style="text-align:center;padding:24px;color:var(--text3);font-size:13px;">Couldn't load this group.<br><span style="font-size:11px;opacity:.7">${esc(detail)}</span></div>`;
+    return;
+  }
+  group = g;
+
+  $('groupName').textContent = g.name;
+  $('groupAvatar').innerHTML = g.avatar_url ? `<img src="${esc(g.avatar_url)}" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:inherit">` : window.CP.initials(g.name);
+
+  await loadMembers();
+
+  // If I created this group but my group_members row never landed (the upsert
+  // in groups.html can fail silently behind RLS), the admin tools would be
+  // invisible to my own group. Put the row back, then re-read.
+  const creatorId = g.creator_id || g.created_by || g.owner_id || null;
+  if (creatorId === userId && !memberMap.has(userId)) {
+    // Try the full row first, then progressively plainer ones, so a missing optional
+    // column (can_send_messages) or a strict role check can't block the repair.
+    const attempts = [
+      { group_id: groupId, user_id: userId, role: 'creator', can_send_messages: true },
+      { group_id: groupId, user_id: userId, role: 'creator' },
+      { group_id: groupId, user_id: userId, role: 'admin' },
+      { group_id: groupId, user_id: userId },
+    ];
+    let firstErr = null, healed = false;
+    for (const row of attempts) {
+      const { error: healErr } = await window.sb.from('group_members').insert(row);
+      if (!healErr || healErr.code === '23505') { healed = true; break; } // 23505 = row already exists
+      if (!firstErr) firstErr = healErr;
+    }
+    if (!healed) {
+      console.error('Could not restore your membership row:', firstErr);
+      toastBanner("Couldn't add you to your own group: " + (firstErr?.message || firstErr?.code || 'unknown error'));
+    } else {
+      await loadMembers();
+    }
+  }
+
+  applyGroupSettings();
+  loadDraft();
+
+  await loadMessages();
+  renderPinBar();
+  subscribeToGroupMessages();
+
+  $('groupCallBtn').style.display = 'flex';
+  $('groupCallBtn').addEventListener('click', openCallSheet);
+  $('giCallBtn').addEventListener('click', () => { closeInfo(); openCallSheet(); });
+  checkActiveCall();
+  subscribeToGroupCalls();
+
+  presence = C.makePresence(`group-presence-${groupId}`, myUserId, {
+    onSync(state) {
+      const online = Object.keys(state).length;
+      if (typingNow.size) return;
+      const n = members.length || 1;
+      $('groupMemberCount').classList.toggle('online', online > 1);
+      $('groupMemberCount').textContent = online > 1
+        ? `${n} members · ${online} online`
+        : `${n} member${n === 1 ? '' : 's'}`;
+    },
+    onTyping(p) {
+      if (p.typing) typingNow.set(p.userId, p.name); else typingNow.delete(p.userId);
+      const el = $('groupMemberCount');
+      const row = $('typingRow');
+      if (typingNow.size) {
+        const names = [...typingNow.values()];
+        el.classList.add('typing');
+        el.textContent = names.length === 1 ? `${names[0]} is typing…` : `${names.length} people are typing…`;
+        if (row) { row.style.display = 'flex'; scroller.nearBottom() && scroller.toBottom(true); }
+        setTimeout(() => {
+          typingNow.delete(p.userId);
+          if (!typingNow.size) { el.classList.remove('typing'); paintHeaderCount(); if (row) row.style.display = 'none'; }
+        }, 4000);
+      } else {
+        el.classList.remove('typing'); paintHeaderCount();
+        if (row) row.style.display = 'none';
+      }
+    },
+  });
+
+  bootDone = true;
+}
+
+/* ============================================================
+   GROUP CALLS  (general call vs lecture)
+   ============================================================ */
+
+let activeCall = null;
+let callsChannel = null;
+
+function openCallSheet() {
+  if (activeCall) { joinCall(activeCall); return; }
+
+  const sheet = makeSheet('callModeSheet');
+  sheet.classList.add('call-mode-sheet-backdrop');
+  sheet.querySelector('.msg-sheet').innerHTML = `
+    <div class="grab"></div>
+    <h4>Start a call</h4>
+    <button data-mode="general"><span class="em">📞</span><span class="col"><b>General call</b><small>Everyone can talk and turn on video</small></span></button>
+    ${canLecture ? `<button data-mode="lecture"><span class="em">🎓</span><span class="col"><b>Start a lecture</b><small>You're on video, students listen — call any student up</small></span></button>`
+              : `<div style="padding:10px 22px;color:var(--text3);font-size:12.5px">An admin has to give you lecture access first.</div>`}
+    <button data-act="close">✕ Cancel</button>`;
+  sheet.classList.add('show');
+
+  sheet.onclick = (e) => {
+    if (e.target === sheet || e.target.dataset.act === 'close') { sheet.classList.remove('show'); return; }
+    const btn = e.target.closest('button[data-mode]'); if (!btn) return;
+    sheet.classList.remove('show');
+    startGroupCall(btn.dataset.mode);
+  };
+}
+
+async function startGroupCall(mode) {
+  if (mode === 'lecture' && !canLecture) { alert('An admin has to give you lecture access first.'); return; }
+  const { data: call, error } = await window.sb.from('group_calls')
+    .insert({ group_id: groupId, host_id: myUserId, mode }).select().single();
+  if (error) { console.error('Could not start call:', error); alert("Couldn't start the call — try again."); return; }
+  postSystem(mode === 'lecture' ? `${myName} started a lecture` : `${myName} started a group call`);
+  window.location.href = `group-call.html?groupId=${groupId}&callId=${call.id}&mode=${mode}&role=host`;
+}
+
+function joinCall(call) {
+  const role = call.host_id === myUserId ? 'host' : 'guest';
+  window.location.href = `group-call.html?groupId=${groupId}&callId=${call.id}&mode=${call.mode}&role=${role}`;
+}
+
+async function checkActiveCall() {
+  const { data } = await window.sb.from('group_calls')
+    .select('*, profiles!group_calls_host_id_fkey(full_name, username)')
+    .eq('group_id', groupId).is('ended_at', null)
+    .order('started_at', { ascending: false }).limit(1).maybeSingle();
+  activeCall = data || null;
+  renderCallBanner();
+}
+
+function renderCallBanner() {
+  const banner = $('activeCallBanner');
+  if (!activeCall) { banner.style.display = 'none'; banner.innerHTML = ''; return; }
+  const hostName = activeCall.profiles?.full_name || activeCall.profiles?.username || 'Someone';
+  const lecture = activeCall.mode === 'lecture';
+  banner.style.cssText = 'display:flex;align-items:center;gap:10px;background:var(--brand-soft);color:var(--brand);margin:10px 16px 0;padding:10px 14px;border-radius:12px;font-size:13px;font-weight:700;';
+  banner.innerHTML = `<span style="flex:1">🔴 ${lecture ? '🎓' : '📞'} ${esc(hostName)} started a ${lecture ? 'lecture' : 'call'} — join now</span>
+    <button id="joinCallBtn" style="padding:8px 14px;font-size:12.5px;background:var(--brand);color:#fff;border:none;border-radius:10px;font-weight:800;cursor:pointer">Join</button>`;
+  $('joinCallBtn').addEventListener('click', () => joinCall(activeCall));
+}
+
+function subscribeToGroupCalls() {
+  callsChannel = window.sb.channel(`group-calls-${groupId}`)
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'group_calls', filter: `group_id=eq.${groupId}` }, () => checkActiveCall())
     .subscribe();
 }
 
-/* ============ BOOT ============ */
+/* ============================================================
+   LIFECYCLE
+   ============================================================ */
 
 document.addEventListener('cp-ready', (e) => {
   myUserId = e.detail.user.id;
-  myUniversityId = e.detail.profile?.university_id || null;
-  loadChats(myUserId);
-  loadActivity(myUserId);
-  subscribeRealtime(myUserId);
-
-  // Deep link: notifications.html?tab=calls
-  const tab = new URLSearchParams(location.search).get('tab');
-  if (tab) document.querySelector(`.notif-tab[data-panel="${tab}"]`)?.click();
+  myName = e.detail.profile?.full_name || e.detail.profile?.username || 'Someone';
+  myAvatar = e.detail.profile?.avatar_url || null;
+  scroller = C.makeScroller($('chatScroll'), $('scrollBottomBtn'));
+  updateSendIcon();
+  loadGroup(myUserId);
 });
 
-document.addEventListener('visibilitychange', () => {
-  if (document.visibilityState === 'visible' && myUserId) loadChats(myUserId);
+$('chatScroll').addEventListener('scroll', () => {
+  if (scroller?.nearBottom()) { $('unreadJump').classList.remove('show'); markRead(); }
 });
+
+document.addEventListener('visibilitychange', () => { if (!document.hidden && bootDone) markRead(); });
+window.addEventListener('beforeunload', () => { presence?.stopTyping(myName); saveDraft(); });
+
+// Android back button / swipe-back closes the info panel and select mode first.
+window.addEventListener('popstate', () => {
+  if (people.classList.contains('show')) { closePeople(); history.pushState(null, ''); }
+  else if (panel.classList.contains('show')) { closeInfo(); history.pushState(null, ''); }
+  else if (selectMode) { exitSelectMode(); history.pushState(null, ''); }
+});
+history.pushState(null, '');
+
+if (window.visualViewport) {
+  window.visualViewport.addEventListener('resize', () => { scroller?.nearBottom() && scroller.toBottom(false); });
+}
 </script>
+
 <script>
 // Service worker: required for the Android install prompt and for the
 // Play Store TWA build. Registered after load so it never delays first paint.
