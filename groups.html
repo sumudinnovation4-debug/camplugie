@@ -1318,12 +1318,20 @@ document.querySelectorAll('.groups-tabs button').forEach(btn => {
 
 async function loadMyGroups() {
   const panel = document.getElementById('myGroupsPanel');
-  const { data, error } = await window.sb
-    .from('group_members').select('groups(id, name, description, avatar_url, member_count)')
-    .eq('user_id', myUserId);
 
-  if (error) { console.error(error); panel.innerHTML = `<div class="admin-empty">Couldn't load your groups.</div>`; return; }
-  const groups = (data || []).map(r => r.groups).filter(Boolean);
+  const { data: memberRows, error: memberErr } = await window.sb
+    .from('group_members').select('group_id').eq('user_id', myUserId);
+  if (memberErr) { console.error('loadMyGroups (group_members):', memberErr); panel.innerHTML = `<div class="admin-empty">Couldn't load your groups. (${CP.esc(memberErr.message || memberErr.code || 'unknown error')})</div>`; return; }
+
+  const groupIds = (memberRows || []).map(r => r.group_id);
+  let groups = [];
+  if (groupIds.length) {
+    const { data: groupRows, error: groupErr } = await window.sb
+      .from('groups').select('id, name, description, avatar_url, member_count').in('id', groupIds);
+    if (groupErr) { console.error('loadMyGroups (groups):', groupErr); panel.innerHTML = `<div class="admin-empty">Couldn't load your groups. (${CP.esc(groupErr.message || groupErr.code || 'unknown error')})</div>`; return; }
+    groups = groupRows || [];
+  }
+
   if (!groups.length) { panel.innerHTML = `<div class="admin-empty">You haven't joined any groups yet — check Discover or create one.</div>`; return; }
 
   panel.innerHTML = groups.map(g => `
