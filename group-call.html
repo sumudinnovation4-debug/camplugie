@@ -9,8 +9,8 @@
 
 :root {
   --brand: #A78BFA; --brand-dark: #7C3AED; --brand-soft: rgba(167,139,250,0.14);
-  --accent: #FBBF24; --money: #34D399; --danger: #FB7185;
-  --bg: #090714; --surface: #12101D; --surface2: #1A1729; --border: rgba(255,255,255,0.10);
+  --accent: #FBBF24; --accent-soft: rgba(251,191,36,0.16); --money: #34D399; --danger: #FB7185;
+  --bg: #090714; --surface: #12101D; --surface2: #1A1729; --surface3: #242039; --border: rgba(255,255,255,0.10);
   --text: #F8F6FF; --text2: #C9C3DE; --text3: #8D86AA;
   --safe-top: env(safe-area-inset-top, 0px); --safe-bottom: env(safe-area-inset-bottom, 0px);
 }
@@ -18,60 +18,159 @@
 html, body { margin: 0; padding: 0; height: 100%; overflow: hidden; }
 body {
   background: var(--bg); color: var(--text); font-family: 'Satoshi', -apple-system, sans-serif;
-  display: flex; flex-direction: column; height: 100vh;
+  height: 100dvh; overflow: hidden;
 }
+button { font-family: inherit; }
+
+/* The call lives in the same 480px column as every other Camplugie screen,
+   so it doesn't blow up to full width on a laptop. */
+.gc-frame {
+  position: fixed; inset: 0; left: 50%; transform: translateX(-50%);
+  width: 100%; max-width: 480px; height: 100dvh;
+  display: flex; flex-direction: column; background: var(--bg);
+}
+@media (min-width: 720px) {
+  .gc-frame { border-left: 1px solid var(--border); border-right: 1px solid var(--border); }
+}
+
+/* ---- header ---- */
 .gc-header {
-  display: flex; align-items: center; justify-content: space-between; gap: 10px;
-  padding: calc(var(--safe-top) + 12px) 16px 12px; z-index: 5;
+  display: flex; align-items: center; gap: 8px;
+  padding: calc(var(--safe-top) + 8px) 12px 6px; z-index: 5; flex-shrink: 0;
 }
-.gc-header b { font-size: 15px; }
-.gc-header span { display: block; font-size: 11.5px; color: var(--text3); }
-.gc-badge { background: var(--brand-soft); color: var(--brand); font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 999px; }
-.gc-stage {
-  flex: 1; min-height: 0; padding: 0 10px; display: flex; flex-direction: column; gap: 8px;
+.gc-header .tx { flex: 1; min-width: 0; }
+.gc-header b { font-size: 14px; display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.gc-header span { display: block; font-size: 10.5px; color: var(--text3); }
+.gc-badge { background: var(--brand-soft); color: var(--brand); font-size: 10px; font-weight: 800; padding: 4px 9px; border-radius: 999px; flex-shrink: 0; }
+.gc-badge.live { background: rgba(251,113,133,.16); color: var(--danger); }
+
+/* ---- stage ---- */
+.gc-stage { flex: 1; min-height: 0; padding: 0 8px; display: flex; flex-direction: column; gap: 6px; }
+
+/* General mode: responsive mesh grid */
+/* Rows split whatever height is left, so the video area always fits the screen
+   exactly — no aspect-ratio forcing a tile taller than the phone. */
+.gc-grid {
+  flex: 1; min-height: 0; display: grid; gap: 5px;
+  grid-template-columns: repeat(var(--cols, 2), minmax(0, 1fr));
+  grid-auto-rows: minmax(0, 1fr);
+  align-content: stretch; overflow: hidden;
 }
-/* General mode: responsive video grid */
-.gc-grid { flex: 1; min-height: 0; display: grid; gap: 6px; grid-template-columns: repeat(var(--cols, 2), 1fr); overflow-y: auto; }
 .gc-tile {
-  position: relative; background: var(--surface2); border-radius: 14px; overflow: hidden;
-  aspect-ratio: 4/5; display: flex; align-items: center; justify-content: center;
+  position: relative; background: var(--surface2); border-radius: 12px; overflow: hidden;
+  min-height: 0; min-width: 0;
+  display: flex; align-items: center; justify-content: center;
 }
 .gc-tile video { width: 100%; height: 100%; object-fit: cover; }
 .gc-tile.no-video video { display: none; }
-.gc-tile .gc-avatar { width: 56px; height: 56px; border-radius: 50%; background: linear-gradient(135deg,var(--brand),var(--brand-dark)); display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 18px; }
-.gc-tile .gc-name { position: absolute; left: 8px; bottom: 8px; font-size: 12px; font-weight: 700; text-shadow: 0 1px 4px rgba(0,0,0,.6); display: flex; align-items: center; gap: 5px; }
-.gc-tile .gc-mic-off { width: 20px; height: 20px; border-radius: 50%; background: rgba(0,0,0,.5); display: flex; align-items: center; justify-content: center; }
-.gc-tile .gc-mic-off svg { width: 11px; height: 11px; }
+.gc-tile.speaking { outline: 2px solid var(--money); }
+.gc-tile.offline { opacity: .4; }
+.gc-avatar {
+  width: clamp(38px, 13vw, 52px); height: clamp(38px, 13vw, 52px); border-radius: 50%;
+  background: linear-gradient(135deg, var(--brand), var(--brand-dark));
+  display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 15px;
+}
+.gc-tile .gc-name {
+  position: absolute; left: 8px; right: 8px; bottom: 8px; font-size: 12px; font-weight: 700;
+  text-shadow: 0 1px 4px rgba(0,0,0,.7); display: flex; align-items: center; gap: 5px;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.gc-mute-chip { width: 19px; height: 19px; border-radius: 50%; background: var(--danger); display: none; align-items: center; justify-content: center; flex-shrink: 0; font-size: 10px; }
+.gc-tile.muted .gc-mute-chip { display: flex; }
 
-/* Lecture mode: one big stage + a scroll strip of student tiles (host view) */
-.gc-lecture-stage { flex: 1; min-height: 0; background: var(--surface2); border-radius: 16px; position: relative; overflow: hidden; display: flex; align-items: center; justify-content: center; }
-.gc-lecture-stage video { width: 100%; height: 100%; object-fit: cover; }
-.gc-lecture-stage .gc-avatar { width: 84px; height: 84px; font-size: 26px; }
-.gc-student-strip { display: flex; gap: 8px; overflow-x: auto; padding: 4px 2px; scrollbar-width: none; }
+/* Lecture mode */
+#gcLecture { flex: 1; min-height: 0; flex-direction: column; gap: 8px; }
+.gc-lecture-stage {
+  flex: 1; min-height: 0; background: #000; border-radius: 14px;
+  position: relative; overflow: hidden; display: flex; align-items: center; justify-content: center;
+}
+.gc-lecture-stage video { width: 100%; height: 100%; object-fit: contain; background: #000; }
+.gc-lecture-stage .gc-avatar { width: clamp(56px, 20vw, 80px); height: clamp(56px, 20vw, 80px); font-size: 22px; }
+.gc-stage-label {
+  position: absolute; left: 8px; bottom: 8px; right: 8px; background: rgba(0,0,0,.5); backdrop-filter: blur(6px);
+  padding: 5px 10px; border-radius: 999px; font-size: 11.5px; font-weight: 700;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.gc-hint { text-align: center; font-size: 11px; color: var(--text3); padding: 1px 6px; line-height: 1.3; }
+.gc-hint b { color: var(--accent); }
+
+.gc-student-strip { display: flex; gap: 8px; overflow-x: auto; padding: 2px; scrollbar-width: none; flex-shrink: 0; }
+.gc-student-strip::-webkit-scrollbar { display: none; }
 .gc-student-tile {
-  position: relative; flex-shrink: 0; width: 78px; height: 96px; border-radius: 12px; background: var(--surface2);
-  display: flex; align-items: center; justify-content: center; border: 2px solid transparent; cursor: pointer;
+  position: relative; flex-shrink: 0; width: 62px; height: 74px; border-radius: 10px; background: var(--surface2);
+  display: flex; align-items: center; justify-content: center; border: 2px solid transparent; cursor: pointer; overflow: hidden;
 }
-.gc-student-tile.spotlighted { border-color: var(--accent); }
-.gc-student-tile .gc-avatar { width: 40px; height: 40px; font-size: 14px; }
-.gc-student-tile .gc-name { position: absolute; bottom: 4px; left: 0; right: 0; text-align: center; font-size: 9.5px; font-weight: 700; padding: 0 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.gc-student-tile .gc-star { position: absolute; top: 4px; right: 4px; font-size: 12px; }
+.gc-student-tile.onstage { border-color: var(--accent); }
+.gc-student-tile.hand { border-color: var(--money); }
+.gc-student-tile .gc-avatar { width: 30px; height: 30px; font-size: 11px; }
+.gc-student-tile .gc-name {
+  position: absolute; bottom: 4px; left: 0; right: 0; text-align: center; font-size: 9.5px; font-weight: 700;
+  padding: 0 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-shadow: 0 1px 3px #000;
+}
+.gc-student-tile .badge { position: absolute; top: 4px; right: 4px; font-size: 12px; }
+.gc-empty-strip { color: var(--text3); font-size: 12px; padding: 12px 4px; }
 
+/* ---- controls ---- */
 .gc-controls {
-  display: flex; align-items: center; justify-content: center; gap: 16px;
-  padding: 14px 16px calc(var(--safe-bottom) + 14px);
+  display: flex; align-items: center; justify-content: center;
+  gap: clamp(8px, 3vw, 16px);
+  padding: 10px 10px calc(var(--safe-bottom) + 20px); flex-shrink: 0;
 }
-.gc-ctl { width: 54px; height: 54px; border-radius: 50%; border: none; background: var(--surface2); color: #fff; display: flex; align-items: center; justify-content: center; cursor: pointer; }
-.gc-ctl svg { width: 22px; height: 22px; }
+.gc-ctl {
+  width: clamp(40px, 12vw, 50px); height: clamp(40px, 12vw, 50px);
+  border-radius: 50%; border: none; background: var(--surface2); color: #fff;
+  display: flex; align-items: center; justify-content: center; cursor: pointer; position: relative; transition: transform .12s;
+  flex-shrink: 0;
+}
+.gc-ctl:active { transform: scale(.92); }
+.gc-ctl svg { width: clamp(17px, 5.2vw, 21px); height: clamp(17px, 5.2vw, 21px); }
 .gc-ctl.off { background: #fff; color: var(--brand-dark); }
+.gc-ctl.on { background: var(--accent); color: #1A1200; }
 .gc-ctl.end { background: var(--danger); }
-.gc-hint { text-align: center; font-size: 11.5px; color: var(--text3); padding-bottom: 6px; }
+.gc-ctl[disabled] { opacity: .38; cursor: not-allowed; }
+.gc-ctl .lbl { position: absolute; bottom: -15px; left: 50%; transform: translateX(-50%); font-size: 9px; color: var(--text3); font-weight: 700; white-space: nowrap; }
+/* Short phones: drop the labels rather than eating the video area. */
+@media (max-height: 620px) {
+  .gc-ctl .lbl { display: none; }
+  .gc-controls { padding-bottom: calc(var(--safe-bottom) + 10px); }
+  .gc-student-tile { width: 54px; height: 64px; }
+}
+
+/* ---- participants sheet ---- */
+.gc-sheet-bd { position: fixed; inset: 0; background: rgba(0,0,0,.6); z-index: 300; display: none; align-items: flex-end; justify-content: center; }
+.gc-sheet-bd.show { display: flex; }
+.gc-sheet {
+  width: 100%; max-width: 480px; background: var(--surface); border-radius: 20px 20px 0 0;
+  padding: 10px 0 calc(14px + var(--safe-bottom)); border: 1px solid var(--border); border-bottom: none; max-height: 76vh; overflow-y: auto;
+}
+.gc-sheet .grab { width: 38px; height: 4px; border-radius: 4px; background: var(--surface3); margin: 0 auto 10px; }
+.gc-sheet h4 { margin: 0; padding: 4px 22px 10px; font-size: 12px; letter-spacing: .06em; text-transform: uppercase; color: var(--text3); }
+.gc-sheet button {
+  width: 100%; background: none; border: none; color: var(--text); font: inherit; font-size: 15px;
+  text-align: left; padding: 14px 22px; cursor: pointer; display: flex; align-items: center; gap: 13px;
+}
+.gc-sheet button:active { background: var(--surface2); }
+.gc-sheet button.danger { color: var(--danger); }
+.gc-sheet .row { display: flex; align-items: center; gap: 11px; padding: 10px 22px; font-size: 14.5px; }
+.gc-sheet .row .st { margin-left: auto; font-size: 11.5px; color: var(--text3); }
+.gc-sheet .row .gc-avatar { width: 34px; height: 34px; font-size: 12px; }
+
+.gc-toast {
+  position: fixed; left: 50%; transform: translateX(-50%); top: calc(var(--safe-top) + 62px);
+  background: var(--surface3); border: 1px solid var(--border); border-radius: 999px;
+  padding: 9px 16px; font-size: 12.5px; font-weight: 700; z-index: 400; display: none; box-shadow: 0 10px 30px rgba(0,0,0,.4);
+}
+.gc-toast.show { display: block; }
+
+#gcHidden { position: absolute; width: 1px; height: 1px; overflow: hidden; opacity: 0; pointer-events: none; }
 </style>
 </head>
 <body>
 
+<div class="gc-frame">
+
 <div class="gc-header">
-  <div>
+  <div class="tx">
     <b id="gcTitle">Connecting…</b>
     <span id="gcSubtitle">&nbsp;</span>
   </div>
@@ -83,8 +182,11 @@ body {
   <div class="gc-grid" id="gcGrid" style="display:none"></div>
 
   <!-- Lecture mode -->
-  <div id="gcLecture" style="display:none; flex:1; min-height:0; display:flex; flex-direction:column; gap:8px;">
-    <div class="gc-lecture-stage" id="gcLectureStage"></div>
+  <div id="gcLecture" style="display:none">
+    <div class="gc-lecture-stage" id="gcLectureStage">
+      <div class="gc-avatar" id="gcStagePlaceholder">··</div>
+      <div class="gc-stage-label" id="gcStageLabel" style="display:none"></div>
+    </div>
     <div class="gc-hint" id="gcLectureHint"></div>
     <div class="gc-student-strip" id="gcStudentStrip"></div>
   </div>
@@ -93,14 +195,40 @@ body {
 <div class="gc-controls">
   <button class="gc-ctl" id="micBtn" aria-label="Mute">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2M12 19v4M8 23h8"/></svg>
+    <span class="lbl" id="micLbl">Mute</span>
   </button>
+
   <button class="gc-ctl" id="camBtn" aria-label="Camera">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>
+    <span class="lbl">Camera</span>
   </button>
+
+  <button class="gc-ctl" id="shareBtn" aria-label="Share screen" style="display:none">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
+    <span class="lbl">Share</span>
+  </button>
+
+  <button class="gc-ctl" id="handBtn" aria-label="Raise hand" style="display:none">
+    <span style="font-size:22px">✋</span>
+    <span class="lbl">Raise hand</span>
+  </button>
+
+  <button class="gc-ctl" id="peopleBtn" aria-label="Participants">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/></svg>
+    <span class="lbl">People</span>
+  </button>
+
   <button class="gc-ctl end" id="endBtn" aria-label="End call">
     <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 9c-3 0-5.6.8-7.8 2.2a1.5 1.5 0 0 0-.4 2.1l1.6 2.2c.4.6 1.2.8 1.9.5 1.4-.6 2.9-1 4.7-1s3.3.4 4.7 1c.7.3 1.5.1 1.9-.5l1.6-2.2c.5-.7.3-1.7-.4-2.1A15.6 15.6 0 0 0 12 9z"/></svg>
+    <span class="lbl" id="endLbl">Leave</span>
   </button>
 </div>
+
+</div><!-- /.gc-frame -->
+
+<div class="gc-sheet-bd" id="gcSheet"><div class="gc-sheet" id="gcSheetBody"></div></div>
+<div class="gc-toast" id="gcToast"></div>
+<div id="gcHidden"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <script src="config.js?v=3"></script>
@@ -123,52 +251,83 @@ window.sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 </script>
 <script>
 /* ============================================================
-   Group calling — two modes, both zero-infrastructure (no SFU):
+   Camplugie group calling — two modes, no SFU, no paid API.
 
-   GENERAL: full mesh. Every participant opens one RTCPeerConnection
-   to every other participant, sending+receiving audio and video.
-   Fine for small groups; each added participant adds N-1 connections
-   for everyone, so this isn't meant for huge calls.
+   GENERAL CALL — full mesh.
+     Everyone opens one RTCPeerConnection to everyone else and sends
+     audio + video. Fine up to roughly 6 people on campus data; past
+     that each extra person costs everybody another upstream.
 
-   LECTURE: star topology. The lecturer (host) opens one
-   RTCPeerConnection PER STUDENT — students never connect to each
-   other. Students send audio only by default; the lecturer sends
-   video+audio to everyone. When the host "calls up" a student, that
-   student's video is added to their one existing connection with the
-   host (ordinary renegotiation — no new connections). To make that
-   student visible to the WHOLE class without an SFU, the host draws
-   its own camera + the spotlighted student's video onto a <canvas>,
-   captures that canvas as a stream, and swaps every other student's
-   incoming video for that composited stream via replaceTrack (no
-   renegotiation needed for a track swap).
+   LECTURE — star topology with the lecturer at the centre.
+     • Only the host (a group admin) is on video.
+     • Students connect ONLY to the host. They never connect to each
+       other, so a 60-student lecture is 60 connections for the host
+       and exactly 1 for each student.
+     • Students join muted with no camera.
+     • The host can "call a student up" — either on video or audio
+       only. That student's mic (and camera) switch on, and because
+       the whole class has to see/hear them without an SFU, the host
+       re-broadcasts them: the host paints its own camera (or shared
+       screen) plus the student onto a <canvas>, captures that canvas
+       as its outgoing video track, and mixes the student's mic into
+       its outgoing audio with WebAudio.
+     • The student who is on stage gets the host's raw mic instead of
+       the mix, so they never hear themselves echo back.
 
-   Signaling for both modes rides on one Supabase Realtime broadcast
-   channel per call (groupcall-<callId>), with messages addressed by
-   `to` (a specific user) or left unaddressed for "everyone".
+   Because the host always sends ONE canvas video track and ONE mixed
+   audio track from the moment it joins, switching stage / screen /
+   spotlight never renegotiates anything — it's just what gets drawn
+   into the canvas and which sources feed the mixer. That's what makes
+   this stable on flaky mobile networks.
+
+   Signalling rides one Supabase Realtime broadcast channel per call
+   (groupcall-<callId>). Messages carry `to` for a specific user or no
+   `to` for everyone. SDP exchange uses perfect negotiation so a glare
+   collision can never deadlock a connection.
    ============================================================ */
 
-const params = new URLSearchParams(location.search);
-const groupId = params.get('groupId');
-const callId = params.get('callId');
-const mode = params.get('mode') === 'lecture' ? 'lecture' : 'general';
-const isHost = params.get('role') === 'host';
+const params   = new URLSearchParams(location.search);
+const groupId  = params.get('groupId');
+const callId   = params.get('callId');
+const mode     = params.get('mode') === 'lecture' ? 'lecture' : 'general';
+const isHost   = params.get('role') === 'host';
+const isLecture = mode === 'lecture';
+const isStudent = isLecture && !isHost;
 
-let myUserId, myName;
+let myUserId = null, myName = 'Someone';
 let iceServers = [];
 let signalChannel = null;
-let localStream = null;
-let micOn = true, camOn = mode === 'general' || isHost; // lecture-mode students start audio-only
+let localStream = null;          // raw mic (+ camera in general / host lecture)
+let micOn = !isStudent;          // students join muted
+let camOn = !isStudent;          // students join with no camera
+let handUp = false;
+let onStage = false;          // student: has the lecturer called me up?
 let ended = false;
+let startedAt = Date.now(), timerInt = null;
 
-// userId -> { pc, videoEl?, tileEl, name, micMuted, hasVideo, makingOffer }
+// userId -> peer record
 const peers = {};
 
-// Lecture-only spotlight/canvas state
-let spotlightId = null;
-let canvasEl = null, canvasCtx = null, canvasStream = null, canvasTimer = null;
+/* host-only lecture machinery */
+let canvasEl = null, canvasCtx = null, canvasStream = null, rafId = null;
+let audioCtx = null, mixDest = null, micOnlyDest = null, micGain = null;
+const studentAudio = {};         // userId -> { source, gain }
+let stage = null;                // { uid, video } — who is called up
+let screenStream = null, screenVideo = null;
+let selfVideoEl = null;          // hidden <video> of the host camera, drawn to canvas
 
-function $(id) { return document.getElementById(id); }
-function initials(name) { return (name || '?').trim().split(/\s+/).slice(0, 2).map(w => w[0]).join('').toUpperCase(); }
+const $ = (id) => document.getElementById(id);
+const escHtml = (s) => String(s || '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const initials = (n) => (n || '?').trim().split(/\s+/).slice(0, 2).map(w => w[0]).join('').toUpperCase();
+
+function toast(msg, ms = 2600) {
+  const t = $('gcToast'); t.textContent = msg; t.classList.add('show');
+  clearTimeout(toast._t); toast._t = setTimeout(() => t.classList.remove('show'), ms);
+}
+
+/* ============================================================
+   BOOT
+   ============================================================ */
 
 document.addEventListener('cp-ready', async (e) => {
   myUserId = e.detail.user.id;
@@ -176,364 +335,964 @@ document.addEventListener('cp-ready', async (e) => {
 
   if (!groupId || !callId) { alert('Missing call info.'); window.location.href = 'groups.html'; return; }
 
-  $('gcBadge').textContent = mode === 'lecture' ? 'Lecture' : 'General call';
-  $('gcTitle').textContent = mode === 'lecture' ? (isHost ? 'Your lecture' : 'Lecture') : 'Group call';
+  $('gcBadge').textContent = isLecture ? 'Lecture' : 'General call';
+  $('gcBadge').classList.toggle('live', isLecture);
+  $('gcTitle').textContent = isLecture ? (isHost ? 'Your lecture' : 'Lecture') : 'Group call';
+  $('endLbl').textContent = isHost && isLecture ? 'End' : 'Leave';
 
-  if (mode === 'lecture') {
+  if (isLecture) {
     $('gcLecture').style.display = 'flex';
-    $('gcLectureHint').textContent = isHost
-      ? 'Tap a student below to bring them on video for everyone.'
-      : "You're on audio. The lecturer can bring you on video.";
+    $('gcLectureHint').innerHTML = isHost
+      ? 'Tap a student to <b>call them up</b> — on video or audio only.'
+      : "You're muted. Raise your hand and the lecturer can call you up.";
+    $('gcStudentStrip').style.display = isHost ? 'flex' : 'none';
+    if (isStudent) { $('handBtn').style.display = 'flex'; $('camBtn').style.display = 'none'; }
+    // The host shares straight to the composited stage. A student who's been
+    // called up can share too — it rides their existing video line the same
+    // way their camera would, so the host just draws it instead of their face.
+    $('shareBtn').style.display = 'flex';
   } else {
+    // General call: anyone can share, since everyone already sends their own
+    // video track peer-to-peer — sharing is just swapping that track.
     $('gcGrid').style.display = 'grid';
+    $('shareBtn').style.display = 'flex';
   }
 
-  try {
-    iceServers = await window.CP_getIceServers();
-  } catch (_) { iceServers = [{ urls: 'stun:stun.l.google.com:19302' }]; }
+  try { iceServers = await window.CP_getIceServers(); }
+  catch (_) { iceServers = [{ urls: 'stun:stun.l.google.com:19302' }]; }
 
+  // Students take mic only. Everyone else takes mic + camera.
   try {
     localStream = await navigator.mediaDevices.getUserMedia({
       audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
-      video: camOn ? { width: { ideal: 640 }, height: { ideal: 480 }, facingMode: 'user' } : false,
+      video: isStudent ? false : { width: { ideal: 960 }, height: { ideal: 720 }, facingMode: 'user' },
     });
   } catch (err) {
     console.error('getUserMedia failed:', err);
     try { localStream = await navigator.mediaDevices.getUserMedia({ audio: true }); camOn = false; }
-    catch (err2) { alert('Camera/microphone access is required for calls.'); window.location.href = 'group-thread.html?id=' + groupId; return; }
+    catch (err2) {
+      alert('Camera / microphone access is required to join the call.');
+      window.location.href = 'group-thread.html?id=' + groupId; return;
+    }
   }
 
-  renderSelfTile();
-  if (mode === 'lecture' && isHost) setupHostCanvas();
+  // Students start muted at the track level so nothing leaks before they're called up.
+  localStream.getAudioTracks().forEach(t => { t.enabled = micOn; });
 
+  if (isHost && isLecture) setupHostPipeline();
+  if (!isLecture) renderSelfTile();
+
+  await joinSignalChannel();
+
+  $('micBtn').addEventListener('click', toggleMic);
+  $('camBtn').addEventListener('click', toggleCam);
+  $('shareBtn').addEventListener('click', toggleScreenShare);
+  $('handBtn').addEventListener('click', toggleHand);
+  $('peopleBtn').addEventListener('click', openParticipants);
+  $('endBtn').addEventListener('click', () => leaveCall());
+  window.addEventListener('pagehide', () => leaveCall(true));
+
+  timerInt = setInterval(paintSubtitle, 1000);
+  paintSubtitle();
+  updateControls();
+});
+
+async function joinSignalChannel() {
   signalChannel = window.sb.channel(`groupcall-${callId}`, {
     config: { broadcast: { self: false }, presence: { key: myUserId } },
   });
+
   signalChannel.on('broadcast', { event: 'signal' }, ({ payload }) => handleSignal(payload));
   signalChannel.on('presence', { event: 'join' }, ({ newPresences }) => newPresences.forEach(onPeerPresence));
   signalChannel.on('presence', { event: 'leave' }, ({ leftPresences }) => leftPresences.forEach(onPeerLeave));
+  signalChannel.on('presence', { event: 'sync' }, paintSubtitle);
 
   await signalChannel.subscribe(async (status) => {
     if (status !== 'SUBSCRIBED') return;
     await signalChannel.track({ userId: myUserId, name: myName, role: isHost ? 'host' : 'guest' });
-    // Pick up anyone already in the call before we joined.
+    // Pick up anyone who was already in the call before we arrived.
     Object.values(signalChannel.presenceState()).flat().forEach(onPeerPresence);
   });
+}
 
-  $('micBtn').addEventListener('click', toggleMic);
-  $('camBtn').addEventListener('click', toggleCam);
-  $('endBtn').addEventListener('click', () => leaveCall());
-  window.addEventListener('pagehide', () => leaveCall(true));
-  updateControlButtons();
-});
+/* ============================================================
+   PEER LIFECYCLE
+   ============================================================ */
 
 function onPeerPresence(p) {
-  if (!p || p.userId === myUserId || peers[p.userId]) return;
-  const shouldInitiate = mode === 'lecture' ? isHost : (myUserId < p.userId);
-  peers[p.userId] = { pc: null, name: p.name, tileEl: null, micMuted: false, hasVideo: false, makingOffer: false };
-  addTile(p.userId, p.name);
-  if (shouldInitiate) connectTo(p.userId, { sendVideo: mode === 'general' || isHost, recvVideo: mode === 'general' });
+  if (!p || !p.userId || p.userId === myUserId) return;
+  if (peers[p.userId]) { peers[p.userId].name = p.name || peers[p.userId].name; paintSubtitle(); return; }
+
+  peers[p.userId] = {
+    id: p.userId, name: p.name || 'Someone', role: p.role || 'guest',
+    pc: null, polite: false, makingOffer: false, ignoreOffer: false,
+    tileEl: null, stream: null, hasVideo: false, micMuted: p.role === 'guest' && isLecture, hand: false,
+  };
+
+  addTile(p.userId);
+  paintSubtitle();
+
+  // Who dials whom:
+  //   lecture  → the host always dials the students (star)
+  //   general  → the lower user id dials, so exactly one side offers
+  const iInitiate = isLecture ? isHost : (myUserId < p.userId);
+  if (isStudent && p.role !== 'host') return;  // students ignore each other entirely
+  if (iInitiate) createPeer(p.userId, /* polite */ false, /* initiate */ true);
 }
 
 function onPeerLeave(p) {
-  if (!p || !peers[p.userId]) return;
-  peers[p.userId].pc?.close();
-  peers[p.userId].tileEl?.remove();
+  const peer = p && peers[p.userId];
+  if (!peer) return;
+  try { peer.pc?.close(); } catch (_) {}
+  peer.tileEl?.remove();
+  removeStudentAudio(p.userId);
+  document.getElementById('hid-' + p.userId)?.remove();
   delete peers[p.userId];
-  if (spotlightId === p.userId) clearSpotlight();
+  if (stage && stage.uid === p.userId) clearStage(true);
+  if (isStudent && peer.role === 'host') { toast('The lecturer disconnected.'); }
+  paintSubtitle();
+  regridGeneral();
   maybeEndIfEmpty();
 }
 
-/* ---------- peer connection plumbing ---------- */
 function signal(to, kind, data) {
-  signalChannel?.send({ type: 'broadcast', event: 'signal', payload: Object.assign({ from: myUserId, to, kind }, data) });
+  signalChannel?.send({
+    type: 'broadcast', event: 'signal',
+    payload: Object.assign({ from: myUserId, fromName: myName, to, kind }, data),
+  });
 }
 
-async function connectTo(targetId, { sendVideo, recvVideo }) {
+function createPeer(targetId, polite, initiate) {
   const peer = peers[targetId];
+  if (!peer || peer.pc) return peer?.pc;
+
   const pc = new RTCPeerConnection({ iceServers, iceCandidatePoolSize: 2, bundlePolicy: 'max-bundle' });
   peer.pc = pc;
+  peer.polite = polite;
 
   pc.onicecandidate = (e) => { if (e.candidate) signal(targetId, 'ice', { candidate: e.candidate }); };
   pc.ontrack = (e) => handleTrack(targetId, e);
   pc.onconnectionstatechange = () => {
-    if (pc.connectionState === 'failed' || pc.connectionState === 'closed') {
-      if (!ended) markTileOffline(targetId);
-    }
+    if (ended) return;
+    if (pc.connectionState === 'failed') { peer.tileEl?.classList.add('offline'); tryIceRestart(targetId); }
+    if (pc.connectionState === 'connected') peer.tileEl?.classList.remove('offline');
   };
   pc.onnegotiationneeded = async () => {
-    if (peer.makingOffer) return;
     try {
       peer.makingOffer = true;
-      const offer = await pc.createOffer();
-      await pc.setLocalDescription(offer);
-      signal(targetId, 'offer', { sdp: pc.localDescription });
-    } finally { peer.makingOffer = false; }
+      await pc.setLocalDescription();
+      signal(targetId, 'sdp', { sdp: pc.localDescription });
+    } catch (err) { console.error('negotiation failed:', err); }
+    finally { peer.makingOffer = false; }
   };
 
-  localStream.getAudioTracks().forEach(t => pc.addTrack(t, localStream));
-  if (sendVideo && localStream.getVideoTracks()[0]) pc.addTrack(localStream.getVideoTracks()[0], localStream);
-  else pc.addTransceiver('video', { direction: recvVideo ? 'recvonly' : 'inactive' });
-  if (!sendVideo && recvVideo) { /* already added recvonly above */ }
+  if (initiate) attachOutboundTracks(pc);
+  return pc;
 }
+
+// What each role puts on the wire.
+function attachOutboundTracks(pc) {
+  if (isHost && isLecture) {
+    // One stable canvas video track + one stable mixed audio track.
+    const v = canvasStream?.getVideoTracks()[0];
+    const a = mixDest?.stream.getAudioTracks()[0] || localStream.getAudioTracks()[0];
+    if (a) pc.addTrack(a, mixDest ? mixDest.stream : localStream);
+    if (v) pc.addTrack(v, canvasStream);
+  } else {
+    localStream.getAudioTracks().forEach(t => pc.addTrack(t, localStream));
+    const vt = localStream.getVideoTracks()[0];
+    if (vt) pc.addTrack(vt, localStream);
+    else pc.addTransceiver('video', { direction: 'recvonly' });
+  }
+}
+
+async function tryIceRestart(targetId) {
+  const peer = peers[targetId];
+  if (!peer?.pc || ended) return;
+  const amCaller = isLecture ? isHost : (myUserId < targetId);
+  if (!amCaller) return;
+  try {
+    await peer.pc.setLocalDescription(await peer.pc.createOffer({ iceRestart: true }));
+    signal(targetId, 'sdp', { sdp: peer.pc.localDescription });
+  } catch (err) { console.warn('ICE restart failed:', err); }
+}
+
+/* ============================================================
+   SIGNALLING (perfect negotiation)
+   ============================================================ */
 
 async function handleSignal(payload) {
   if (!payload || payload.from === myUserId) return;
-  if (payload.to && payload.to !== myUserId) return; // not for us
+  if (payload.to && payload.to !== myUserId) return;
   const fromId = payload.from;
 
-  if (payload.kind === 'offer') {
-    if (!peers[fromId]) { peers[fromId] = { pc: null, name: payload.fromName || 'Someone', tileEl: null, micMuted: false, hasVideo: false, makingOffer: false }; addTile(fromId, peers[fromId].name); }
-    let peer = peers[fromId];
-    if (!peer.pc) {
-      const pc = new RTCPeerConnection({ iceServers, iceCandidatePoolSize: 2, bundlePolicy: 'max-bundle' });
-      peer.pc = pc;
-      pc.onicecandidate = (e) => { if (e.candidate) signal(fromId, 'ice', { candidate: e.candidate }); };
-      pc.ontrack = (e) => handleTrack(fromId, e);
-      pc.onconnectionstatechange = () => { if ((pc.connectionState === 'failed' || pc.connectionState === 'closed') && !ended) markTileOffline(fromId); };
-      localStream.getAudioTracks().forEach(t => pc.addTrack(t, localStream));
-      // Guests in lecture mode only send video once spotlighted; general mode always sends.
-      if (mode === 'general' && localStream.getVideoTracks()[0]) pc.addTrack(localStream.getVideoTracks()[0], localStream);
+  // Non-SDP control messages first — they don't need a peer connection.
+  switch (payload.kind) {
+    case 'stage-request':  return onCalledUp(payload.video !== false);
+    case 'stage-clear':    return onSentBack();
+    case 'host-ended':     return onHostEnded();
+    case 'hand':           return onHandSignal(fromId, payload.up);
+    case 'state':          return onStateSignal(fromId, payload);
+    case 'stage-info':     return onStageInfo(payload);
+  }
+
+  if (!peers[fromId]) {
+    peers[fromId] = {
+      id: fromId, name: payload.fromName || 'Someone', role: payload.fromRole || 'guest',
+      pc: null, polite: false, makingOffer: false, ignoreOffer: false,
+      tileEl: null, stream: null, hasVideo: false, micMuted: false, hand: false,
+    };
+    addTile(fromId);
+    paintSubtitle();
+  }
+  const peer = peers[fromId];
+
+  // The side that didn't dial is the polite one and yields on a collision.
+  if (!peer.pc) createPeer(fromId, /* polite */ true, /* initiate */ false);
+  const pc = peer.pc;
+
+  try {
+    if (payload.kind === 'sdp') {
+      const desc = payload.sdp;
+      const offerCollision = desc.type === 'offer' && (peer.makingOffer || pc.signalingState !== 'stable');
+      peer.ignoreOffer = !peer.polite && offerCollision;
+      if (peer.ignoreOffer) return;
+
+      await pc.setRemoteDescription(new RTCSessionDescription(desc));
+
+      if (desc.type === 'offer') {
+        // A student answering the lecturer: claim both m-lines as two-way now,
+        // so being called up later is just a replaceTrack — no renegotiation.
+        if (isStudent) prepareStudentTransceivers(pc);
+        await pc.setLocalDescription();
+        signal(fromId, 'sdp', { sdp: pc.localDescription });
+      }
+    } else if (payload.kind === 'ice') {
+      try { await pc.addIceCandidate(payload.candidate); }
+      catch (err) { if (!peer.ignoreOffer) console.warn('ICE candidate rejected:', err); }
     }
-    await peer.pc.setRemoteDescription(new RTCSessionDescription(payload.sdp));
-    const answer = await peer.pc.createAnswer();
-    await peer.pc.setLocalDescription(answer);
-    signal(fromId, 'answer', { sdp: peer.pc.localDescription });
-
-  } else if (payload.kind === 'answer') {
-    const pc = peers[fromId]?.pc;
-    if (pc && pc.signalingState === 'have-local-offer') await pc.setRemoteDescription(new RTCSessionDescription(payload.sdp));
-
-  } else if (payload.kind === 'ice') {
-    const pc = peers[fromId]?.pc;
-    if (pc) { try { await pc.addIceCandidate(payload.candidate); } catch (e) { console.warn(e); } }
-
-  } else if (payload.kind === 'spotlight-request') {
-    // I'm the student being called up — start sending video to the host.
-    await enableMyVideoForSpotlight();
-
-  } else if (payload.kind === 'spotlight-clear') {
-    await disableMyVideoAfterSpotlight();
-
-  } else if (payload.kind === 'host-ended') {
-    alert('The lecturer ended the call.');
-    leaveCall(true);
+  } catch (err) {
+    console.error('Signal handling failed:', err);
   }
 }
+
+function prepareStudentTransceivers(pc) {
+  pc.getTransceivers().forEach(t => {
+    const kind = t.receiver?.track?.kind;
+    if (kind === 'audio') {
+      t.direction = 'sendrecv';
+      const track = localStream.getAudioTracks()[0];
+      if (track && t.sender.track !== track) t.sender.replaceTrack(track).catch(() => {});
+    } else if (kind === 'video') {
+      // Left empty until the lecturer calls this student up.
+      t.direction = 'sendrecv';
+    }
+  });
+}
+
+/* ============================================================
+   INCOMING MEDIA
+   ============================================================ */
 
 function handleTrack(fromId, e) {
   const peer = peers[fromId];
   if (!peer) return;
   const [stream] = e.streams;
-  if (e.track.kind === 'video') { peer.hasVideo = true; }
-  renderPeerMedia(fromId, stream);
+  peer.stream = stream || peer.stream;
+
+  if (e.track.kind === 'video') {
+    peer.hasVideo = true;
+    e.track.onmute = () => { peer.hasVideo = false; paintPeerMedia(fromId); };
+    e.track.onunmute = () => { peer.hasVideo = true; paintPeerMedia(fromId); };
+  }
+  e.track.onended = () => { if (e.track.kind === 'video') { peer.hasVideo = false; paintPeerMedia(fromId); } };
+
+  paintPeerMedia(fromId);
+
+  // Host keeps a hidden element per student: it's the draw source for the
+  // canvas and the audio source for the mixer.
+  if (isHost && isLecture && stream) attachHiddenStudent(fromId, stream);
 }
 
-/* ---------- tiles / rendering ---------- */
+function attachHiddenStudent(userId, stream) {
+  let v = document.getElementById('hid-' + userId);
+  if (!v) {
+    v = document.createElement('video');
+    v.id = 'hid-' + userId;
+    v.autoplay = true; v.playsInline = true;
+    v.muted = true;            // audio reaches the host through the mixer, not this element
+    $('gcHidden').appendChild(v);
+  }
+  if (v.srcObject !== stream) { v.srcObject = stream; v.play().catch(() => {}); }
+  if (stage && stage.uid === userId) wireStudentAudio(userId, stream);
+}
+
+function paintPeerMedia(userId) {
+  const peer = peers[userId];
+  if (!peer) return;
+
+  if (!isLecture) {
+    if (!peer.tileEl) return;
+    const v = peer.tileEl.querySelector('video');
+    if (v && peer.stream && v.srcObject !== peer.stream) v.srcObject = peer.stream;
+    peer.tileEl.classList.toggle('no-video', !peer.hasVideo);
+    peer.tileEl.classList.toggle('muted', !!peer.micMuted);
+    return;
+  }
+
+  if (isStudent && peer.role === 'host') {
+    // The only stream a student ever receives: the lecturer's composite.
+    const st = $('gcLectureStage');
+    let v = st.querySelector('video');
+    if (!v) {
+      v = document.createElement('video');
+      v.autoplay = true; v.playsInline = true;
+      st.insertBefore(v, st.firstChild);
+      $('gcStagePlaceholder').style.display = 'none';
+    }
+    if (peer.stream && v.srcObject !== peer.stream) v.srcObject = peer.stream;
+    v.play().catch(() => {});
+  }
+  // Host: student video never renders directly — it goes through the canvas.
+}
+
+/* ============================================================
+   TILES
+   ============================================================ */
+
 function renderSelfTile() {
-  if (mode === 'lecture' && !isHost) return; // students don't see their own tile, just the stage
   const el = document.createElement('div');
   el.className = 'gc-tile' + (camOn ? '' : ' no-video');
-  el.innerHTML = `<video autoplay muted playsinline></video><div class="gc-avatar">${initials(myName)}</div><div class="gc-name">You</div>`;
+  el.id = 'tile-self';
+  el.innerHTML = `<video autoplay muted playsinline></video>
+    <div class="gc-avatar">${escHtml(initials(myName))}</div>
+    <div class="gc-name"><span class="gc-mute-chip">🔇</span>You</div>`;
   el.querySelector('video').srcObject = localStream;
-  if (mode === 'lecture' && isHost) { $('gcLectureStage').appendChild(el); }
-  else { $('gcGrid').appendChild(el); regridGeneral(); }
+  $('gcGrid').appendChild(el);
+  regridGeneral();
 }
 
-function addTile(userId, name) {
+function addTile(userId) {
   const peer = peers[userId];
-  if (mode === 'general') {
+  if (!peer) return;
+
+  if (!isLecture) {
     const el = document.createElement('div');
     el.className = 'gc-tile no-video';
-    el.innerHTML = `<video autoplay playsinline></video><div class="gc-avatar">${initials(name)}</div><div class="gc-name">${escHtml(name)}</div>`;
+    el.dataset.uid = userId;
+    el.innerHTML = `<video autoplay playsinline></video>
+      <div class="gc-avatar">${escHtml(initials(peer.name))}</div>
+      <div class="gc-name"><span class="gc-mute-chip">🔇</span>${escHtml(peer.name)}</div>`;
     $('gcGrid').appendChild(el);
     peer.tileEl = el;
     regridGeneral();
-  } else if (mode === 'lecture' && isHost) {
+    return;
+  }
+
+  if (isHost && peer.role !== 'host') {
     const el = document.createElement('div');
     el.className = 'gc-student-tile';
     el.dataset.uid = userId;
-    el.innerHTML = `<div class="gc-avatar">${initials(name)}</div><div class="gc-name">${escHtml(name)}</div>`;
-    el.addEventListener('click', () => toggleSpotlight(userId));
+    el.innerHTML = `<div class="gc-avatar">${escHtml(initials(peer.name))}</div>
+      <div class="badge"></div>
+      <div class="gc-name">${escHtml(peer.name)}</div>`;
+    el.addEventListener('click', () => openStudentMenu(userId));
     $('gcStudentStrip').appendChild(el);
     peer.tileEl = el;
-  }
-  // Non-host students in lecture mode don't render a tile for the host —
-  // the host's stream goes straight to the single big stage element.
-}
-
-function renderPeerMedia(userId, stream) {
-  const peer = peers[userId];
-  if (mode === 'general' && peer.tileEl) {
-    const v = peer.tileEl.querySelector('video');
-    v.srcObject = stream;
-    peer.tileEl.classList.toggle('no-video', !peer.hasVideo);
-  } else if (mode === 'lecture' && isHost) {
-    // This is a student's stream arriving at the host — audio always,
-    // video only once spotlighted. Feed it into the compositing canvas.
-    updateSpotlightSource(userId, stream);
-  } else if (mode === 'lecture' && !isHost) {
-    // Guest: the only incoming stream is the host's (composited) stream.
-    let stage = $('gcLectureStage');
-    let v = stage.querySelector('video');
-    if (!v) { stage.innerHTML = '<video autoplay playsinline></video>'; v = stage.querySelector('video'); }
-    v.srcObject = stream;
+    paintStrip();
   }
 }
 
-function markTileOffline(userId) {
-  const peer = peers[userId];
-  if (!peer?.tileEl) return;
-  peer.tileEl.style.opacity = '0.4';
-  const v = peer.tileEl.querySelector('video'); if (v) v.srcObject = null;
-}
-
-function regridGeneral() {
-  const n = $('gcGrid').children.length;
-  $('gcGrid').style.setProperty('--cols', n <= 1 ? 1 : n <= 4 ? 2 : 3);
-}
-
-function escHtml(s) { return String(s || '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
-
-/* ---------- lecture spotlight (host side) ---------- */
-function setupHostCanvas() {
-  canvasEl = document.createElement('canvas');
-  canvasEl.width = 640; canvasEl.height = 480;
-  canvasCtx = canvasEl.getContext('2d');
-  const selfVideo = document.querySelector('#gcLectureStage video');
-
-  function draw() {
-    if (ended) return;
-    canvasCtx.fillStyle = '#000'; canvasCtx.fillRect(0, 0, canvasEl.width, canvasEl.height);
-    if (selfVideo && selfVideo.readyState >= 2) {
-      const w = spotlightId ? canvasEl.width * 0.62 : canvasEl.width;
-      canvasCtx.drawImage(selfVideo, 0, 0, w, canvasEl.height);
+function paintStrip() {
+  const strip = $('gcStudentStrip');
+  if (!isHost || !isLecture) return;
+  const anyStudents = Object.values(peers).some(p => p.role !== 'host');
+  let empty = strip.querySelector('.gc-empty-strip');
+  if (!anyStudents) {
+    if (!empty) {
+      empty = document.createElement('div');
+      empty.className = 'gc-empty-strip';
+      empty.textContent = 'Waiting for students to join…';
+      strip.appendChild(empty);
     }
-    const spotVideo = spotlightId ? document.getElementById('spot-video-' + spotlightId) : null;
-    if (spotVideo && spotVideo.readyState >= 2) {
-      const w = canvasEl.width * 0.38, x = canvasEl.width * 0.62;
-      canvasCtx.drawImage(spotVideo, x, 0, w, canvasEl.height);
-    }
-    canvasTimer = requestAnimationFrame(draw);
-  }
-  draw();
-  canvasStream = canvasEl.captureStream(24);
-}
+  } else if (empty) empty.remove();
 
-async function toggleSpotlight(userId) {
-  if (spotlightId === userId) { clearSpotlight(); return; }
-  if (spotlightId) clearSpotlight(); // only one at a time in this MVP
-  spotlightId = userId;
-  peers[userId]?.tileEl?.classList.add('spotlighted');
-  signal(userId, 'spotlight-request', {});
-}
-
-function clearSpotlight() {
-  if (!spotlightId) return;
-  const prev = spotlightId;
-  peers[prev]?.tileEl?.classList.remove('spotlighted');
-  signal(prev, 'spotlight-clear', {});
-  spotlightId = null;
-  swapEveryoneToStream(getBroadcastStream());
-}
-
-// A hidden <video> per spotlighted student's incoming stream, used as a
-// draw source for the canvas (never shown directly to the host).
-function updateSpotlightSource(userId, stream) {
-  let v = document.getElementById('spot-video-' + userId);
-  if (!v) {
-    v = document.createElement('video');
-    v.id = 'spot-video-' + userId; v.autoplay = true; v.playsInline = true; v.muted = false;
-    v.style.display = 'none';
-    document.body.appendChild(v);
-  }
-  v.srcObject = stream;
-  if (userId === spotlightId) swapEveryoneToStream(getBroadcastStream());
-}
-
-// What every non-spotlighted student should currently be receiving as
-// "the host's video": plain self-camera normally, or the composited
-// canvas stream while someone is spotlighted.
-function getBroadcastStream() {
-  return spotlightId && canvasStream ? canvasStream : localStream;
-}
-
-function swapEveryoneToStream(stream) {
-  const videoTrack = stream.getVideoTracks()[0];
-  if (!videoTrack) return;
-  Object.entries(peers).forEach(([uid, peer]) => {
-    if (!peer.pc) return;
-    const sender = peer.pc.getSenders().find(s => s.track && s.track.kind === 'video');
-    if (sender) sender.replaceTrack(videoTrack).catch(err => console.error('replaceTrack failed:', err));
+  Object.values(peers).forEach(p => {
+    if (!p.tileEl) return;
+    p.tileEl.classList.toggle('onstage', !!(stage && stage.uid === p.id));
+    p.tileEl.classList.toggle('hand', !!p.hand && !(stage && stage.uid === p.id));
+    const badge = p.tileEl.querySelector('.badge');
+    if (badge) badge.textContent = (stage && stage.uid === p.id) ? (stage.video ? '🎥' : '🎤') : (p.hand ? '✋' : '');
   });
 }
 
-/* ---------- lecture spotlight (student side) ---------- */
-async function enableMyVideoForSpotlight() {
-  if (localStream.getVideoTracks()[0]) return; // already have it
-  try {
-    const camStream = await navigator.mediaDevices.getUserMedia({ video: { width: { ideal: 480 }, facingMode: 'user' } });
-    const track = camStream.getVideoTracks()[0];
-    localStream.addTrack(track);
-    const hostPeer = Object.values(peers)[0]; // students only ever have one peer: the host
-    hostPeer?.pc?.addTrack(track, localStream);
-    camOn = true;
-    updateControlButtons();
-  } catch (err) {
-    console.error('Could not enable camera for spotlight:', err);
-  }
-}
-async function disableMyVideoAfterSpotlight() {
-  const track = localStream.getVideoTracks()[0];
-  if (!track) return;
-  track.stop();
-  localStream.removeTrack(track);
-  camOn = false;
-  updateControlButtons();
+function regridGeneral() {
+  if (isLecture) return;
+  const n = $('gcGrid').children.length;
+  // Columns chosen so the rows that follow stay close to square in a 480px
+  // column — the grid itself splits the leftover height between them.
+  const cols = n <= 1 ? 1 : n <= 4 ? 2 : n <= 9 ? 3 : 4;
+  $('gcGrid').style.setProperty('--cols', cols);
 }
 
-/* ---------- controls ---------- */
-function toggleMic() {
-  micOn = !micOn;
-  localStream.getAudioTracks().forEach(t => t.enabled = micOn);
-  updateControlButtons();
+function paintSubtitle() {
+  const n = signalChannel ? Object.keys(signalChannel.presenceState()).length : 1;
+  const mins = Math.floor((Date.now() - startedAt) / 60000);
+  const secs = Math.floor((Date.now() - startedAt) / 1000) % 60;
+  const clock = `${mins}:${String(secs).padStart(2, '0')}`;
+  $('gcSubtitle').textContent = isLecture
+    ? `${n} in the room · ${clock}`
+    : `${n} on the call · ${clock}`;
 }
-function toggleCam() {
-  if (mode === 'lecture' && !isHost) return; // students can't self-promote to video
+
+/* ============================================================
+   HOST PIPELINE (lecture): canvas video + WebAudio mix
+   ============================================================ */
+
+function setupHostPipeline() {
+  // --- hidden <video> for the host's own camera, used as a draw source ---
+  selfVideoEl = document.createElement('video');
+  selfVideoEl.autoplay = true; selfVideoEl.playsInline = true; selfVideoEl.muted = true;
+  selfVideoEl.srcObject = localStream;
+  $('gcHidden').appendChild(selfVideoEl);
+  selfVideoEl.play().catch(() => {});
+
+  // --- canvas the whole class actually watches ---
+  canvasEl = document.createElement('canvas');
+  canvasEl.width = 1280; canvasEl.height = 720;
+  canvasCtx = canvasEl.getContext('2d', { alpha: false });
+  drawFrame();
+  canvasStream = canvasEl.captureStream(24);
+
+  // Host previews exactly what the class sees.
+  const st = $('gcLectureStage');
+  const preview = document.createElement('video');
+  preview.autoplay = true; preview.playsInline = true; preview.muted = true;
+  preview.srcObject = canvasStream;
+  st.insertBefore(preview, st.firstChild);
+  $('gcStagePlaceholder').style.display = 'none';
+  preview.play().catch(() => {});
+
+  // --- audio mix: host mic (+ whoever is on stage) ---
+  try {
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    mixDest = audioCtx.createMediaStreamDestination();
+    micOnlyDest = audioCtx.createMediaStreamDestination();
+    micGain = audioCtx.createGain();
+    micGain.gain.value = micOn ? 1 : 0;
+    audioCtx.createMediaStreamSource(localStream).connect(micGain);
+    micGain.connect(mixDest);
+    micGain.connect(micOnlyDest);
+    // Some browsers suspend the context until a gesture.
+    document.addEventListener('click', () => audioCtx.resume().catch(() => {}), { once: true });
+  } catch (err) {
+    console.warn('WebAudio mixing unavailable, falling back to raw mic:', err);
+    mixDest = null; micOnlyDest = null;
+  }
+}
+
+function drawFrame() {
+  if (ended) return;
+  rafId = requestAnimationFrame(drawFrame);
+  if (!canvasCtx) return;
+
+  const W = canvasEl.width, H = canvasEl.height;
+  canvasCtx.fillStyle = '#0B0918';
+  canvasCtx.fillRect(0, 0, W, H);
+
+  const cam = (selfVideoEl && selfVideoEl.readyState >= 2 && camOn) ? selfVideoEl : null;
+  const screen = (screenVideo && screenVideo.readyState >= 2) ? screenVideo : null;
+  const spot = (stage && stage.video) ? document.getElementById('hid-' + stage.uid) : null;
+  const spotReady = spot && spot.readyState >= 2;
+
+  if (screen) {
+    // Slides fill the frame; the lecturer sits bottom-right, the student bottom-left.
+    cover(screen, 0, 0, W, H, true);
+    if (cam) pip(cam, W - W * 0.26 - 24, H - H * 0.26 - 24, W * 0.26, H * 0.26);
+    if (spotReady) pip(spot, 24, H - H * 0.26 - 24, W * 0.26, H * 0.26);
+  } else if (spotReady) {
+    // Split stage: lecturer left, student right.
+    cover(cam, 0, 0, W * 0.62, H);
+    cover(spot, W * 0.62, 0, W * 0.38, H);
+    canvasCtx.fillStyle = 'rgba(0,0,0,.35)';
+    canvasCtx.fillRect(W * 0.62, H - 54, W * 0.38, 54);
+    label(peers[stage.uid]?.name || 'Student', W * 0.62 + 16, H - 20);
+  } else if (cam) {
+    cover(cam, 0, 0, W, H);
+  } else {
+    canvasCtx.fillStyle = '#7C3AED';
+    canvasCtx.font = 'bold 54px Satoshi, sans-serif';
+    canvasCtx.textAlign = 'center';
+    canvasCtx.fillText(initials(myName), W / 2, H / 2 + 18);
+    canvasCtx.textAlign = 'left';
+  }
+
+  if (stage && !stage.video) {
+    canvasCtx.fillStyle = 'rgba(0,0,0,.42)';
+    canvasCtx.fillRect(24, 24, 430, 54);
+    label(`🎤 ${peers[stage.uid]?.name || 'A student'} is speaking`, 42, 60);
+  }
+}
+
+function label(text, x, y) {
+  canvasCtx.fillStyle = '#fff';
+  canvasCtx.font = 'bold 26px Satoshi, sans-serif';
+  canvasCtx.fillText(text, x, y);
+}
+
+// object-fit: cover, drawn by hand.
+function cover(video, x, y, w, h) {
+  if (!video) { canvasCtx.fillStyle = '#141024'; canvasCtx.fillRect(x, y, w, h); return; }
+  const vw = video.videoWidth || 16, vh = video.videoHeight || 9;
+  const scale = Math.max(w / vw, h / vh);
+  const dw = vw * scale, dh = vh * scale;
+  canvasCtx.save();
+  canvasCtx.beginPath(); canvasCtx.rect(x, y, w, h); canvasCtx.clip();
+  canvasCtx.drawImage(video, x + (w - dw) / 2, y + (h - dh) / 2, dw, dh);
+  canvasCtx.restore();
+}
+
+function pip(video, x, y, w, h) {
+  canvasCtx.save();
+  canvasCtx.shadowColor = 'rgba(0,0,0,.5)'; canvasCtx.shadowBlur = 18;
+  canvasCtx.fillStyle = '#000';
+  canvasCtx.fillRect(x, y, w, h);
+  canvasCtx.restore();
+  cover(video, x, y, w, h);
+  canvasCtx.strokeStyle = 'rgba(255,255,255,.22)';
+  canvasCtx.lineWidth = 3;
+  canvasCtx.strokeRect(x, y, w, h);
+}
+
+/* ---- which audio each student receives ---- */
+function audioTrackFor(userId) {
+  if (!mixDest) return localStream.getAudioTracks()[0] || null;
+  // The student who is on stage hears the lecturer only — otherwise they'd
+  // hear their own voice bounced back through the mix.
+  const theyAreOnStage = stage && stage.uid === userId;
+  const dest = theyAreOnStage ? micOnlyDest : mixDest;
+  return dest.stream.getAudioTracks()[0] || null;
+}
+
+function refreshOutboundAudio() {
+  if (!isHost || !isLecture) return;
+  Object.values(peers).forEach(p => {
+    if (!p.pc) return;
+    const track = audioTrackFor(p.id);
+    const sender = p.pc.getSenders().find(s => s.track && s.track.kind === 'audio')
+      || p.pc.getSenders().find(s => !s.track);
+    if (track && sender) sender.replaceTrack(track).catch(err => console.warn('audio swap failed:', err));
+  });
+}
+
+function wireStudentAudio(userId, stream) {
+  if (!audioCtx || !mixDest) return;
+  removeStudentAudio(userId);
+  const track = stream.getAudioTracks()[0];
+  if (!track) return;
+  try {
+    const source = audioCtx.createMediaStreamSource(new MediaStream([track]));
+    const gain = audioCtx.createGain();
+    gain.gain.value = 1;
+    source.connect(gain);
+    gain.connect(mixDest);          // the rest of the class hears them
+    gain.connect(audioCtx.destination); // the lecturer hears them
+    studentAudio[userId] = { source, gain };
+  } catch (err) { console.warn('Could not mix student audio:', err); }
+}
+
+function removeStudentAudio(userId) {
+  const node = studentAudio[userId];
+  if (!node) return;
+  try { node.gain.disconnect(); node.source.disconnect(); } catch (_) {}
+  delete studentAudio[userId];
+}
+
+/* ============================================================
+   CALLING A STUDENT UP  (host side)
+   ============================================================ */
+
+function openStudentMenu(userId) {
+  const peer = peers[userId];
+  if (!peer) return;
+  const theyAreOnStage = stage && stage.uid === userId;
+
+  openSheet(`
+    <div class="grab"></div>
+    <h4>${escHtml(peer.name)}${peer.hand ? ' · ✋ hand raised' : ''}</h4>
+    ${theyAreOnStage
+      ? `<button data-s="clear">↩️ Send back to the class</button>
+         <button data-s="${stage.video ? 'audio' : 'video'}">${stage.video ? '🎤 Switch to audio only' : '🎥 Bring on video'}</button>`
+      : `<button data-s="video">🎥 Bring on video</button>
+         <button data-s="audio">🎤 Let them speak (audio only)</button>`}
+    <button data-s="close">✕ Cancel</button>
+  `, async (act) => {
+    if (act === 'close') return;
+    if (act === 'clear') return clearStage();
+    await setStage(userId, act === 'video');
+  });
+}
+
+async function setStage(userId, withVideo) {
+  if (stage && stage.uid !== userId) clearStage(true);
+
+  const peer = peers[userId];
+  if (!peer) return;
+  stage = { uid: userId, video: !!withVideo };
+  peer.hand = false;
+
+  signal(userId, 'stage-request', { video: !!withVideo });
+  signal(null, 'stage-info', { uid: userId, name: peer.name, video: !!withVideo });
+
+  if (peer.stream) wireStudentAudio(userId, peer.stream);
+  refreshOutboundAudio();
+  paintStrip();
+  toast(`${peer.name} is on${withVideo ? ' video' : ' audio'}`);
+}
+
+function clearStage(silent) {
+  if (!stage) return;
+  const prev = stage.uid;
+  stage = null;
+  signal(prev, 'stage-clear', {});
+  if (!silent) signal(null, 'stage-info', { uid: null });
+  removeStudentAudio(prev);
+  refreshOutboundAudio();
+  paintStrip();
+}
+
+/* ============================================================
+   BEING CALLED UP  (student side)
+   ============================================================ */
+
+// A student only ever has one peer: the lecturer.
+function hostPeer() {
+  return Object.values(peers).find(p => p.role === 'host') || Object.values(peers)[0] || null;
+}
+function hostVideoSender() {
+  const pc = hostPeer()?.pc;
+  if (!pc) return null;
+  const t = pc.getTransceivers().find(tr =>
+    tr.receiver?.track?.kind === 'video' || tr.sender?.track?.kind === 'video');
+  return t ? t.sender : (pc.getSenders().find(s => s.track?.kind === 'video') || null);
+}
+
+async function onCalledUp(withVideo) {
+  onStage = true;
+  micOn = true;
+  localStream.getAudioTracks().forEach(t => { t.enabled = true; });
+  handUp = false;
+
+  if (withVideo) {
+    try {
+      const camStream = await navigator.mediaDevices.getUserMedia({
+        video: { width: { ideal: 640 }, height: { ideal: 480 }, facingMode: 'user' },
+      });
+      const track = camStream.getVideoTracks()[0];
+      // The video m-line was negotiated as two-way when we answered the
+      // lecturer's offer, so this is a plain track swap — no new offer, no
+      // renegotiation, nothing for a weak connection to drop on.
+      const sender = hostVideoSender();
+      if (sender) await sender.replaceTrack(track);
+      else hostPeer()?.pc?.addTrack(track, localStream);
+      localStream.getVideoTracks().forEach(t => t.stop());
+      localStream.addTrack(track);
+      camOn = true;
+      $('camBtn').style.display = 'flex';
+    } catch (err) {
+      console.error('Camera for stage failed:', err);
+      toast('Could not turn your camera on.');
+    }
+  }
+
+  toast(withVideo ? "You're on video — the class can see you" : "You're unmuted — go ahead");
+  if (navigator.vibrate) navigator.vibrate([25, 60, 25]);
+  $('gcLectureHint').innerHTML = withVideo
+    ? "<b>You're on stage.</b> The whole class can see and hear you."
+    : "<b>You're unmuted.</b> The whole class can hear you.";
+  updateControls();
+}
+
+async function onSentBack() {
+  onStage = false;
+  micOn = false;
+  localStream.getAudioTracks().forEach(t => { t.enabled = false; });
+
+  const vt = localStream.getVideoTracks()[0];
+  if (vt) {
+    const sender = hostVideoSender();
+    if (sender) await sender.replaceTrack(null).catch(() => {});
+    vt.stop();
+    localStream.removeTrack(vt);
+  }
+  camOn = false;
+  $('camBtn').style.display = 'none';
+  $('gcLectureHint').innerHTML = "You're muted. Raise your hand and the lecturer can call you up.";
+  toast('Back to listening');
+  updateControls();
+}
+
+function onStageInfo(p) {
+  if (isHost) return;
+  const label = $('gcStageLabel');
+  if (p.uid && p.uid !== myUserId) {
+    label.textContent = `${p.video ? '🎥' : '🎤'} ${p.name || 'A student'} is on stage`;
+    label.style.display = 'block';
+  } else if (p.uid === myUserId) {
+    label.textContent = "🎤 You're on stage";
+    label.style.display = 'block';
+  } else {
+    label.style.display = 'none';
+  }
+}
+
+function onHostEnded() {
+  if (ended) return;
+  toast('The lecturer ended the call.');
+  setTimeout(() => leaveCall(), 900);
+}
+
+function onHandSignal(fromId, up) {
+  const peer = peers[fromId];
+  if (!peer) return;
+  peer.hand = !!up;
+  paintStrip();
+  if (isHost && up) toast(`✋ ${peer.name} raised their hand`);
+}
+
+function onStateSignal(fromId, p) {
+  const peer = peers[fromId];
+  if (!peer) return;
+  if (typeof p.micMuted === 'boolean') peer.micMuted = p.micMuted;
+  if (typeof p.hasVideo === 'boolean') peer.hasVideo = p.hasVideo;
+  paintPeerMedia(fromId);
+}
+
+function broadcastState() {
+  signal(null, 'state', { micMuted: !micOn, hasVideo: camOn });
+}
+
+/* ============================================================
+   CONTROLS
+   ============================================================ */
+
+function toggleMic() {
+  if (isStudent && !micOn && !onStage) {
+    toast('The lecturer has to call you up before you can speak.');
+    return;
+  }
+  micOn = !micOn;
+  localStream.getAudioTracks().forEach(t => { t.enabled = micOn; });
+  if (micGain) micGain.gain.value = micOn ? 1 : 0;   // host: mutes the outgoing mix too
+  updateControls();
+  broadcastState();
+}
+
+async function toggleCam() {
+  if (isStudent && !localStream.getVideoTracks()[0]) return;
   const track = localStream.getVideoTracks()[0];
   if (!track) return;
   camOn = !camOn;
   track.enabled = camOn;
-  updateControlButtons();
-}
-function updateControlButtons() {
-  $('micBtn').classList.toggle('off', !micOn);
-  $('camBtn').classList.toggle('off', !camOn);
-  $('camBtn').style.display = (mode === 'lecture' && !isHost && !localStream.getVideoTracks()[0]) ? 'none' : 'flex';
+  const self = document.getElementById('tile-self');
+  if (self) self.classList.toggle('no-video', !camOn);
+  updateControls();
+  broadcastState();
 }
 
-/* ---------- leaving ---------- */
+async function toggleScreenShare() {
+  if (isLecture && isHost) return toggleScreenShareHost();
+  if (isLecture && isStudent) return toggleScreenShareOnStage();
+  if (!isLecture) return toggleScreenShareGeneral();
+}
+
+/* Host in a lecture: shares straight into the compositing canvas everyone
+   already receives — see setupHostPipeline() / drawFrame(). */
+async function toggleScreenShareHost() {
+  if (screenStream) {
+    screenStream.getTracks().forEach(t => t.stop());
+    screenStream = null;
+    screenVideo?.remove(); screenVideo = null;
+    $('shareBtn').classList.remove('on');
+    toast('Stopped sharing');
+    return;
+  }
+
+  try {
+    screenStream = await navigator.mediaDevices.getDisplayMedia({ video: { frameRate: 15 }, audio: false });
+  } catch (err) { return; }
+
+  screenVideo = document.createElement('video');
+  screenVideo.autoplay = true; screenVideo.playsInline = true; screenVideo.muted = true;
+  screenVideo.srcObject = screenStream;
+  $('gcHidden').appendChild(screenVideo);
+  screenVideo.play().catch(() => {});
+
+  screenStream.getVideoTracks()[0].addEventListener('ended', () => {
+    screenStream = null; screenVideo?.remove(); screenVideo = null;
+    $('shareBtn').classList.remove('on');
+  });
+
+  $('shareBtn').classList.add('on');
+  toast('Sharing your screen with the class');
+}
+
+/* A student who's been called up: their video line to the host is already
+   open (that's how being "called up" works), so sharing is a plain
+   replaceTrack — the host draws whatever arrives on that line, camera or
+   screen, without knowing the difference. */
+async function toggleScreenShareOnStage() {
+  if (!onStage) { toast('The lecturer has to call you up before you can share.'); return; }
+
+  if (screenStream) {
+    const camTrack = localStream.getVideoTracks().find(t => t !== screenStream.getVideoTracks()[0]);
+    const sender = hostVideoSender();
+    if (sender) await sender.replaceTrack(camTrack || null).catch(() => {});
+    screenStream.getTracks().forEach(t => t.stop());
+    screenStream = null;
+    $('shareBtn').classList.remove('on');
+    toast('Back to your camera');
+    return;
+  }
+
+  try {
+    screenStream = await navigator.mediaDevices.getDisplayMedia({ video: { frameRate: 15 }, audio: false });
+  } catch (err) { return; }
+
+  const screenTrack = screenStream.getVideoTracks()[0];
+  const sender = hostVideoSender();
+  if (sender) await sender.replaceTrack(screenTrack).catch(() => {});
+  else localStream.addTrack(screenTrack);
+
+  screenTrack.addEventListener('ended', toggleScreenShareOnStage);
+  $('shareBtn').classList.add('on');
+  toast('Sharing your screen with the class');
+}
+
+/* General call: full mesh, everyone already sends one live video track per
+   peer connection — sharing swaps that outgoing track for every peer at
+   once. No renegotiation, no new connections. */
+async function toggleScreenShareGeneral() {
+  if (screenStream) {
+    const camTrack = localStream.getVideoTracks()[0];
+    Object.values(peers).forEach(p => {
+      const sender = p.pc?.getSenders().find(s => s.track && s.track.kind === 'video');
+      if (sender && camTrack) sender.replaceTrack(camTrack).catch(() => {});
+    });
+    const selfVideo = document.querySelector('#tile-self video');
+    if (selfVideo && camTrack) selfVideo.srcObject = localStream;
+    screenStream.getTracks().forEach(t => t.stop());
+    screenStream = null;
+    $('shareBtn').classList.remove('on');
+    toast('Back to your camera');
+    return;
+  }
+
+  try {
+    screenStream = await navigator.mediaDevices.getDisplayMedia({ video: { frameRate: 15 }, audio: false });
+  } catch (err) { return; }
+
+  const screenTrack = screenStream.getVideoTracks()[0];
+  Object.values(peers).forEach(p => {
+    const sender = p.pc?.getSenders().find(s => s.track && s.track.kind === 'video');
+    if (sender) sender.replaceTrack(screenTrack).catch(() => {});
+  });
+  const selfVideo = document.querySelector('#tile-self video');
+  if (selfVideo) selfVideo.srcObject = screenStream;
+
+  screenTrack.addEventListener('ended', toggleScreenShareGeneral);
+  $('shareBtn').classList.add('on');
+  toast('Sharing your screen');
+}
+
+function toggleHand() {
+  handUp = !handUp;
+  signal(null, 'hand', { up: handUp });
+  $('handBtn').classList.toggle('on', handUp);
+  toast(handUp ? 'Hand raised — the lecturer can see it' : 'Hand lowered');
+}
+
+function updateControls() {
+  $('micBtn').classList.toggle('off', !micOn);
+  $('micLbl').textContent = micOn ? 'Mute' : 'Unmute';
+  $('camBtn').classList.toggle('off', !camOn);
+
+  if (isStudent) {
+    $('camBtn').style.display = localStream?.getVideoTracks()[0] ? 'flex' : 'none';
+    $('micBtn').disabled = false;
+  }
+}
+
+/* ============================================================
+   PARTICIPANTS SHEET
+   ============================================================ */
+
+function openParticipants() {
+  const rows = [
+    `<div class="row"><span class="gc-avatar">${escHtml(initials(myName))}</span><span>${escHtml(myName)} (You)</span><span class="st">${isHost ? 'Host' : micOn ? 'Speaking' : 'Muted'}</span></div>`,
+    ...Object.values(peers).map(p => `<div class="row">
+      <span class="gc-avatar">${escHtml(initials(p.name))}</span>
+      <span>${escHtml(p.name)}</span>
+      <span class="st">${p.role === 'host' ? 'Lecturer' : (stage && stage.uid === p.id) ? 'On stage' : p.hand ? '✋ Hand up' : isLecture ? 'Listening' : (p.micMuted ? 'Muted' : 'In call')}</span>
+    </div>`),
+  ].join('');
+
+  openSheet(`
+    <div class="grab"></div>
+    <h4>${Object.keys(peers).length + 1} in the ${isLecture ? 'lecture' : 'call'}</h4>
+    ${rows}
+    <button data-s="close">✕ Close</button>
+  `, () => {});
+}
+
+function openSheet(html, onPick) {
+  const bd = $('gcSheet');
+  $('gcSheetBody').innerHTML = html;
+  bd.classList.add('show');
+  bd.onclick = (e) => {
+    if (e.target === bd) { bd.classList.remove('show'); return; }
+    const btn = e.target.closest('button[data-s]');
+    if (!btn) return;
+    bd.classList.remove('show');
+    onPick(btn.dataset.s);
+  };
+}
+
+/* ============================================================
+   LEAVING
+   ============================================================ */
+
 async function maybeEndIfEmpty() {
-  if (!signalChannel) return;
+  if (!signalChannel || ended) return;
   const remaining = Object.keys(signalChannel.presenceState()).length;
   if (remaining <= 1) {
-    await window.sb.from('group_calls').update({ ended_at: new Date().toISOString() }).eq('id', callId).is('ended_at', null);
+    await window.sb.from('group_calls')
+      .update({ ended_at: new Date().toISOString() })
+      .eq('id', callId).is('ended_at', null);
   }
 }
 
 async function leaveCall(silent) {
   if (ended) return;
   ended = true;
-  if (canvasTimer) cancelAnimationFrame(canvasTimer);
-  if (mode === 'lecture' && isHost) {
+  clearInterval(timerInt);
+  if (rafId) cancelAnimationFrame(rafId);
+
+  if (isHost) {
     signalChannel?.send({ type: 'broadcast', event: 'signal', payload: { from: myUserId, kind: 'host-ended' } });
-    await window.sb.from('group_calls').update({ ended_at: new Date().toISOString() }).eq('id', callId).is('ended_at', null);
+    await window.sb.from('group_calls')
+      .update({ ended_at: new Date().toISOString() })
+      .eq('id', callId).is('ended_at', null).then(() => {}, () => {});
   } else {
     await maybeEndIfEmpty();
   }
-  Object.values(peers).forEach(p => p.pc?.close());
+
+  Object.values(peers).forEach(p => { try { p.pc?.close(); } catch (_) {} });
   localStream?.getTracks().forEach(t => t.stop());
+  screenStream?.getTracks().forEach(t => t.stop());
+  try { audioCtx?.close(); } catch (_) {}
   if (signalChannel) window.sb.removeChannel(signalChannel);
+
   if (!silent) window.location.href = `group-thread.html?id=${groupId}`;
 }
 </script>
