@@ -1416,10 +1416,18 @@ document.getElementById('createGroupForm').addEventListener('submit', async (e) 
 
   if (error) { console.error(error); alert('Could not create group.'); return; }
 
-  await window.sb.from('group_members').upsert(
+  // Add the creator as a member. Falls back to plainer rows if optional columns or the
+  // unique constraint behind upsert are missing; group-thread.html repairs anything left.
+  const memberAttempts = [
     { group_id: group.id, user_id: myUserId, role: 'creator', can_send_messages: true, can_add_members: true, can_remove_members: true },
-    { onConflict: 'group_id,user_id', ignoreDuplicates: true }
-  );
+    { group_id: group.id, user_id: myUserId, role: 'creator', can_send_messages: true },
+    { group_id: group.id, user_id: myUserId, role: 'creator' },
+  ];
+  for (const row of memberAttempts) {
+    const { error: mErr } = await window.sb.from('group_members').insert(row);
+    if (!mErr || mErr.code === '23505') break;
+    console.error('Creator membership insert failed:', mErr);
+  }
 
   window.location.href = `group-thread.html?id=${group.id}`;
 });
