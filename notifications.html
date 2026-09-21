@@ -1596,28 +1596,51 @@ $('markAllReadBtn').addEventListener('click', async () => {
 
 /* ============ GROUPS ============ */
 
+function groupsFailed(where, err) {
+  console.error('Groups load error (' + where + '):', err);
+  loaded.groups = false; // so tapping the Groups tab again retries instead of staying stuck
+  const panel = $('groupsPanel');
+  panel.innerHTML = `
+    <div class="admin-empty">
+      Couldn't load groups.
+      <div style="font-size:11px;margin-top:6px;opacity:.7">${esc((err && (err.message || err.code)) || 'unknown error')}</div>
+      <button id="retryGroupsBtn" style="margin-top:14px;padding:8px 18px;border-radius:999px;border:1px solid var(--border,#ddd);background:transparent;color:inherit;font:inherit;font-weight:600;cursor:pointer">Try again</button>
+    </div>`;
+  $('retryGroupsBtn').addEventListener('click', () => { loaded.groups = true; loadGroups(); });
+}
+
 async function loadGroups() {
   const panel = $('groupsPanel');
+  if (!myUserId) { loaded.groups = false; return; } // auth not ready yet; the tab click / cp-ready will call again
+  panel.innerHTML = `<div class="admin-empty">Loading…</div>`;
 
-  // Two plain queries instead of one embedded/nested select — this doesn't
-  // depend on Supabase correctly recognizing the group_members -> groups
-  // foreign key relationship, which is a distinct failure mode from RLS
-  // (a missing/ambiguous relationship gives a PGRST error even when RLS
-  // itself is fine).
+  // Two plain queries instead of one embedded select, so this never depends on
+  // Supabase recognising the group_members -> groups relationship.
   const { data: memberRows, error: memberErr } = await window.sb
     .from('group_members').select('group_id').eq('user_id', myUserId);
-
-  if (memberErr) { console.error('Groups load error (group_members):', memberErr); panel.innerHTML = `<div class="admin-empty">Couldn't load groups. (${esc(memberErr.message || memberErr.code || 'unknown error')})</div>`; return; }
+  if (memberErr) return groupsFailed('group_members', memberErr);
 
   const groupIds = (memberRows || []).map(r => r.group_id);
   let groups = [];
   if (groupIds.length) {
+    // select('*') on purpose: naming columns (last_message, invite_code, ...) made the
+    // whole tab fail with "column does not exist" whenever one of them was missing.
     const { data: groupRows, error: groupErr } = await window.sb
-      .from('groups').select('id, name, member_count, last_message, last_message_at, invite_code')
-      .in('id', groupIds);
-    if (groupErr) { console.error('Groups load error (groups):', groupErr); panel.innerHTML = `<div class="admin-empty">Couldn't load groups. (${esc(groupErr.message || groupErr.code || 'unknown error')})</div>`; return; }
+      .from('groups').select('*').in('id', groupIds);
+    if (groupErr) return groupsFailed('groups', groupErr);
     groups = groupRows || [];
   }
+
+  // Groups you created should always show, even if your group_members row never
+  // landed (the insert in groups.html can fail silently behind RLS). Best-effort only.
+  try {
+    const { data: mine, error: mineErr } = await window.sb
+      .from('groups').select('*').eq('creator_id', myUserId);
+    if (!mineErr && mine) {
+      const seen = new Set(groups.map(g => g.id));
+      mine.forEach(g => { if (!seen.has(g.id)) groups.push(g); });
+    }
+  } catch (_) { /* column may be named differently; ignore */ }
 
   groups = groups.sort((a, b) => new Date(b.last_message_at || 0) - new Date(a.last_message_at || 0));
 
