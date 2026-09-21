@@ -1599,15 +1599,27 @@ $('markAllReadBtn').addEventListener('click', async () => {
 async function loadGroups() {
   const panel = $('groupsPanel');
 
-  const { data: memberships, error } = await window.sb
-    .from('group_members')
-    .select('group_id, groups(id, name, member_count, last_message, last_message_at, invite_code)')
-    .eq('user_id', myUserId);
+  // Two plain queries instead of one embedded/nested select — this doesn't
+  // depend on Supabase correctly recognizing the group_members -> groups
+  // foreign key relationship, which is a distinct failure mode from RLS
+  // (a missing/ambiguous relationship gives a PGRST error even when RLS
+  // itself is fine).
+  const { data: memberRows, error: memberErr } = await window.sb
+    .from('group_members').select('group_id').eq('user_id', myUserId);
 
-  if (error) { console.error('Groups load error:', error); panel.innerHTML = `<div class="admin-empty">Couldn't load groups.</div>`; return; }
+  if (memberErr) { console.error('Groups load error (group_members):', memberErr); panel.innerHTML = `<div class="admin-empty">Couldn't load groups. (${esc(memberErr.message || memberErr.code || 'unknown error')})</div>`; return; }
 
-  const groups = (memberships || []).map(m => m.groups).filter(Boolean)
-    .sort((a, b) => new Date(b.last_message_at || 0) - new Date(a.last_message_at || 0));
+  const groupIds = (memberRows || []).map(r => r.group_id);
+  let groups = [];
+  if (groupIds.length) {
+    const { data: groupRows, error: groupErr } = await window.sb
+      .from('groups').select('id, name, member_count, last_message, last_message_at, invite_code')
+      .in('id', groupIds);
+    if (groupErr) { console.error('Groups load error (groups):', groupErr); panel.innerHTML = `<div class="admin-empty">Couldn't load groups. (${esc(groupErr.message || groupErr.code || 'unknown error')})</div>`; return; }
+    groups = groupRows || [];
+  }
+
+  groups = groups.sort((a, b) => new Date(b.last_message_at || 0) - new Date(a.last_message_at || 0));
 
   const badge = $('groupsCount');
   badge.textContent = groups.length;
